@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Flash Code",
+  "version": "0.1.0",
+  "identifier": "com.flashcode.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Flash Code",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "devtools": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "dmg": {
+        "appPosition": {
+          "x": 130,
+          "y": 150
+        },
+        "applicationFolderPosition": {
+          "x": 390,
+          "y": 150
+        },
+        "windowSize": {
+          "height": 400,
+          "width": 660
+        }
+      },
+      "entitlements": null,
+      "exceptionDomain": null,
+      "frameworks": [],
+      "minimumSystemVersion": "10.13",
+      "signingIdentity": "AB31F4929F8775CB2032D4AD024C345345D4B6AF"
+    }
+  }
+}

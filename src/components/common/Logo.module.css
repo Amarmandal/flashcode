@@ -1,0 +1,50 @@
+.logoText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: #f3f4f6;
+  text-align: center;
+  background: linear-gradient(90deg, #6366f1, #10b981);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* Size variations */
+.large {
+  font-size: 3rem;
+  line-height: 3.5rem;
+}
+
+.medium {
+  font-size: 2rem;
+  line-height: 2.5rem;
+}
+
+.small {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.favicon {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700; /* Bolder for small sizes */
+}
+
+/* Optional animation */
+.logoText:hover {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
