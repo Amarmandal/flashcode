@@ -1,6 +1,6 @@
 {
-  "name": "tauri-react-vite",
-  "productName": "tauri-app",
+  "name": "flashcode",
+  "productName": "Flashcode",
   "private": true,
   "version": "0.1.0",
   "type": "module",
