@@ -1,26 +1,9 @@
+use std::time::SystemTime;
+
 use rusqlite::{params, Error};
 use serde::{Deserialize, Serialize};
 
-use crate::{database::DatabaseConnection, responses::StateCountResponse};
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum FlashcardState {
-    New = 0,
-    Learning = 1,
-    Review = 2,
-}
-
-impl FlashcardState {
-    fn from_i32(value: i32) -> Option<Self> {
-        match value {
-            0 => Some(FlashcardState::New),
-            1 => Some(FlashcardState::Learning),
-            3 => Some(FlashcardState::Review),
-            _ => None,
-        }
-    }
-}
+use crate::{database::DatabaseConnection, sm2::{calculate_sm2, Answer}};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Flashcode {
@@ -29,10 +12,35 @@ pub struct Flashcode {
     pub back: String,
     pub deck_id: i64,
     pub language: String,
-    pub state: FlashcardState,
+    pub ease_factor: f32,
+    pub repetitions: u32,
+    pub interval: u32,
+    pub created_at: String,
+    pub due_date: u64,
 }
 
 impl Flashcode {
+    pub fn default() -> Self {
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("Time went backwards");
+
+        let due_date = seconds_to_days(now.as_secs());
+
+        Flashcode {
+            id: -1,
+            front: String::new(),
+            back: String::new(),
+            deck_id: -1,
+            language: String::new(),
+            ease_factor: 2.5,
+            repetitions: 0,
+            interval: 1,
+            created_at: now.as_secs().to_string(),
+            due_date,
+        }
+    }
+
     pub fn create(
         db: &DatabaseConnection,
         front: &str,
@@ -41,37 +49,50 @@ impl Flashcode {
         language: &str,
     ) -> Result<Self, Error> {
         let conn = db.get_connection();
-        conn.execute(
-            "INSERT INTO flashcodes (front, back, deck_id, language, state) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![front, back, deck_id, language, FlashcardState::New as i32],
-        )?;
-        let id = conn.last_insert_rowid();
-        Ok(Flashcode {
-            id,
+        let new_flashcode = Flashcode {
+            id: conn.last_insert_rowid(),
             front: front.to_string(),
             back: back.to_string(),
             deck_id,
             language: language.to_string(),
-            state: FlashcardState::New,
-        })
+            ..Flashcode::default()
+        };
+
+        conn.execute(
+            "INSERT INTO flashcodes (front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                new_flashcode.front,
+                new_flashcode.back,
+                new_flashcode.deck_id,
+                new_flashcode.language,
+                new_flashcode.ease_factor,
+                new_flashcode.repetitions,
+                new_flashcode.interval,
+                new_flashcode.created_at, 
+                new_flashcode.due_date,
+            ],
+        )?;
+
+        Ok(new_flashcode)
     }
 
     pub fn get(db: &DatabaseConnection, id: i64) -> Result<Self, Error> {
         let conn = db.get_connection();
         conn.query_row(
-            "SELECT id, front, back, deck_id, language, state FROM flashcodes WHERE id = ?1",
+            "SELECT id, front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date FROM flashcodes WHERE id = ?1",
             params![id],
             |row| {
-                let state = FlashcardState::from_i32(row.get("state")?)
-                    .ok_or_else(|| rusqlite::Error::InvalidQuery);
-
                 Ok(Flashcode {
                     id: row.get("id")?,
                     front: row.get("front")?,
                     back: row.get("back")?,
                     deck_id: row.get("deck_id")?,
                     language: row.get("language")?,
-                    state: state?,
+                    ease_factor: row.get("ease_factor")?,
+                    repetitions: row.get("repetitions")?,            // Default value
+                    interval: row.get("interval")?,               // Default value
+                    created_at: row.get("created_at")?, // Placeholder value
+                    due_date: row.get("due_date")?, // Placeholder value
                 })
             },
         )
@@ -81,20 +102,21 @@ impl Flashcode {
         let conn = db.get_connection();
 
         let mut stmt = conn.prepare(
-            "SELECT id, front, back, deck_id, language, state FROM flashcodes WHERE deck_id = ?1",
+            "SELECT id, front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date FROM flashcodes WHERE deck_id = ?1",
         )?;
 
         let flashcodes = stmt.query_map(params![deck_id], |row| {
-            let state = FlashcardState::from_i32(row.get("state")?)
-                .ok_or_else(|| rusqlite::Error::InvalidQuery);
-
             Ok(Flashcode {
                 id: row.get("id")?,
                 front: row.get("front")?,
                 back: row.get("back")?,
                 deck_id: row.get("deck_id")?,
                 language: row.get("language")?,
-                state: state?,
+                ease_factor: row.get("ease_factor")?,
+                repetitions: row.get("repetitions")?,
+                interval: row.get("interval")?,
+                created_at: row.get("created_at")?,
+                due_date: row.get("due_date")?,
             })
         })?;
 
@@ -105,35 +127,6 @@ impl Flashcode {
         }
 
         Ok(results)
-    }
-
-    pub fn get_flash_counts(
-        db: &DatabaseConnection,
-        deck_id: i64,
-    ) -> Result<StateCountResponse, Error> {
-        let conn = db.get_connection();
-
-        let mut response = StateCountResponse::new(0, 0, 0);
-
-        let mut stmt = conn
-            .prepare("SELECT state, COUNT(*) FROM flashcards WHERE deck_id = ? GROUP BY state")?;
-        let rows = stmt.query_map([deck_id], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-        })?;
-
-        for row_result in rows {
-            let (state, count) = row_result?;
-
-            if state == "0" {
-                response.new = count
-            } else if state == "1" {
-                response.learning = count
-            } else {
-                response.to_review = count
-            }
-        }
-
-        Ok(response)
     }
 
     pub fn update(&self, db: &DatabaseConnection) -> Result<String, Error> {
@@ -147,11 +140,66 @@ impl Flashcode {
         Ok("Flashcode has been updated successfully".to_string())
     }
 
-    pub fn delete(&self, db: &DatabaseConnection) -> Result<String, Error> {
+    pub fn update_based_on_answer(db: &DatabaseConnection, id: &str,  answer: Answer) -> Result<String, Error> {
         let conn = db.get_connection();
 
-        conn.execute("DELETE FROM flashcodes WHERE id = ?1", params![&self.id])?;
+        let flashcode = conn.query_row(
+            "SELECT id, ease_factor, repetitions, interval, due_date FROM flashcodes WHERE id = ?1",
+            params![id],
+            |row| {
+                Ok(Flashcode {
+                    id: row.get("id")?,
+                    ease_factor: row.get("ease_factor")?,
+                    repetitions: row.get("repetitions")?,
+                    interval: row.get("interval")?,
+                    due_date: row.get("due_date")?,
+                    ..Flashcode::default()
+                })
+            },
+        );
+
+        match flashcode {
+            Ok(flashcode) => {
+                let previous_interval = flashcode.interval;
+                let previous_ease_factor = flashcode.ease_factor;
+                let previous_repetitions = flashcode.repetitions;
+
+                let result = calculate_sm2(
+                    previous_interval,
+                    previous_ease_factor,
+                    previous_repetitions,
+                    answer,
+                );
+
+                // Calculate the new values based on the answer
+                let mut due = flashcode.due_date;
+                due += seconds_to_days(result.interval.into());
+
+                conn.execute(
+                    "UPDATE flashcodes SET ease_factor = ?1, repetitions = ?2, interval = ?3, due_date = ?4 WHERE id = ?5",
+                    params![result.ease_factor, result.repetitions, result.interval, due, id],
+                )?;
+            },
+            Err(e) => {
+                eprintln!("Error retrieving flashcode: {}", e);
+                return Err(Error::QueryReturnedNoRows);
+            }
+        };
+
+
+        Ok("Flashcode has been updated successfully".to_string())
+    }
+
+    pub fn delete_by_id(db: &DatabaseConnection, id: i64) -> Result<String, Error> {
+        let conn = db.get_connection();
+
+        conn.execute("DELETE FROM flashcodes WHERE id = ?1", params![id])?;
 
         Ok("Flashcode has been deleted successfully".to_string())
     }
+}
+
+// function to convert seconds into days
+fn seconds_to_days(seconds: u64) -> u64 {
+    seconds / 86400
 }

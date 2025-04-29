@@ -4,8 +4,8 @@ use v_htmlescape::escape;
 
 use crate::{
     database::DatabaseConnection,
-    models::{Deck, DeckQueryParams, FlashcardState, Flashcode},
-    responses::{ErrorResponse, StateCountResponse, SuccessResponse},
+    models::{Deck, DeckQueryParams, Flashcode},
+    responses::{ErrorResponse, SuccessResponse},
 };
 
 pub struct AppState {
@@ -250,68 +250,26 @@ pub fn get_flashcodes_by_deck(
 }
 
 #[tauri::command]
-pub fn get_flash_counts_by_deck(
-    state: State<'_, AppState>,
-    deck_id: i64,
-) -> Result<SuccessResponse<StateCountResponse>, ErrorResponse> {
-    let db_guard_result = state.db.lock();
-
-    match db_guard_result {
-        Ok(db_guard) => {
-            let db = &*db_guard;
-
-            match Flashcode::get_flash_counts(db, deck_id) {
-                Ok(counts) => Ok(SuccessResponse::new(
-                    "Flashcard counts retrieved successfully!".into(),
-                    counts,
-                )),
-                Err(e) => {
-                    eprintln!(
-                        "Failed to get flashcard counts for deck id {}: {:?}",
-                        e, deck_id
-                    );
-                    Err(ErrorResponse::new(format!(
-                        "Failed to retrieve flashcard counts for deck id {}.",
-                        deck_id
-                    )))
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("Error acquiring the lock: {:?}", e);
-            Err(ErrorResponse::new("Internal server error".into()))
-        }
-    }
-}
-
-#[tauri::command]
 pub fn update_flashcode(
     state: State<'_, AppState>,
     flashcode: Flashcode,
 ) -> Result<SuccessResponse<String>, ErrorResponse> {
     let db_guard_result = state.db.lock();
-    let updated_flashcode = Flashcode {
-        id: flashcode.id,
-        front: flashcode.front,
+    let new_flashcode = Flashcode {
         back: escape(&flashcode.back).to_string(),
-        language: flashcode.language,
-        deck_id: flashcode.deck_id,
-        state: flashcode.state,
+        ..flashcode
     };
 
     match db_guard_result {
         Ok(db_guard) => {
             let db = &*db_guard;
-            match updated_flashcode.update(db) {
+            match new_flashcode.update(db) {
                 Ok(message) => Ok(SuccessResponse::new(
                     message,
-                    format!("Flashcard with id {} updated!", updated_flashcode.id),
+                    format!("Flashcard with id {} updated!", flashcode.id),
                 )),
                 Err(e) => {
-                    eprintln!(
-                        "Failed to update flashcode {}: {:?}",
-                        updated_flashcode.id, e
-                    );
+                    eprintln!("Failed to update flashcode {}: {:?}", flashcode.id, e);
                     Err(ErrorResponse::new(format!(
                         "Failed to update flashcard with id {}.",
                         flashcode.id
@@ -336,15 +294,7 @@ pub fn delete_flashcode(
     match db_guard_result {
         Ok(db_guard) => {
             let db = &*db_guard;
-            let flashcode_to_delete = Flashcode {
-                id,
-                front: String::new(), // Dummy values, only id is used for delete
-                back: String::new(),
-                deck_id: 0,
-                language: String::new(), // Added dummy language field
-                state: FlashcardState::New,
-            };
-            match flashcode_to_delete.delete(db) {
+            match Flashcode::delete_by_id(db, id) {
                 Ok(message) => Ok(SuccessResponse::new(
                     message,
                     format!("Flashcard with id {} deleted!", id),
