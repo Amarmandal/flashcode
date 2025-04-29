@@ -6,6 +6,7 @@ use crate::{
     database::DatabaseConnection,
     models::{Deck, DeckQueryParams, Flashcode},
     responses::{ErrorResponse, SuccessResponse},
+    sm2::Answer,
 };
 
 pub struct AppState {
@@ -273,6 +274,38 @@ pub fn update_flashcode(
                     Err(ErrorResponse::new(format!(
                         "Failed to update flashcard with id {}.",
                         flashcode.id
+                    )))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn answer_flashcard(
+    state: State<'_, AppState>,
+    id: String,
+    answer: Answer,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Flashcode::update_based_on_answer(db, &id, answer) {
+                Ok(message) => Ok(SuccessResponse::new(
+                    message,
+                    format!("Flashcard with id {} updated based on answer!", id),
+                )),
+                Err(e) => {
+                    eprintln!("Failed to update flashcode {}: {:?}", id, e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to update flashcard with id {} based on answer.",
+                        id
                     )))
                 }
             }

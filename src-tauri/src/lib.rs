@@ -8,8 +8,8 @@ use std::sync::Mutex;
 use tauri::Manager;
 
 use commands::{
-    create_deck, create_flashcode, delete_deck, delete_flashcode, get_all_decks, get_deck,
-    get_flashcode, get_flashcodes_by_deck, update_deck, update_flashcode, AppState,
+    answer_flashcard, create_deck, create_flashcode, delete_deck, delete_flashcode, get_all_decks,
+    get_deck, get_flashcode, get_flashcodes_by_deck, update_deck, update_flashcode, AppState,
 };
 use database::DatabaseConnection;
 
@@ -35,6 +35,7 @@ pub fn run() {
             delete_flashcode,
             update_flashcode,
             get_flashcodes_by_deck,
+            answer_flashcard
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
