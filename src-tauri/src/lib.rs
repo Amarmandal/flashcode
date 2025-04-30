@@ -1,6 +1,7 @@
 mod commands;
 mod database;
 mod models;
+mod queues;
 mod responses;
 mod sm2;
 

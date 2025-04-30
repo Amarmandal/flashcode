@@ -200,6 +200,6 @@ impl Flashcode {
 }
 
 // function to convert seconds into days
-fn seconds_to_days(seconds: u64) -> u64 {
+pub fn seconds_to_days(seconds: u64) -> u64 {
     seconds / 86400
 }
