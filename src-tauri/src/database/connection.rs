@@ -21,6 +21,8 @@ impl DatabaseConnection {
         // Set database path
         let db_path = app_data_dir.join("flashcodes.db");
 
+        println!("Database path: {:?}", db_path);
+
         match Connection::open(&db_path) {
             Ok(conn) => {
                 let mut db = Self { conn };
