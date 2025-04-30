@@ -152,6 +152,7 @@ pub fn delete_deck(
     }
 }
 
+// all the flashcodes commands
 #[tauri::command]
 // function to get all the queues cards
 // takes the deck_id as the parameter and returns the struct vec of flashcode
@@ -190,7 +191,6 @@ pub fn get_queues_for_today(
     }
 }
 
-// all the flashcodes commands
 #[tauri::command]
 pub fn create_flashcode(
     state: State<'_, AppState>,
