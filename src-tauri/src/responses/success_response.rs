@@ -24,6 +24,7 @@ pub struct StateCountResponse {
     pub to_review: i64,
 }
 
+#[allow(dead_code)]
 impl StateCountResponse {
     pub fn new(new: i64, learning: i64, to_review: i64) -> Self {
         Self {

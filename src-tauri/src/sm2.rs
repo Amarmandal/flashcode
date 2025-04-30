@@ -1,4 +1,5 @@
-#![allow(dead_code)]
+use serde::Deserialize;
+#[derive(Deserialize)]
 pub enum Answer {
     Again,
     Hard,

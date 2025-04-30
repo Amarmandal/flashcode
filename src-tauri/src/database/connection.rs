@@ -59,8 +59,11 @@ impl DatabaseConnection {
                 front TEXT NOT NULL,
                 back TEXT NOT NULL,
                 deck_id INTEGER NOT NULL,
-                state INTEGER NOT NULL DEFAULT 0, 
                 language TEXT NOT NULL DEFAULT 'rust',  
+                ease_factor REAL NOT NULL DEFAULT 2.5,
+                repetitions INTEGER NOT NULL DEFAULT 0,
+                interval INTEGER NOT NULL DEFAULT 1,
+                due_date INTEGER NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE CASCADE
             )",

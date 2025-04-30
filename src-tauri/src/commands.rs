@@ -6,6 +6,7 @@ use crate::{
     database::DatabaseConnection,
     models::{Deck, DeckQueryParams, Flashcode},
     responses::{ErrorResponse, SuccessResponse},
+    sm2::Answer,
 };
 
 pub struct AppState {
@@ -153,6 +154,44 @@ pub fn delete_deck(
 
 // all the flashcodes commands
 #[tauri::command]
+// function to get all the queues cards
+// takes the deck_id as the parameter and returns the struct vec of flashcode
+// it should also return the new, review and learning counts
+// response should look like {today_queues: Vec<Flashcode>, new_count: usize, review_count: usize, learning_count: usize}
+pub fn get_queues_for_today(
+    state: State<'_, AppState>,
+    deck_id: i64,
+) -> Result<SuccessResponse<(Vec<Flashcode>, usize, usize, usize)>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+
+            match Flashcode::get_all_queues_cards(db, deck_id) {
+                Ok((today_queues, new_count, review_count, learning_count)) => {
+                    Ok(SuccessResponse::new(
+                        "Queues cards retrieved successfully!".into(),
+                        (today_queues, new_count, review_count, learning_count),
+                    ))
+                }
+                Err(e) => {
+                    eprintln!("Failed to get queues cards: {:?}", e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to retrieve queues cards for deck id {}.",
+                        deck_id
+                    )))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
 pub fn create_flashcode(
     state: State<'_, AppState>,
     front: &str,
@@ -273,6 +312,38 @@ pub fn update_flashcode(
                     Err(ErrorResponse::new(format!(
                         "Failed to update flashcard with id {}.",
                         flashcode.id
+                    )))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn answer_flashcard(
+    state: State<'_, AppState>,
+    id: String,
+    answer: Answer,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Flashcode::update_based_on_answer(db, &id, answer) {
+                Ok(message) => Ok(SuccessResponse::new(
+                    message,
+                    format!("Flashcard with id {} updated based on answer!", id),
+                )),
+                Err(e) => {
+                    eprintln!("Failed to update flashcode {}: {:?}", id, e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to update flashcard with id {} based on answer.",
+                        id
                     )))
                 }
             }
