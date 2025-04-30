@@ -1,4 +1,5 @@
 use std::time::SystemTime;
+use chrono::{Utc, DateTime};
 
 use rusqlite::{params, Error};
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,8 @@ impl Flashcode {
             .expect("Time went backwards");
 
         let due_date = seconds_to_days(now.as_secs());
+        let now_iso: DateTime<Utc> = Utc::now();
+        let created_at = now_iso.to_rfc3339(); // ISO 8601 format
 
         Flashcode {
             id: -1,
@@ -36,7 +39,7 @@ impl Flashcode {
             ease_factor: 2.5,
             repetitions: 0,
             interval: 1,
-            created_at: now.as_secs().to_string(),
+            created_at,
             due_date,
         }
     }
