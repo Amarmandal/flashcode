@@ -53,6 +53,20 @@
       "frameworks": [],
       "minimumSystemVersion": "10.13",
       "signingIdentity": "AB31F4929F8775CB2032D4AD024C345345D4B6AF"
+    }, 
+    "windows": {
+      "allowDowngrades": true,
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "nsis": null,
+      "signCommand": null,
+      "timestampUrl": "http://timestamp.digicert.com",
+      "tsp": false,
+      "webviewInstallMode": {
+        "silent": true,
+        "type": "embedBootstrapper"
+      },
+      "wix": null
     }
   }
 }
