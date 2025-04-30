@@ -59,7 +59,7 @@ impl Flashcode {
         };
 
         conn.execute(
-            "INSERT INTO flashcodes (front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            "INSERT INTO flashcodes (front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 new_flashcode.front,
                 new_flashcode.back,
