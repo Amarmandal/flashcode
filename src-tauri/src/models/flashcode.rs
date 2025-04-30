@@ -129,6 +129,25 @@ impl Flashcode {
         Ok(results)
     }
 
+    pub fn get_all_queues_cards(
+        db: &DatabaseConnection,
+        deck_id: i64,
+    ) -> Result<(Vec<Flashcode>, usize, usize, usize), rusqlite::Error> {
+        // Step 1: Retrieve all cards from the database filtered by deck_id
+        let cards = Flashcode::get_by_deck_id(db, deck_id)?;
+
+        // Step 2: Build queues using the queue_builder method
+        let queues = crate::build_queues(cards);
+
+        let (new_count, learning_count, review_count) = queues.counts();
+
+        // Step 3: Merge the queues
+        let merged_cards = crate::merge_queues(queues);
+
+        // Step 5: Return the merged cards and counts
+        Ok((merged_cards, new_count, learning_count, review_count))
+    }
+
     pub fn update(&self, db: &DatabaseConnection) -> Result<String, Error> {
         let conn = db.get_connection();
 

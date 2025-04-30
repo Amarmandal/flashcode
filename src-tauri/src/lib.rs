@@ -10,9 +10,12 @@ use tauri::Manager;
 
 use commands::{
     answer_flashcard, create_deck, create_flashcode, delete_deck, delete_flashcode, get_all_decks,
-    get_deck, get_flashcode, get_flashcodes_by_deck, update_deck, update_flashcode, AppState,
+    get_deck, get_flashcode, get_flashcodes_by_deck, get_queues_for_today, update_deck,
+    update_flashcode, AppState,
 };
 use database::DatabaseConnection;
+use models::{seconds_to_days, Flashcode};
+use queues::{build_queues, merge_queues};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -36,7 +39,8 @@ pub fn run() {
             delete_flashcode,
             update_flashcode,
             get_flashcodes_by_deck,
-            answer_flashcard
+            answer_flashcard,
+            get_queues_for_today,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
