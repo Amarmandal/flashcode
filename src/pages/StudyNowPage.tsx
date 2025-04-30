@@ -9,12 +9,16 @@ import { SuccessApiResponse } from '../types/successApiResponse';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 
 interface Flashcard {
-  id: string;
+  id: number;
   front: string;
   back: string;
+  deck_id: number;
   language: string;
-  deckId: string;
-  state: number;
+  ease_factor: number;
+  repetitions: number;
+  interval: number;
+  created_at: string;
+  due_date: number;
 }
 
 export default function StudyNow() {
@@ -39,7 +43,6 @@ export default function StudyNow() {
             ? res.data.map((flashcard) => ({
                 ...flashcard,
                 back: htmlDecode(flashcard.back) || '',
-                id: flashcard.id.toString(),
               }))
             : [];
 
