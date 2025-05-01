@@ -2,10 +2,10 @@ use std::sync::Mutex;
 use tauri::State;
 use v_htmlescape::escape;
 
-use crate::{
+use super::{
     database::DatabaseConnection,
     models::{Deck, DeckQueryParams, Flashcode},
-    responses::{ErrorResponse, SuccessResponse},
+    responses::{ErrorResponse, SuccessResponse, TodayQueuesResponse},
     sm2::Answer,
 };
 
@@ -161,7 +161,7 @@ pub fn delete_deck(
 pub fn get_queues_for_today(
     state: State<'_, AppState>,
     deck_id: i64,
-) -> Result<SuccessResponse<(Vec<Flashcode>, usize, usize, usize)>, ErrorResponse> {
+) -> Result<SuccessResponse<TodayQueuesResponse>, ErrorResponse> {
     let db_guard_result = state.db.lock();
 
     match db_guard_result {
@@ -169,10 +169,15 @@ pub fn get_queues_for_today(
             let db = &*db_guard;
 
             match Flashcode::get_all_queues_cards(db, deck_id) {
-                Ok((today_queues, new_count, review_count, learning_count)) => {
+                Ok((merged_cards, new_count, review_count, learning_count)) => {
                     Ok(SuccessResponse::new(
                         "Queues cards retrieved successfully!".into(),
-                        (today_queues, new_count, review_count, learning_count),
+                        TodayQueuesResponse::new(
+                            merged_cards,
+                            new_count,
+                            review_count,
+                            learning_count,
+                        ),
                     ))
                 }
                 Err(e) => {

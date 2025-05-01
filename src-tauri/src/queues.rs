@@ -6,6 +6,8 @@ use std::{
 
 use crate::{seconds_to_days, Flashcode};
 
+//add debug derive trait
+#[derive(Debug)]
 pub struct CardQueues {
     new: VecDeque<Flashcode>,
     learning: VecDeque<Flashcode>,
@@ -85,13 +87,32 @@ pub fn merge_queues(queue: CardQueues) -> Vec<Flashcode> {
     let mut learning_iter = queue.learning.into_iter();
     let review_iter = queue.review.into_iter();
 
-    while let (Some(new_card), Some(learning_card)) = (new_iter.next(), learning_iter.next()) {
+    let mut new_option = new_iter.next();
+    let mut learning_option = learning_iter.next();
+
+    // Interleave new and learning cards
+    while new_option.is_some() && learning_option.is_some() {
+        if let Some(new_card) = new_option.take() {
+            merged.push(new_card);
+        }
+        if let Some(learning_card) = learning_option.take() {
+            merged.push(learning_card);
+        }
+        new_option = new_iter.next();
+        learning_option = learning_iter.next();
+    }
+
+    // Add remaining card from current iteration if any
+    if let Some(new_card) = new_option {
         merged.push(new_card);
+    }
+    if let Some(learning_card) = learning_option {
         merged.push(learning_card);
     }
 
     merged.extend(new_iter);
     merged.extend(learning_iter);
     merged.extend(review_iter);
+
     merged
 }

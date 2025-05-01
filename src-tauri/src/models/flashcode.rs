@@ -1,4 +1,5 @@
 use std::time::SystemTime;
+use chrono::{Utc, DateTime};
 
 use rusqlite::{params, Error};
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,8 @@ impl Flashcode {
             .expect("Time went backwards");
 
         let due_date = seconds_to_days(now.as_secs());
+        let now_iso: DateTime<Utc> = Utc::now();
+        let created_at = now_iso.to_rfc3339(); // ISO 8601 format
 
         Flashcode {
             id: -1,
@@ -36,7 +39,7 @@ impl Flashcode {
             ease_factor: 2.5,
             repetitions: 0,
             interval: 1,
-            created_at: now.as_secs().to_string(),
+            created_at,
             due_date,
         }
     }
@@ -135,12 +138,12 @@ impl Flashcode {
     ) -> Result<(Vec<Flashcode>, usize, usize, usize), rusqlite::Error> {
         // Step 1: Retrieve all cards from the database filtered by deck_id
         let cards = Flashcode::get_by_deck_id(db, deck_id)?;
-
+        
         // Step 2: Build queues using the queue_builder method
         let queues = crate::build_queues(cards);
-
+        
         let (new_count, learning_count, review_count) = queues.counts();
-
+        
         // Step 3: Merge the queues
         let merged_cards = crate::merge_queues(queues);
 

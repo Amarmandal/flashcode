@@ -2,8 +2,11 @@ import { Button, Container, Group, Stack, Title } from '@mantine/core';
 import { IconBook, IconPlus } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router-dom';
 import { StatusCard } from '../components/deck/StatusCard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
+import { invoke } from '@tauri-apps/api/core';
+import { SuccessApiResponse } from '../types/successApiResponse';
+import { htmlDecode } from './StudyNowPage';
 
 interface CardStatus {
   label: string;
@@ -11,16 +14,74 @@ interface CardStatus {
   color: string;
 }
 
+interface Flashcard {
+  id: number;
+  front: string;
+  back: string;
+  deck_id: number;
+  language: string;
+  ease_factor: number;
+  repetitions: number;
+  interval: number;
+  created_at: string;
+  due_date: number;
+}
+
 export default function DeckDetail() {
   const { deckId } = useParams<{ deckId: string }>();
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [statuses, setStatuses] = useState<CardStatus[]>([
+    { label: 'New', count: 0, color: 'blue' },
+    { label: 'Learning', count: 0, color: 'orange' },
+    { label: 'To Review', count: 0, color: 'green' },
+  ]);
 
-  // Static random counts for now
-  const statuses: CardStatus[] = [
-    { label: 'New', count: Math.floor(Math.random() * 10) + 1, color: 'blue' },
-    { label: 'Learning', count: Math.floor(Math.random() * 10) + 1, color: 'orange' },
-    { label: 'To Review', count: Math.floor(Math.random() * 10) + 1, color: 'green' },
-  ];
+  useEffect(() => {
+    const fetchFlashcards = async () => {
+      try {
+        const res = await invoke<
+          SuccessApiResponse<{ cards: Flashcard[]; new: number; learning: number; to_review: number }>
+        >('get_queues_for_today', { deckId: Number(deckId) });
+
+        if (res.success) {
+          // Update flashcards state
+          const processedFlashcards = Array.isArray(res.data.cards)
+            ? res.data.cards.map((flashcard) => ({
+                ...flashcard,
+                back: htmlDecode(flashcard.back) || '',
+              }))
+            : [];
+          setFlashcards(processedFlashcards);
+
+          // Update statuses state
+          setStatuses([
+            { label: 'New', count: res.data.new, color: 'blue' },
+            { label: 'Learning', count: res.data.learning, color: 'orange' },
+            { label: 'To Review', count: res.data.to_review, color: 'green' },
+          ]);
+        } else {
+          console.error('Failed to fetch flashcards:', res.message);
+          setFlashcards([]);
+          setStatuses([
+            { label: 'New', count: 0, color: 'blue' },
+            { label: 'Learning', count: 0, color: 'orange' },
+            { label: 'To Review', count: 0, color: 'green' },
+          ]);
+        }
+      } catch (err) {
+        console.error('Error fetching flashcards:', err);
+        setFlashcards([]);
+        setStatuses([
+          { label: 'New', count: 0, color: 'blue' },
+          { label: 'Learning', count: 0, color: 'orange' },
+          { label: 'To Review', count: 0, color: 'green' },
+        ]);
+      }
+    };
+
+    fetchFlashcards();
+  }, [deckId]);
 
   const handleAddFlashcard = () => {
     setIsFormOpen(true);
@@ -49,6 +110,7 @@ export default function DeckDetail() {
           mt="lg"
           component={Link}
           to="study-now"
+          state={{ flashcards }}
         >
           Study Now
         </Button>
