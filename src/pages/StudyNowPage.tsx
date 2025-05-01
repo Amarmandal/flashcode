@@ -6,6 +6,7 @@ import { NoData } from '../components/common/NoData';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 import { Congratulations } from '../components/common/Congratulations';
+import { invoke } from '@tauri-apps/api/core';
 
 interface Flashcard {
   id: number;
@@ -18,6 +19,13 @@ interface Flashcard {
   interval: number;
   created_at: string;
   due_date: number;
+}
+
+enum CardAnswer {
+  Again = 'Again',
+  Hard = 'Hard',
+  Good = 'Good',
+  Easy = 'Easy',
 }
 
 // Define the type for the current card state
@@ -68,45 +76,58 @@ export default function StudyNow() {
     setShowAnswer(true);
   };
 
-  const handleOptionClick = (option: string) => {
+  const handleOptionClick = async (option: CardAnswer) => {
     console.log('Option clicked:', option, 'for card:', currentCardState.card?.id);
 
-    if (flashcards.length > 0) {
-      // Check if there are more cards to show
-      if (currentCardState.index < flashcards.length - 1) {
-        // Move to the next card
-        const nextIndex = currentCardState.index + 1;
-        setCurrentCardState({
-          index: nextIndex,
-          card: flashcards[nextIndex],
-          completed: false,
-        });
-      } else {
-        // We've reached the end of the deck, mark as completed
-        setCurrentCardState({
-          index: flashcards.length - 1,
-          card: flashcards[flashcards.length - 1],
-          completed: true,
-        });
+    if (!currentCardState.card) return;
+
+    try {
+      // Call the Tauri answer_flashcard command
+      await invoke('answer_flashcard', {
+        id: currentCardState.card.id.toString(),
+        answer: option,
+      });
+
+      if (flashcards.length > 0) {
+        // Check if there are more cards to show
+        if (currentCardState.index < flashcards.length - 1) {
+          // Move to the next card
+          const nextIndex = currentCardState.index + 1;
+          setCurrentCardState({
+            index: nextIndex,
+            card: flashcards[nextIndex],
+            completed: false,
+          });
+        } else {
+          // We've reached the end of the deck, mark as completed
+          setCurrentCardState({
+            index: flashcards.length - 1,
+            card: flashcards[flashcards.length - 1],
+            completed: true,
+          });
+        }
+        setShowAnswer(false);
       }
-      setShowAnswer(false);
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+      setError('Failed to submit your answer. Please try again.');
     }
   };
 
-  const handleResetStudySession = () => {
-    // Reset to the first card
-    if (flashcards.length > 0) {
-      setCurrentCardState({
-        index: 0,
-        card: flashcards[0],
-        completed: false,
-      });
-      setShowAnswer(false);
-    } else {
-      // Go back to deck details if no cards
-      navigate(`/deck/${deckId}`);
-    }
-  };
+  // const handleResetStudySession = () => {
+  //   // Reset to the first card
+  //   if (flashcards.length > 0) {
+  //     setCurrentCardState({
+  //       index: 0,
+  //       card: flashcards[0],
+  //       completed: false,
+  //     });
+  //     setShowAnswer(false);
+  //   } else {
+  //     // Go back to deck details if no cards
+  //     navigate(`/deck/${deckId}`);
+  //   }
+  // };
 
   const handleBackToDeck = () => {
     navigate(`/deck/${deckId}`);
@@ -181,16 +202,16 @@ export default function StudyNow() {
               <>
                 <CodeBlockWithHeader code={currentCardState.card.back} language={currentCardState.card.language} />
                 <Group justify="center" mt="md">
-                  <Button variant="outline" color="red" onClick={() => handleOptionClick('Again')}>
+                  <Button variant="outline" color="red" onClick={() => handleOptionClick(CardAnswer.Again)}>
                     Again
                   </Button>
-                  <Button variant="outline" color="orange" onClick={() => handleOptionClick('Hard')}>
+                  <Button variant="outline" color="orange" onClick={() => handleOptionClick(CardAnswer.Hard)}>
                     Hard
                   </Button>
-                  <Button variant="outline" color="teal" onClick={() => handleOptionClick('Good')}>
+                  <Button variant="outline" color="teal" onClick={() => handleOptionClick(CardAnswer.Good)}>
                     Good
                   </Button>
-                  <Button variant="outline" color="green" onClick={() => handleOptionClick('Easy')}>
+                  <Button variant="outline" color="green" onClick={() => handleOptionClick(CardAnswer.Easy)}>
                     Easy
                   </Button>
                 </Group>

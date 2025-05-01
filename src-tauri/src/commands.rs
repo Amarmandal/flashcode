@@ -336,8 +336,6 @@ pub fn answer_flashcard(
 ) -> Result<SuccessResponse<String>, ErrorResponse> {
     let db_guard_result = state.db.lock();
 
-    println!("Answered received: {:?}", answer);
-
     match db_guard_result {
         Ok(db_guard) => {
             let db = &*db_guard;

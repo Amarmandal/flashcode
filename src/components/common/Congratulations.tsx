@@ -3,19 +3,12 @@ import { IconConfetti, IconArrowBackUp } from '@tabler/icons-react';
 import { ReactNode } from 'react';
 
 interface CongratulationsProps {
-  /** Main title of the congratulations card */
   title?: string;
-  /** Detailed message to display */
   message?: string;
-  /** Custom icon to display (defaults to confetti icon) */
   icon?: ReactNode;
-  /** Color for the default icon (ignored if custom icon is provided) */
   iconColor?: MantineColor;
-  /** Text for the action button */
   buttonText?: string;
-  /** Callback when the action button is clicked */
   onReset?: () => void;
-  /** Additional class names for styling */
   className?: string;
 }
 
