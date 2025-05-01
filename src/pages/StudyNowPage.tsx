@@ -1,10 +1,12 @@
 import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { IconAlertCircle, IconEye, IconPlus } from '@tabler/icons-react';
 import { NoData } from '../components/common/NoData';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
+import { Congratulations } from '../components/common/Congratulations';
+import { invoke } from '@tauri-apps/api/core';
 
 interface Flashcard {
   id: number;
@@ -19,6 +21,20 @@ interface Flashcard {
   due_date: number;
 }
 
+enum CardAnswer {
+  Again = 'Again',
+  Hard = 'Hard',
+  Good = 'Good',
+  Easy = 'Easy',
+}
+
+// Define the type for the current card state
+interface CurrentCardState {
+  index: number;
+  card: Flashcard | null;
+  completed: boolean;
+}
+
 export function htmlDecode(input: string) {
   const doc = new DOMParser().parseFromString(input, 'text/html');
   return doc.documentElement.textContent;
@@ -27,12 +43,18 @@ export function htmlDecode(input: string) {
 export default function StudyNow() {
   const { deckId } = useParams<{ deckId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const passedFlashcards = location.state?.flashcards || [];
 
   const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentCard, setCurrentCard] = useState<Flashcard | null>(null);
+  // Include completed flag in state
+  const [currentCardState, setCurrentCardState] = useState<CurrentCardState>({
+    index: 0,
+    card: passedFlashcards.length > 0 ? passedFlashcards[0] : null,
+    completed: false,
+  });
   const [showAnswer, setShowAnswer] = useState(false);
 
   useEffect(() => {
@@ -40,23 +62,75 @@ export default function StudyNow() {
     if (passedFlashcards.length > 0) {
       console.log('Using passed flashcards:', passedFlashcards);
       setFlashcards(passedFlashcards);
-      setCurrentCard(passedFlashcards[0]);
+      setCurrentCardState({
+        index: 0,
+        card: passedFlashcards[0],
+        completed: false,
+      });
       return;
     }
   }, [deckId, isFormOpen, passedFlashcards]);
 
   const handleShowAnswer = () => {
-    console.log('Show answer clicked for card:', currentCard?.id);
+    console.log('Show answer clicked for card:', currentCardState.card?.id);
     setShowAnswer(true);
   };
 
-  const handleOptionClick = (option: string) => {
-    console.log('Option clicked:', option, 'for card:', currentCard?.id);
-    if (flashcards.length > 0) {
-      const nextCard = flashcards[Math.floor(Math.random() * flashcards.length)];
-      setCurrentCard(nextCard);
-      setShowAnswer(false);
+  const handleOptionClick = async (option: CardAnswer) => {
+    console.log('Option clicked:', option, 'for card:', currentCardState.card?.id);
+
+    if (!currentCardState.card) return;
+
+    try {
+      // Call the Tauri answer_flashcard command
+      await invoke('answer_flashcard', {
+        id: currentCardState.card.id.toString(),
+        answer: option,
+      });
+
+      if (flashcards.length > 0) {
+        // Check if there are more cards to show
+        if (currentCardState.index < flashcards.length - 1) {
+          // Move to the next card
+          const nextIndex = currentCardState.index + 1;
+          setCurrentCardState({
+            index: nextIndex,
+            card: flashcards[nextIndex],
+            completed: false,
+          });
+        } else {
+          // We've reached the end of the deck, mark as completed
+          setCurrentCardState({
+            index: flashcards.length - 1,
+            card: flashcards[flashcards.length - 1],
+            completed: true,
+          });
+        }
+        setShowAnswer(false);
+      }
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+      setError('Failed to submit your answer. Please try again.');
     }
+  };
+
+  // const handleResetStudySession = () => {
+  //   // Reset to the first card
+  //   if (flashcards.length > 0) {
+  //     setCurrentCardState({
+  //       index: 0,
+  //       card: flashcards[0],
+  //       completed: false,
+  //     });
+  //     setShowAnswer(false);
+  //   } else {
+  //     // Go back to deck details if no cards
+  //     navigate(`/deck/${deckId}`);
+  //   }
+  // };
+
+  const handleBackToDeck = () => {
+    navigate(`/deck/${deckId}`);
   };
 
   const handleAddFlashcard = () => {
@@ -80,7 +154,7 @@ export default function StudyNow() {
     );
   }
 
-  if (!currentCard) {
+  if (!currentCardState.card) {
     return (
       <Container size="md" py="xl">
         <Stack align="center" gap="sm">
@@ -100,30 +174,44 @@ export default function StudyNow() {
     );
   }
 
+  // If completed, show congratulations component
+  if (currentCardState.completed) {
+    return (
+      <Congratulations
+        title="Well done!"
+        message="You've completed your study session for today."
+        buttonText="Back to Deck"
+        onReset={handleBackToDeck}
+      />
+    );
+  }
+
   return (
     <Container size="md" py="xl">
       <Stack>
-        <Title order={2}>Studying Deck #{deckId}</Title>
+        <Title order={2}>
+          Studying Deck #{deckId} - Card {currentCardState.index + 1} of {flashcards.length}
+        </Title>
         <Card withBorder shadow="sm" radius="md" p="lg">
           <Stack align="center">
             <Text size="32px" fw={700} lh={1.4} ta="center">
-              {currentCard.front}
+              {currentCardState.card.front}
             </Text>
             <Divider my="xs" styles={{ root: { width: '100%' } }} />
             {showAnswer ? (
               <>
-                <CodeBlockWithHeader code={currentCard.back} language={currentCard.language} />
+                <CodeBlockWithHeader code={currentCardState.card.back} language={currentCardState.card.language} />
                 <Group justify="center" mt="md">
-                  <Button variant="outline" color="red" onClick={() => handleOptionClick('Again')}>
+                  <Button variant="outline" color="red" onClick={() => handleOptionClick(CardAnswer.Again)}>
                     Again
                   </Button>
-                  <Button variant="outline" color="orange" onClick={() => handleOptionClick('Hard')}>
+                  <Button variant="outline" color="orange" onClick={() => handleOptionClick(CardAnswer.Hard)}>
                     Hard
                   </Button>
-                  <Button variant="outline" color="teal" onClick={() => handleOptionClick('Good')}>
+                  <Button variant="outline" color="teal" onClick={() => handleOptionClick(CardAnswer.Good)}>
                     Good
                   </Button>
-                  <Button variant="outline" color="green" onClick={() => handleOptionClick('Easy')}>
+                  <Button variant="outline" color="green" onClick={() => handleOptionClick(CardAnswer.Easy)}>
                     Easy
                   </Button>
                 </Group>

@@ -195,7 +195,7 @@ impl Flashcode {
 
                 // Calculate the new values based on the answer
                 let mut due = flashcode.due_date;
-                due += seconds_to_days(result.interval.into());
+                due += result.interval as u64;
 
                 conn.execute(
                     "UPDATE flashcodes SET ease_factor = ?1, repetitions = ?2, interval = ?3, due_date = ?4 WHERE id = ?5",
