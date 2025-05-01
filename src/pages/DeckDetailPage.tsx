@@ -31,6 +31,7 @@ export default function DeckDetail() {
   const { deckId } = useParams<{ deckId: string }>();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [statuses, setStatuses] = useState<CardStatus[]>([
     { label: 'New', count: 0, color: 'blue' },
     { label: 'Learning', count: 0, color: 'orange' },
@@ -81,10 +82,19 @@ export default function DeckDetail() {
     };
 
     fetchFlashcards();
-  }, [deckId]);
+  }, [deckId, refreshTrigger]);
 
   const handleAddFlashcard = () => {
     setIsFormOpen(true);
+  };
+
+  const handleFormClose = (isSuccess: boolean) => {
+    if (isSuccess) {
+      // make my useEffect to fetch flashcards again
+      setRefreshTrigger((prev) => prev + 1);
+    }
+
+    setIsFormOpen(false);
   };
 
   return (
@@ -114,7 +124,7 @@ export default function DeckDetail() {
         >
           Study Now
         </Button>
-        <FlashcardForm opened={isFormOpen} onClose={() => setIsFormOpen(false)} deckId={deckId!} />
+        <FlashcardForm opened={isFormOpen} onClose={handleFormClose} deckId={deckId!} />
       </Stack>
     </Container>
   );

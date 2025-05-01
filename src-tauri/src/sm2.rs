@@ -19,7 +19,8 @@ pub struct SM2Result {
 fn update_ease_factor(current_ease_factor: f32, quality: f32) -> f32 {
     let new_ease_factor =
         current_ease_factor + (0.1 - (5.0 - quality) * (0.08 + (5.0 - quality) * 0.02));
-    ((new_ease_factor * 10000.0).round() / 10000.0).max(1.3)
+
+    (new_ease_factor.max(1.3) * 10000.0).round() / 10000.0
 }
 
 pub fn calculate_sm2(
