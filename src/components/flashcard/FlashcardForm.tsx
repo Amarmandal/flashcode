@@ -7,7 +7,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 interface FlashcardFormProps {
   opened: boolean;
-  onClose: () => void;
+  onClose: (isSuccessful: boolean) => void;
   deckId: string;
 }
 
@@ -37,7 +37,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
       });
 
       form.reset();
-      onClose();
+      onClose(true);
     } catch (error) {
       console.error('Failed to create flashcard:', error);
       setError('Failed to create flashcard. Please try again.');
@@ -60,7 +60,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
     <Modal
       size="xl"
       opened={opened}
-      onClose={onClose}
+      onClose={() => onClose(false)}
       title="New Flashcode"
       styles={{
         title: {
@@ -157,7 +157,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
           )}
         </Box>
         <Group justify="flex-end" mt="md">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => onClose(false)} color="red" mr="sm">
             Cancel
           </Button>
           <Button type="submit">Create</Button>

@@ -45,7 +45,6 @@ export default function StudyNow() {
   const passedFlashcards = location.state?.flashcards || [];
 
   const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Include completed flag in state
   const [currentCardState, setCurrentCardState] = useState<CurrentCardState>({
@@ -58,7 +57,6 @@ export default function StudyNow() {
   useEffect(() => {
     // If we already have flashcards from location state, use them
     if (passedFlashcards.length > 0) {
-      console.log('Using passed flashcards:', passedFlashcards);
       setFlashcards(passedFlashcards);
       setCurrentCardState({
         index: 0,
@@ -67,7 +65,7 @@ export default function StudyNow() {
       });
       return;
     }
-  }, [deckId, isFormOpen, passedFlashcards]);
+  }, [deckId, passedFlashcards]);
 
   const handleShowAnswer = () => {
     console.log('Show answer clicked for card:', currentCardState.card?.id);
