@@ -1,10 +1,11 @@
 import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { IconAlertCircle, IconEye, IconPlus } from '@tabler/icons-react';
 import { NoData } from '../components/common/NoData';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
+import { Congratulations } from '../components/common/Congratulations';
 
 interface Flashcard {
   id: number;
@@ -23,6 +24,7 @@ interface Flashcard {
 interface CurrentCardState {
   index: number;
   card: Flashcard | null;
+  completed: boolean;
 }
 
 export function htmlDecode(input: string) {
@@ -33,15 +35,17 @@ export function htmlDecode(input: string) {
 export default function StudyNow() {
   const { deckId } = useParams<{ deckId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const passedFlashcards = location.state?.flashcards || [];
 
   const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Replace currentCard with currentCardState object that tracks both the index and card
+  // Include completed flag in state
   const [currentCardState, setCurrentCardState] = useState<CurrentCardState>({
     index: 0,
     card: passedFlashcards.length > 0 ? passedFlashcards[0] : null,
+    completed: false,
   });
   const [showAnswer, setShowAnswer] = useState(false);
 
@@ -53,6 +57,7 @@ export default function StudyNow() {
       setCurrentCardState({
         index: 0,
         card: passedFlashcards[0],
+        completed: false,
       });
       return;
     }
@@ -74,16 +79,37 @@ export default function StudyNow() {
         setCurrentCardState({
           index: nextIndex,
           card: flashcards[nextIndex],
+          completed: false,
         });
       } else {
-        // We've reached the end of the deck, loop back to the first card
+        // We've reached the end of the deck, mark as completed
         setCurrentCardState({
-          index: 0,
-          card: flashcards[0],
+          index: flashcards.length - 1,
+          card: flashcards[flashcards.length - 1],
+          completed: true,
         });
       }
       setShowAnswer(false);
     }
+  };
+
+  const handleResetStudySession = () => {
+    // Reset to the first card
+    if (flashcards.length > 0) {
+      setCurrentCardState({
+        index: 0,
+        card: flashcards[0],
+        completed: false,
+      });
+      setShowAnswer(false);
+    } else {
+      // Go back to deck details if no cards
+      navigate(`/deck/${deckId}`);
+    }
+  };
+
+  const handleBackToDeck = () => {
+    navigate(`/deck/${deckId}`);
   };
 
   const handleAddFlashcard = () => {
@@ -124,6 +150,18 @@ export default function StudyNow() {
         </Stack>
         <FlashcardForm opened={isFormOpen} onClose={() => setIsFormOpen(false)} deckId={deckId!} />
       </Container>
+    );
+  }
+
+  // If completed, show congratulations component
+  if (currentCardState.completed) {
+    return (
+      <Congratulations
+        title="Well done!"
+        message="You've completed your study session for today."
+        buttonText="Back to Deck"
+        onReset={handleBackToDeck}
+      />
     );
   }
 
