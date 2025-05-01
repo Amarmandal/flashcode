@@ -198,7 +198,7 @@ impl Flashcode {
                 due += result.interval as u64;
 
                 conn.execute(
-                    "UPDATE flashcodes SET ease_factor = ?1, repetitions = ?2, interval = ?3, due_date = ?4 WHERE id = ?5",
+                    "UPDATE flashcodes SET ease_factor = printf('%.4f', ?1), repetitions = ?2, interval = ?3, due_date = ?4 WHERE id = ?5",
                     params![result.ease_factor, result.repetitions, result.interval, due, id],
                 )?;
             },

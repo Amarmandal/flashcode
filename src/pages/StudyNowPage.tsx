@@ -1,10 +1,8 @@
 import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { IconAlertCircle, IconEye, IconPlus } from '@tabler/icons-react';
-import { NoData } from '../components/common/NoData';
+import { IconAlertCircle, IconEye } from '@tabler/icons-react';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
-import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 import { Congratulations } from '../components/common/Congratulations';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -133,10 +131,6 @@ export default function StudyNow() {
     navigate(`/deck/${deckId}`);
   };
 
-  const handleAddFlashcard = () => {
-    setIsFormOpen(true);
-  };
-
   if (error) {
     return (
       <Container size="md" py="xl">
@@ -154,28 +148,8 @@ export default function StudyNow() {
     );
   }
 
-  if (!currentCardState.card) {
-    return (
-      <Container size="md" py="xl">
-        <Stack align="center" gap="sm">
-          <NoData message="No flashcards in this deck yet" />
-          <Button
-            variant="filled"
-            color="teal"
-            leftSection={<IconPlus size={16} />}
-            onClick={handleAddFlashcard}
-            mt="xs"
-          >
-            Add new
-          </Button>
-        </Stack>
-        <FlashcardForm opened={isFormOpen} onClose={() => setIsFormOpen(false)} deckId={deckId!} />
-      </Container>
-    );
-  }
-
   // If completed, show congratulations component
-  if (currentCardState.completed) {
+  if (currentCardState.completed || !currentCardState.card) {
     return (
       <Congratulations
         title="Well done!"

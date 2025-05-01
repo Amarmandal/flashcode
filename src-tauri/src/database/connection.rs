@@ -24,8 +24,8 @@ impl DatabaseConnection {
         match Connection::open(&db_path) {
             Ok(conn) => {
                 let mut db = Self { conn };
-                // db.initialize_db()?;
-                db.reset_database()?;
+                db.initialize_db()?;
+                // db.reset_database()?;
                 Ok(db)
             }
             Err(e) => {
