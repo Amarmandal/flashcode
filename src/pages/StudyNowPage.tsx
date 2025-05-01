@@ -19,6 +19,12 @@ interface Flashcard {
   due_date: number;
 }
 
+// Define the type for the current card state
+interface CurrentCardState {
+  index: number;
+  card: Flashcard | null;
+}
+
 export function htmlDecode(input: string) {
   const doc = new DOMParser().parseFromString(input, 'text/html');
   return doc.documentElement.textContent;
@@ -32,7 +38,11 @@ export default function StudyNow() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentCard, setCurrentCard] = useState<Flashcard | null>(null);
+  // Replace currentCard with currentCardState object that tracks both the index and card
+  const [currentCardState, setCurrentCardState] = useState<CurrentCardState>({
+    index: 0,
+    card: passedFlashcards.length > 0 ? passedFlashcards[0] : null,
+  });
   const [showAnswer, setShowAnswer] = useState(false);
 
   useEffect(() => {
@@ -40,21 +50,38 @@ export default function StudyNow() {
     if (passedFlashcards.length > 0) {
       console.log('Using passed flashcards:', passedFlashcards);
       setFlashcards(passedFlashcards);
-      setCurrentCard(passedFlashcards[0]);
+      setCurrentCardState({
+        index: 0,
+        card: passedFlashcards[0],
+      });
       return;
     }
   }, [deckId, isFormOpen, passedFlashcards]);
 
   const handleShowAnswer = () => {
-    console.log('Show answer clicked for card:', currentCard?.id);
+    console.log('Show answer clicked for card:', currentCardState.card?.id);
     setShowAnswer(true);
   };
 
   const handleOptionClick = (option: string) => {
-    console.log('Option clicked:', option, 'for card:', currentCard?.id);
+    console.log('Option clicked:', option, 'for card:', currentCardState.card?.id);
+
     if (flashcards.length > 0) {
-      const nextCard = flashcards[Math.floor(Math.random() * flashcards.length)];
-      setCurrentCard(nextCard);
+      // Check if there are more cards to show
+      if (currentCardState.index < flashcards.length - 1) {
+        // Move to the next card
+        const nextIndex = currentCardState.index + 1;
+        setCurrentCardState({
+          index: nextIndex,
+          card: flashcards[nextIndex],
+        });
+      } else {
+        // We've reached the end of the deck, loop back to the first card
+        setCurrentCardState({
+          index: 0,
+          card: flashcards[0],
+        });
+      }
       setShowAnswer(false);
     }
   };
@@ -80,7 +107,7 @@ export default function StudyNow() {
     );
   }
 
-  if (!currentCard) {
+  if (!currentCardState.card) {
     return (
       <Container size="md" py="xl">
         <Stack align="center" gap="sm">
@@ -103,16 +130,18 @@ export default function StudyNow() {
   return (
     <Container size="md" py="xl">
       <Stack>
-        <Title order={2}>Studying Deck #{deckId}</Title>
+        <Title order={2}>
+          Studying Deck #{deckId} - Card {currentCardState.index + 1} of {flashcards.length}
+        </Title>
         <Card withBorder shadow="sm" radius="md" p="lg">
           <Stack align="center">
             <Text size="32px" fw={700} lh={1.4} ta="center">
-              {currentCard.front}
+              {currentCardState.card.front}
             </Text>
             <Divider my="xs" styles={{ root: { width: '100%' } }} />
             {showAnswer ? (
               <>
-                <CodeBlockWithHeader code={currentCard.back} language={currentCard.language} />
+                <CodeBlockWithHeader code={currentCardState.card.back} language={currentCardState.card.language} />
                 <Group justify="center" mt="md">
                   <Button variant="outline" color="red" onClick={() => handleOptionClick('Again')}>
                     Again
