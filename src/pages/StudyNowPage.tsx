@@ -1,11 +1,9 @@
 import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { IconAlertCircle, IconEye, IconPlus } from '@tabler/icons-react';
 import { NoData } from '../components/common/NoData';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
-import { invoke } from '@tauri-apps/api/core';
-import { SuccessApiResponse } from '../types/successApiResponse';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 
 interface Flashcard {
@@ -21,54 +19,31 @@ interface Flashcard {
   due_date: number;
 }
 
+export function htmlDecode(input: string) {
+  const doc = new DOMParser().parseFromString(input, 'text/html');
+  return doc.documentElement.textContent;
+}
+
 export default function StudyNow() {
   const { deckId } = useParams<{ deckId: string }>();
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const location = useLocation();
+  const passedFlashcards = location.state?.flashcards || [];
+
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentCard, setCurrentCard] = useState<Flashcard | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
 
   useEffect(() => {
-    const fetchFlashcards = async () => {
-      try {
-        setError(null);
-
-        const res = await invoke<SuccessApiResponse<Flashcard[]>>('get_flashcodes_by_deck', {
-          deckId: Number(deckId),
-        });
-
-        if (res.success) {
-          const processedFlashcards = Array.isArray(res.data)
-            ? res.data.map((flashcard) => ({
-                ...flashcard,
-                back: htmlDecode(flashcard.back) || '',
-              }))
-            : [];
-
-          setFlashcards(processedFlashcards);
-
-          // Set initial random card if available
-          if (processedFlashcards.length > 0) {
-            setCurrentCard(processedFlashcards[Math.floor(Math.random() * processedFlashcards.length)]);
-          } else {
-            setCurrentCard(null);
-          }
-        } else {
-          setError(res.message || 'Failed to fetch flashcards');
-          setFlashcards([]);
-          setCurrentCard(null);
-        }
-      } catch (err) {
-        console.error('Failed to fetch flashcards:', err);
-        setError('Failed to load flashcards. Please try again.');
-        setFlashcards([]);
-        setCurrentCard(null);
-      }
-    };
-
-    fetchFlashcards();
-  }, [deckId, isFormOpen]);
+    // If we already have flashcards from location state, use them
+    if (passedFlashcards.length > 0) {
+      console.log('Using passed flashcards:', passedFlashcards);
+      setFlashcards(passedFlashcards);
+      setCurrentCard(passedFlashcards[0]);
+      return;
+    }
+  }, [deckId, isFormOpen, passedFlashcards]);
 
   const handleShowAnswer = () => {
     console.log('Show answer clicked for card:', currentCard?.id);
@@ -83,11 +58,6 @@ export default function StudyNow() {
       setShowAnswer(false);
     }
   };
-
-  function htmlDecode(input: string) {
-    const doc = new DOMParser().parseFromString(input, 'text/html');
-    return doc.documentElement.textContent;
-  }
 
   const handleAddFlashcard = () => {
     setIsFormOpen(true);

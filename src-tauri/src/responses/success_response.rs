@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use crate::models::Flashcode;
+
 #[derive(Debug, Serialize)]
 pub struct SuccessResponse<T> {
     pub success: bool,
@@ -18,16 +20,17 @@ impl<T> SuccessResponse<T> {
 }
 
 #[derive(Debug, Serialize)]
-pub struct StateCountResponse {
-    pub new: i64,
-    pub learning: i64,
-    pub to_review: i64,
+pub struct TodayQueuesResponse {
+    pub cards: Vec<Flashcode>,
+    pub new: usize,
+    pub learning: usize,
+    pub to_review: usize,
 }
 
-#[allow(dead_code)]
-impl StateCountResponse {
-    pub fn new(new: i64, learning: i64, to_review: i64) -> Self {
+impl TodayQueuesResponse {
+    pub fn new(cards: Vec<Flashcode>, new: usize, learning: usize, to_review: usize) -> Self {
         Self {
+            cards,
             new,
             learning,
             to_review,
