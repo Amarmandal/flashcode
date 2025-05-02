@@ -5,6 +5,7 @@ import { IconAlertCircle, IconEye } from '@tabler/icons-react';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { Congratulations } from '../components/common/Congratulations';
 import { invoke } from '@tauri-apps/api/core';
+import { SuccessApiResponse } from '../types/successApiResponse';
 
 interface Flashcard {
   id: number;
@@ -64,6 +65,44 @@ export default function StudyNow() {
         completed: false,
       });
       return;
+    }
+
+    if (deckId) {
+      const fetchFlashcards = async () => {
+        try {
+          const res = await invoke<
+            SuccessApiResponse<{ cards: Flashcard[]; new: number; learning: number; to_review: number }>
+          >('get_queues_for_today', { deckId: Number(deckId) });
+
+          if (res.success && res.data.cards.length > 0) {
+            // Process and update flashcards
+            const processedFlashcards = res.data.cards.map((flashcard) => ({
+              ...flashcard,
+              back: htmlDecode(flashcard.back) || '',
+            }));
+
+            setFlashcards(processedFlashcards);
+            setCurrentCardState({
+              index: 0,
+              card: processedFlashcards[0],
+              completed: false,
+            });
+          } else {
+            // No cards to study or API error
+            console.error('No flashcards available to study or API error:', res.message);
+            setCurrentCardState({
+              index: 0,
+              card: null,
+              completed: true,
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching flashcards:', error);
+          setError('Failed to fetch flashcards. Please try again.');
+        }
+      };
+
+      fetchFlashcards();
     }
   }, [deckId, passedFlashcards]);
 
