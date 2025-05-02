@@ -84,26 +84,34 @@ export default function StudyNow() {
         answer: option,
       });
 
-      if (flashcards.length > 0) {
-        // Check if there are more cards to show
-        if (currentCardState.index < flashcards.length - 1) {
-          // Move to the next card
-          const nextIndex = currentCardState.index + 1;
-          setCurrentCardState({
-            index: nextIndex,
-            card: flashcards[nextIndex],
-            completed: false,
-          });
-        } else {
-          // We've reached the end of the deck, mark as completed
-          setCurrentCardState({
-            index: flashcards.length - 1,
-            card: flashcards[flashcards.length - 1],
-            completed: true,
-          });
-        }
-        setShowAnswer(false);
+      if (option === CardAnswer.Again) {
+        const updatedFlashcards = [...flashcards];
+        const currentCard = updatedFlashcards.splice(currentCardState.index, 1)[0];
+        updatedFlashcards.push(currentCard);
+        setFlashcards(updatedFlashcards);
+
+        // If we're at the end of the list after removing the current card,
+        // we need to go back to the start
+        const nextIndex = currentCardState.index < updatedFlashcards.length ? currentCardState.index : 0;
+
+        setCurrentCardState({
+          index: nextIndex,
+          card: updatedFlashcards[nextIndex],
+          completed: false,
+        });
+      } else {
+        // For all other options, just move to the next card
+        const isLastCard = currentCardState.index >= flashcards.length - 1;
+
+        setCurrentCardState({
+          index: isLastCard ? currentCardState.index : currentCardState.index + 1,
+          card: isLastCard ? currentCardState.card : flashcards[currentCardState.index + 1],
+          completed: isLastCard,
+        });
       }
+
+      // Always reset the answer display
+      setShowAnswer(false);
     } catch (error) {
       console.error('Error submitting answer:', error);
       setError('Failed to submit your answer. Please try again.');
