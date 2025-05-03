@@ -219,6 +219,40 @@ impl Flashcode {
 
         Ok("Flashcode has been deleted successfully".to_string())
     }
+
+
+    // function to get flashcard counts based 
+    pub fn get_flashcard_count_by_category(
+        db: &DatabaseConnection,
+        deck_id: i64,
+    ) -> Result<(usize, usize, usize), Error> {
+        let conn = db.get_connection();
+
+        let new_count = conn.query_row(
+            "SELECT COUNT(*) FROM flashcodes WHERE deck_id = ?1 AND repetitions = 0",
+            params![deck_id],
+            |row| row.get(0),
+        )?;
+
+        let learning_count = conn.query_row(
+            "SELECT COUNT(*) FROM flashcodes WHERE deck_id = ?1 AND repetitions = 1",
+            params![deck_id],
+            |row| row.get(0),
+        )?;
+
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("Time went backwards");
+        let today = seconds_to_days(now.as_secs());
+
+        let review_count = conn.query_row(
+            "SELECT COUNT(*) FROM flashcodes WHERE deck_id = ?1 AND due_date <= ?2",
+            params![deck_id, today],
+            |row| row.get(0),
+        )?;
+
+        Ok((new_count, learning_count, review_count))
+    }
 }
 
 // function to convert seconds into days

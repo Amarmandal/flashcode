@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::models::Flashcode;
+use crate::models::{Deck, Flashcode};
 
 #[derive(Debug, Serialize)]
 pub struct SuccessResponse<T> {
@@ -36,4 +36,13 @@ impl TodayQueuesResponse {
             to_review,
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeckWithCount {
+    pub deck: Deck,
+    pub new_count: usize,
+    pub learning_count: usize,
+    pub review_count: usize,
 }
