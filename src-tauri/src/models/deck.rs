@@ -59,7 +59,7 @@ impl Deck {
     pub fn get_all(
         db: &DatabaseConnection,
         query_params: DeckQueryParams,
-    ) -> Result<Vec<Self>, Error> {
+    ) -> Result<(Vec<Self>, usize), Error> {
         let mut query = "SELECT id, name, is_favorite FROM decks".to_string();
         let mut where_clauses = Vec::new();
         let mut params_vec: Vec<i32> = Vec::new();
@@ -99,6 +99,8 @@ impl Deck {
             .collect();
 
         let conn = db.get_connection();
+        let total_count =
+            conn.query_row("SELECT COUNT(*) FROM decks", params![], |row| row.get(0))?;
         let mut stmt = conn.prepare(&query)?;
 
         let decks = stmt.query_map(params.as_slice(), |row| {
@@ -115,7 +117,7 @@ impl Deck {
             results.push(deck?);
         }
 
-        Ok(results)
+        Ok((results, total_count))
     }
 
     pub fn update(&self, db: &DatabaseConnection) -> Result<String, Error> {

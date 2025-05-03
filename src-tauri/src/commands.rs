@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use tauri::State;
 use v_htmlescape::escape;
 
-use crate::responses::DeckWithCount;
+use crate::responses::{DeckWithCount, SuccessResponseWithCount};
 
 use super::{
     database::DatabaseConnection,
@@ -72,7 +72,7 @@ pub fn get_deck(
 pub fn get_all_decks(
     state: State<'_, AppState>,
     query_params: DeckQueryParams,
-) -> Result<SuccessResponse<Vec<DeckWithCount>>, ErrorResponse> {
+) -> Result<SuccessResponseWithCount<Vec<DeckWithCount>>, ErrorResponse> {
     state
         .db
         .lock()
@@ -83,7 +83,8 @@ pub fn get_all_decks(
         .and_then(|db_guard| {
             let db = &*db_guard;
             Deck::get_all(db, query_params)
-                .map(|decks| {
+                .map(|deck_with_counts| {
+                    let (decks, counts) = deck_with_counts;
                     let mut decks_with_counts = Vec::new();
 
                     for deck in decks {
@@ -98,7 +99,11 @@ pub fn get_all_decks(
                         });
                     }
 
-                    SuccessResponse::new("All decks retrieved".into(), decks_with_counts)
+                    SuccessResponseWithCount::new(
+                        "All decks retrieved".into(),
+                        decks_with_counts,
+                        counts,
+                    )
                 })
                 .map_err(|db_error| {
                     eprintln!("Error fetching all decks: {:?}", db_error);
