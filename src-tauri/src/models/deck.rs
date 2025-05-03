@@ -44,7 +44,7 @@ impl Deck {
     pub fn get(db: &DatabaseConnection, id: i64) -> Result<Self, Error> {
         let conn = db.get_connection();
         conn.query_row(
-            "SELECT id, name FROM decks WHERE id = ?1",
+            "SELECT id, name, is_favorite FROM decks WHERE id = ?1",
             params![id],
             |row| {
                 Ok(Deck {

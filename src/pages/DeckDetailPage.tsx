@@ -7,6 +7,7 @@ import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 import { invoke } from '@tauri-apps/api/core';
 import { SuccessApiResponse } from '../types/successApiResponse';
 import { htmlDecode } from './StudyNowPage';
+import { Deck as DeckType } from '../types/deck';
 
 interface CardStatus {
   label: string;
@@ -29,6 +30,7 @@ interface Flashcard {
 
 export default function DeckDetail() {
   const { deckId } = useParams<{ deckId: string }>();
+  const [deckDetail, setDeckDetail] = useState<DeckType>();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -37,6 +39,17 @@ export default function DeckDetail() {
     { label: 'Learning', count: 0, color: 'orange' },
     { label: 'To Review', count: 0, color: 'green' },
   ]);
+
+  useEffect(() => {
+    const fetchDeck = async () => {
+      const response = await invoke<SuccessApiResponse<DeckType>>('get_deck', { id: Number(deckId) });
+      if (response.success) {
+        setDeckDetail(response.data);
+      }
+    };
+
+    fetchDeck();
+  }, [deckId]);
 
   useEffect(() => {
     const fetchFlashcards = async () => {
@@ -101,7 +114,7 @@ export default function DeckDetail() {
     <Container size="md" py="xl">
       <Stack>
         <Group justify="space-between">
-          <Title order={2}>Deck Details</Title>
+          <Title order={2}>{deckDetail?.name}</Title>
           <Button variant="filled" color="teal" leftSection={<IconPlus size={16} />} onClick={handleAddFlashcard}>
             Add Flash
           </Button>
