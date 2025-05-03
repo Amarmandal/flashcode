@@ -7,10 +7,11 @@ import ConfirmationModal from '../common/ConfirmationModal';
 
 interface FavoriteDeckListProps {
   favoriteDecks: Deck[];
+  cardCounts: { [key: string]: number };
   onRemoveFavorite: (deck: Deck) => void;
 }
 
-export function FavoriteDeckList({ favoriteDecks, onRemoveFavorite }: FavoriteDeckListProps) {
+export function FavoriteDeckList({ favoriteDecks, onRemoveFavorite, cardCounts }: FavoriteDeckListProps) {
   const [deckToRemove, setDeckToRemove] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -87,7 +88,7 @@ export function FavoriteDeckList({ favoriteDecks, onRemoveFavorite }: FavoriteDe
                   <IconCards size={16} />
                 </ThemeIcon>
                 <Text size="sm" c="dimmed">
-                  {Math.floor(Math.random() * 20) + 5} Cards
+                  {cardCounts[deck.id]} Cards
                 </Text>
               </Group>
 

@@ -3,7 +3,7 @@ import { Alert, Box, Button, Container, Group, Pagination, Stack, Text, Title } 
 import { useEffect, useState } from 'react';
 import { DeckList } from '../components/deck/DeckList';
 import { DeckForm } from '../components/deck/DeckForm';
-import { Deck as DeckType } from '../types/deck';
+import { Deck as DeckType, DeckWithCount } from '../types/deck';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { SuccessApiResponse } from '../types/successApiResponse';
 
@@ -17,9 +17,11 @@ export default function Deck() {
   useEffect(() => {
     const fetchDecks = async () => {
       try {
-        const res = (await invoke('get_all_decks', { queryParams: {} })) as SuccessApiResponse<DeckType[]>;
-        console.log(res.data);
-        setDecks(res.data);
+        const res = (await invoke('get_all_decks', { queryParams: {} })) as SuccessApiResponse<DeckWithCount[]>;
+
+        const deckList = res.data.map((deckWithCount) => deckWithCount.deck);
+
+        setDecks(deckList);
       } catch (error) {
         console.error('Failed to fetch decks:', error);
         setError((error as Error)?.message || 'Failed to fetch decks.');

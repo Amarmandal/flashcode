@@ -2,6 +2,8 @@ use std::sync::Mutex;
 use tauri::State;
 use v_htmlescape::escape;
 
+use crate::responses::DeckWithCount;
+
 use super::{
     database::DatabaseConnection,
     models::{Deck, DeckQueryParams, Flashcode},
@@ -70,7 +72,7 @@ pub fn get_deck(
 pub fn get_all_decks(
     state: State<'_, AppState>,
     query_params: DeckQueryParams,
-) -> Result<SuccessResponse<Vec<Deck>>, ErrorResponse> {
+) -> Result<SuccessResponse<Vec<DeckWithCount>>, ErrorResponse> {
     state
         .db
         .lock()
@@ -81,7 +83,23 @@ pub fn get_all_decks(
         .and_then(|db_guard| {
             let db = &*db_guard;
             Deck::get_all(db, query_params)
-                .map(|decks| SuccessResponse::new("All decks retrieved".into(), decks))
+                .map(|decks| {
+                    let mut decks_with_counts = Vec::new();
+
+                    for deck in decks {
+                        let (new_count, review_count, learning_count) =
+                            Flashcode::get_flashcard_count_by_category(db, deck.id)
+                                .unwrap_or_default();
+                        decks_with_counts.push(DeckWithCount {
+                            deck,
+                            new_count,
+                            review_count,
+                            learning_count,
+                        });
+                    }
+
+                    SuccessResponse::new("All decks retrieved".into(), decks_with_counts)
+                })
                 .map_err(|db_error| {
                     eprintln!("Error fetching all decks: {:?}", db_error);
                     ErrorResponse::new("Failed to retrieve all decks from the database.".into())
@@ -221,6 +239,37 @@ pub fn create_flashcode(
                 Err(e) => {
                     eprintln!("Failed to create flashcode: {:?}", e);
                     Err(ErrorResponse::new("Failed to create new flashcard.".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_flashcard_counts(
+    state: State<'_, AppState>,
+    deck_id: i64,
+) -> Result<SuccessResponse<(usize, usize, usize)>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Flashcode::get_flashcard_count_by_category(db, deck_id) {
+                Ok((new_count, review_count, learning_count)) => Ok(SuccessResponse::new(
+                    "Flashcard counts retrieved successfully!".into(),
+                    (new_count, review_count, learning_count),
+                )),
+                Err(e) => {
+                    eprintln!("Failed to get flashcard counts: {:?}", e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to retrieve flashcard counts for deck id {}.",
+                        deck_id
+                    )))
                 }
             }
         }
