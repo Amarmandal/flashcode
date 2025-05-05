@@ -83,7 +83,7 @@ impl Deck {
             query.push_str(&where_clauses.join(" AND "));
         }
 
-        query.push_str(" ORDER BY created_at DESC");
+        query.push_str(" ORDER BY created_at ASC");
 
         let limit = query_params.limit.unwrap_or(5);
         let page = query_params.page.unwrap_or(1);
