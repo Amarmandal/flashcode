@@ -11,7 +11,7 @@ use tauri::Manager;
 use commands::{
     answer_flashcard, create_deck, create_flashcode, delete_deck, delete_flashcode, get_all_decks,
     get_deck, get_flashcard_counts, get_flashcode, get_flashcodes_by_deck, get_queues_for_today,
-    update_deck, update_flashcode, AppState,
+    reset_deck, update_deck, update_flashcode, AppState,
 };
 use database::DatabaseConnection;
 use models::{seconds_to_days, Flashcode};
@@ -41,7 +41,8 @@ pub fn run() {
             get_flashcodes_by_deck,
             answer_flashcard,
             get_queues_for_today,
-            get_flashcard_counts
+            get_flashcard_counts,
+            reset_deck
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

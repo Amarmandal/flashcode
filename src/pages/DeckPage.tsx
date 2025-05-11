@@ -10,6 +10,7 @@ import { SuccessApiResponse } from '../types/successApiResponse';
 export default function Deck() {
   const [decks, setDecks] = useState<DeckType[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [editingDeck, setEditingDeck] = useState<DeckType | null>(null);
   const [activePage, setPage] = useState(1);
@@ -17,11 +18,20 @@ export default function Deck() {
   useEffect(() => {
     const fetchDecks = async () => {
       try {
-        const res = (await invoke('get_all_decks', { queryParams: {} })) as SuccessApiResponse<DeckWithCount[]>;
+        const res = (await invoke('get_all_decks', {
+          queryParams: {
+            page: activePage < 1 ? 1 : activePage,
+            limit: 5,
+          },
+        })) as SuccessApiResponse<DeckWithCount[]>;
 
         const deckList = res.data.map((deckWithCount) => deckWithCount.deck);
 
         setDecks(deckList);
+
+        if (res.totalCount) {
+          setTotalCount(res.totalCount);
+        }
       } catch (error) {
         console.error('Failed to fetch decks:', error);
         setError((error as Error)?.message || 'Failed to fetch decks.');
@@ -29,7 +39,7 @@ export default function Deck() {
     };
 
     fetchDecks();
-  }, []);
+  }, [activePage, setPage, decks.length]);
 
   // Handle deck creation
   const handleCreate = async (name: string) => {
@@ -55,6 +65,12 @@ export default function Deck() {
     try {
       await invoke('delete_deck', { id });
       setDecks((prevDecks) => prevDecks.filter((deck) => deck.id !== id));
+
+      setPage((current) => {
+        // If we're deleting the last item on a page (except page 1), move to previous page
+        const isLastItemOnPage = decks.length === 1 && activePage > 1;
+        return isLastItemOnPage ? current - 1 : current;
+      });
     } catch (error: any) {
       console.error('Failed to delete deck:', error);
       setError((error as Error)?.message || `Failed to delete deck with ID ${id}.`);
@@ -111,7 +127,9 @@ export default function Deck() {
           )}
         </Box>
 
-        <Pagination onChange={setPage} value={activePage} total={10} mt="md" />
+        {totalCount > 5 && (
+          <Pagination onChange={setPage} value={activePage} total={Math.ceil(totalCount / 5)} mt="md" />
+        )}
 
         <DeckForm
           opened={isFormOpen}

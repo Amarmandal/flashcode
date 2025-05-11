@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use tauri::State;
 use v_htmlescape::escape;
 
-use crate::responses::DeckWithCount;
+use crate::responses::{DeckWithCount, SuccessResponseWithCount};
 
 use super::{
     database::DatabaseConnection,
@@ -72,7 +72,7 @@ pub fn get_deck(
 pub fn get_all_decks(
     state: State<'_, AppState>,
     query_params: DeckQueryParams,
-) -> Result<SuccessResponse<Vec<DeckWithCount>>, ErrorResponse> {
+) -> Result<SuccessResponseWithCount<Vec<DeckWithCount>>, ErrorResponse> {
     state
         .db
         .lock()
@@ -83,7 +83,8 @@ pub fn get_all_decks(
         .and_then(|db_guard| {
             let db = &*db_guard;
             Deck::get_all(db, query_params)
-                .map(|decks| {
+                .map(|deck_with_counts| {
+                    let (decks, counts) = deck_with_counts;
                     let mut decks_with_counts = Vec::new();
 
                     for deck in decks {
@@ -98,7 +99,11 @@ pub fn get_all_decks(
                         });
                     }
 
-                    SuccessResponse::new("All decks retrieved".into(), decks_with_counts)
+                    SuccessResponseWithCount::new(
+                        "All decks retrieved".into(),
+                        decks_with_counts,
+                        counts,
+                    )
                 })
                 .map_err(|db_error| {
                     eprintln!("Error fetching all decks: {:?}", db_error);
@@ -129,6 +134,31 @@ pub fn update_deck(
                     eprintln!("Error updating deck: {:?}", db_error);
                     ErrorResponse::new(format!("Failed to update deck with id {}", deck.id))
                 })
+        })
+}
+
+#[tauri::command]
+pub fn reset_deck(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<i64>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|poison_err| {
+            eprintln!("Error locking database Mutex: {:?}", poison_err);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })
+        .and_then(|db_guard| {
+            let db = &*db_guard;
+
+            match Deck::reset_all_flashcards(db, id) {
+                Ok(msg) => Ok(SuccessResponse::new(msg, id)),
+                Err(err) => {
+                    eprintln!("Error reseting dekc: {:?}", err);
+                    Err(ErrorResponse::new("Failed to reset deck".into()))
+                }
+            }
         })
 }
 

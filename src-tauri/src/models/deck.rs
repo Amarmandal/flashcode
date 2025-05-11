@@ -44,7 +44,7 @@ impl Deck {
     pub fn get(db: &DatabaseConnection, id: i64) -> Result<Self, Error> {
         let conn = db.get_connection();
         conn.query_row(
-            "SELECT id, name FROM decks WHERE id = ?1",
+            "SELECT id, name, is_favorite FROM decks WHERE id = ?1",
             params![id],
             |row| {
                 Ok(Deck {
@@ -59,7 +59,7 @@ impl Deck {
     pub fn get_all(
         db: &DatabaseConnection,
         query_params: DeckQueryParams,
-    ) -> Result<Vec<Self>, Error> {
+    ) -> Result<(Vec<Self>, usize), Error> {
         let mut query = "SELECT id, name, is_favorite FROM decks".to_string();
         let mut where_clauses = Vec::new();
         let mut params_vec: Vec<i32> = Vec::new();
@@ -83,7 +83,7 @@ impl Deck {
             query.push_str(&where_clauses.join(" AND "));
         }
 
-        query.push_str(" ORDER BY created_at DESC");
+        query.push_str(" ORDER BY created_at ASC");
 
         let limit = query_params.limit.unwrap_or(5);
         let page = query_params.page.unwrap_or(1);
@@ -99,6 +99,8 @@ impl Deck {
             .collect();
 
         let conn = db.get_connection();
+        let total_count =
+            conn.query_row("SELECT COUNT(*) FROM decks", params![], |row| row.get(0))?;
         let mut stmt = conn.prepare(&query)?;
 
         let decks = stmt.query_map(params.as_slice(), |row| {
@@ -115,7 +117,7 @@ impl Deck {
             results.push(deck?);
         }
 
-        Ok(results)
+        Ok((results, total_count))
     }
 
     pub fn update(&self, db: &DatabaseConnection) -> Result<String, Error> {
@@ -127,6 +129,18 @@ impl Deck {
         )?;
 
         Ok("Deck has been updated successfully".to_string())
+    }
+
+    // given the id of the deck, reset ease factor, interval and repetition to default values
+    pub fn reset_all_flashcards(db: &DatabaseConnection, deck_id: i64) -> Result<String, Error> {
+        let conn = db.get_connection();
+
+        conn.execute(
+            "UPDATE flashcodes SET ease_factor = 2.5, interval = 1, repetitions = 0 WHERE deck_id = ?1",
+            params![deck_id],
+        )?;
+
+        Ok("Deck have been reset successfully".to_string())
     }
 
     pub fn delete(&self, db: &DatabaseConnection) -> Result<String, Error> {

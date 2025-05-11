@@ -20,6 +20,25 @@ impl<T> SuccessResponse<T> {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuccessResponseWithCount<T> {
+    pub success: bool,
+    pub message: String,
+    pub data: T,
+    pub total_count: usize,
+}
+impl<T> SuccessResponseWithCount<T> {
+    pub fn new(message: String, data: T, count: usize) -> Self {
+        SuccessResponseWithCount {
+            success: true,
+            message,
+            data,
+            total_count: count,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 pub struct TodayQueuesResponse {
     pub cards: Vec<Flashcode>,
     pub new: usize,
