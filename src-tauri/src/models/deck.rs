@@ -131,6 +131,18 @@ impl Deck {
         Ok("Deck has been updated successfully".to_string())
     }
 
+    // given the id of the deck, reset ease factor, interval and repetition to default values
+    pub fn reset_all_flashcards(db: &DatabaseConnection, deck_id: i64) -> Result<String, Error> {
+        let conn = db.get_connection();
+
+        conn.execute(
+            "UPDATE flashcards SET ease_factor = 2.5, interval = 1, repetition = 0 WHERE deck_id = ?1",
+            params![deck_id],
+        )?;
+
+        Ok("Deck have been reset successfully".to_string())
+    }
+
     pub fn delete(&self, db: &DatabaseConnection) -> Result<String, Error> {
         let conn = db.get_connection();
 

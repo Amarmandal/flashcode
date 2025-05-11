@@ -138,6 +138,31 @@ pub fn update_deck(
 }
 
 #[tauri::command]
+pub fn reset_deck(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|poison_err| {
+            eprintln!("Error locking database Mutex: {:?}", poison_err);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })
+        .and_then(|db_guard| {
+            let db = &*db_guard;
+
+            match Deck::reset_all_flashcards(db, deck_id) {
+                Ok(msg) => SuccessResponse::new(msg, id),
+                Err(err) => {
+                    eprintln!("Error reseting dekc: {:?}", err);
+                    Err(E)
+                }
+            }
+        })
+}
+
+#[tauri::command]
 pub fn delete_deck(
     state: State<'_, AppState>,
     id: i64,
