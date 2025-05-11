@@ -1,5 +1,5 @@
-import { Button, Container, Group, Stack, Title } from '@mantine/core';
-import { IconBook, IconPlus } from '@tabler/icons-react';
+import { Button, Container, Group, Stack, Title, Modal, Text } from '@mantine/core';
+import { IconBook, IconPlus, IconRefresh } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router-dom';
 import { StatusCard } from '../components/deck/StatusCard';
 import { useEffect, useState } from 'react';
@@ -34,6 +34,7 @@ export default function DeckDetail() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [statuses, setStatuses] = useState<CardStatus[]>([
     { label: 'New', count: 0, color: 'blue' },
     { label: 'Learning', count: 0, color: 'orange' },
@@ -110,14 +111,39 @@ export default function DeckDetail() {
     setIsFormOpen(false);
   };
 
+  const handleResetDeck = async () => {
+    try {
+      const response = await invoke<SuccessApiResponse<number>>('reset_deck', { id: Number(deckId) });
+      if (response.success) {
+        setRefreshTrigger((prev) => prev + 1);
+      } else {
+        console.error('Failed to reset deck:', response.message);
+      }
+    } catch (err) {
+      console.error('Error resetting deck:', err);
+    } finally {
+      setResetConfirmOpen(false);
+    }
+  };
+
   return (
     <Container size="md" py="xl">
       <Stack>
         <Group justify="space-between">
           <Title order={2}>{deckDetail?.name}</Title>
-          <Button variant="filled" color="teal" leftSection={<IconPlus size={16} />} onClick={handleAddFlashcard}>
-            Add Flash
-          </Button>
+          <Group>
+            <Button
+              variant="outline"
+              color="red"
+              leftSection={<IconRefresh size={16} />}
+              onClick={() => setResetConfirmOpen(true)}
+            >
+              Reset Deck
+            </Button>
+            <Button variant="filled" color="teal" leftSection={<IconPlus size={16} />} onClick={handleAddFlashcard}>
+              Add Flash
+            </Button>
+          </Group>
         </Group>
         <Group justify="center" grow>
           {statuses.map((status) => (
@@ -138,6 +164,21 @@ export default function DeckDetail() {
           Study Now
         </Button>
         <FlashcardForm opened={isFormOpen} onClose={handleFormClose} deckId={deckId!} />
+
+        {/* Reset Confirmation Modal */}
+        <Modal opened={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)} title="Reset Deck" centered>
+          <Stack>
+            <Text>Are you sure you want to reset all flashcards in this deck? This will reset all progress.</Text>
+            <Group justify="flex-end">
+              <Button variant="default" onClick={() => setResetConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="filled" color="red" onClick={handleResetDeck}>
+                Reset
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
       </Stack>
     </Container>
   );

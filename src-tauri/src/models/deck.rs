@@ -136,7 +136,7 @@ impl Deck {
         let conn = db.get_connection();
 
         conn.execute(
-            "UPDATE flashcards SET ease_factor = 2.5, interval = 1, repetition = 0 WHERE deck_id = ?1",
+            "UPDATE flashcodes SET ease_factor = 2.5, interval = 1, repetitions = 0 WHERE deck_id = ?1",
             params![deck_id],
         )?;
 
