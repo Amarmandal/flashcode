@@ -141,7 +141,7 @@ pub fn update_deck(
 pub fn reset_deck(
     state: State<'_, AppState>,
     id: i64,
-) -> Result<SuccessResponse<String>, ErrorResponse> {
+) -> Result<SuccessResponse<i64>, ErrorResponse> {
     state
         .db
         .lock()
@@ -152,11 +152,11 @@ pub fn reset_deck(
         .and_then(|db_guard| {
             let db = &*db_guard;
 
-            match Deck::reset_all_flashcards(db, deck_id) {
-                Ok(msg) => SuccessResponse::new(msg, id),
+            match Deck::reset_all_flashcards(db, id) {
+                Ok(msg) => Ok(SuccessResponse::new(msg, id)),
                 Err(err) => {
                     eprintln!("Error reseting dekc: {:?}", err);
-                    Err(E)
+                    Err(ErrorResponse::new("Failed to reset deck".into()))
                 }
             }
         })

@@ -127,8 +127,6 @@ export default function Deck() {
           )}
         </Box>
 
-        {/* Render pagination component only if totalCount > 0 and ther are more that 1 pages */}
-        {/* Also add the logic to get total number of pages and pass to total props of pagination component */}
         {totalCount > 5 && (
           <Pagination onChange={setPage} value={activePage} total={Math.ceil(totalCount / 5)} mt="md" />
         )}
