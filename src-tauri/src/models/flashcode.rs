@@ -246,10 +246,11 @@ impl Flashcode {
         let today = seconds_to_days(now.as_secs());
 
         let review_count = conn.query_row(
-            "SELECT COUNT(*) FROM flashcodes WHERE deck_id = ?1 AND due_date <= ?2",
+            "SELECT COUNT(*) FROM flashcodes WHERE deck_id = ?1 AND repetitions = 2 AND due_date <= ?2",
             params![deck_id, today],
             |row| row.get(0),
         )?;
+
 
         Ok((new_count, learning_count, review_count))
     }

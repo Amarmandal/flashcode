@@ -86,18 +86,24 @@ pub fn get_all_decks(
                 .map(|deck_with_counts| {
                     let (decks, counts) = deck_with_counts;
                     let mut decks_with_counts = Vec::new();
+                    let mut count = 0;
 
                     for deck in decks {
                         let (new_count, review_count, learning_count) =
                             Flashcode::get_flashcard_count_by_category(db, deck.id)
                                 .unwrap_or_default();
+
                         decks_with_counts.push(DeckWithCount {
                             deck,
                             new_count,
                             review_count,
                             learning_count,
                         });
+
+                        count += 1;
                     }
+
+                    println!("Count called: {}", count);
 
                     SuccessResponseWithCount::new(
                         "All decks retrieved".into(),
