@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Alert, Container, Stack, Text, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Deck as DeckType, DeckWithCount } from '../types/deck';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { SuccessApiResponse } from '../types/successApiResponse';
@@ -10,15 +10,18 @@ export default function FavoritePage() {
   const [favoriteDecks, setFavoriteDecks] = useState<DeckType[]>([]);
   const [cardCounts, setCardCounts] = useState<{ [key: string]: number }>({});
   const [error, setError] = useState<string | null>(null);
+  const dataFetchedRef = useRef(false);
 
   useEffect(() => {
     const fetchFavoriteDecks = async () => {
+      // Return early if data was already fetched
+      if (dataFetchedRef.current) return;
+      dataFetchedRef.current = true;
+
       try {
         const res = (await invoke('get_all_decks', {
           queryParams: { isFavorite: 'true' },
         })) as SuccessApiResponse<DeckWithCount[]>;
-
-        console.log('Deck with count', res.data);
 
         const favoriteDecks = res.data.map((deckWithCount) => {
           setCardCounts((prevCounts) => ({
