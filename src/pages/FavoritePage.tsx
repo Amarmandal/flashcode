@@ -18,6 +18,8 @@ export default function FavoritePage() {
           queryParams: { isFavorite: 'true' },
         })) as SuccessApiResponse<DeckWithCount[]>;
 
+        console.log('Deck with count', res.data);
+
         const favoriteDecks = res.data.map((deckWithCount) => {
           setCardCounts((prevCounts) => ({
             ...prevCounts,

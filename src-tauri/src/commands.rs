@@ -91,6 +91,7 @@ pub fn get_all_decks(
                         let (new_count, review_count, learning_count) =
                             Flashcode::get_flashcard_count_by_category(db, deck.id)
                                 .unwrap_or_default();
+
                         decks_with_counts.push(DeckWithCount {
                             deck,
                             new_count,
