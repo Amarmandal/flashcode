@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Alert, Box, Button, Container, Group, Pagination, Stack, Text, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { DeckList } from '../components/deck/DeckList';
 import { DeckForm } from '../components/deck/DeckForm';
 import { Deck as DeckType, DeckWithCount } from '../types/deck';
@@ -15,8 +15,25 @@ export default function Deck() {
   const [editingDeck, setEditingDeck] = useState<DeckType | null>(null);
   const [activePage, setPage] = useState(1);
 
+  const isFirstRender = useRef(true);
+  const prevDepsRef = useRef({ activePage, decksLength: decks.length });
+
   useEffect(() => {
     const fetchDecks = async () => {
+      const shouldFetch =
+        isFirstRender.current ||
+        prevDepsRef.current.activePage !== activePage ||
+        prevDepsRef.current.decksLength !== decks.length;
+
+      prevDepsRef.current = { activePage, decksLength: decks.length };
+
+      if (isFirstRender.current) {
+        isFirstRender.current = false;
+      }
+
+      // Skip fetch if deps haven't changed and not first render
+      if (!shouldFetch) return;
+
       try {
         const res = (await invoke('get_all_decks', {
           queryParams: {
