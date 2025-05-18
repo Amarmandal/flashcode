@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 import { invoke } from '@tauri-apps/api/core';
 import { SuccessApiResponse } from '../types/successApiResponse';
-import { htmlDecode } from './StudyNowPage';
 import { Deck as DeckType } from '../types/deck';
 
 interface CardStatus {
@@ -59,14 +58,11 @@ export default function DeckDetail() {
           SuccessApiResponse<{ cards: Flashcard[]; new: number; learning: number; to_review: number }>
         >('get_queues_for_today', { deckId: Number(deckId) });
 
+        console.log('Flashcards response:', res);
+
         if (res.success) {
           // Update flashcards state
-          const processedFlashcards = Array.isArray(res.data.cards)
-            ? res.data.cards.map((flashcard) => ({
-                ...flashcard,
-                back: htmlDecode(flashcard.back) || '',
-              }))
-            : [];
+          const processedFlashcards = Array.isArray(res.data.cards) ? res.data.cards.map((flashcard) => flashcard) : [];
           setFlashcards(processedFlashcards);
 
           // Update statuses state

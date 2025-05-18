@@ -18,6 +18,7 @@ interface Flashcard {
   interval: number;
   created_at: string;
   due_date: number;
+  is_reversed: boolean;
 }
 
 enum CardAnswer {
@@ -75,16 +76,10 @@ export default function StudyNow() {
           >('get_queues_for_today', { deckId: Number(deckId) });
 
           if (res.success && res.data.cards.length > 0) {
-            // Process and update flashcards
-            const processedFlashcards = res.data.cards.map((flashcard) => ({
-              ...flashcard,
-              back: htmlDecode(flashcard.back) || '',
-            }));
-
-            setFlashcards(processedFlashcards);
+            setFlashcards(res.data.cards);
             setCurrentCardState({
               index: 0,
-              card: processedFlashcards[0],
+              card: res.data.cards[0],
               completed: false,
             });
           } else {
@@ -157,21 +152,6 @@ export default function StudyNow() {
     }
   };
 
-  // const handleResetStudySession = () => {
-  //   // Reset to the first card
-  //   if (flashcards.length > 0) {
-  //     setCurrentCardState({
-  //       index: 0,
-  //       card: flashcards[0],
-  //       completed: false,
-  //     });
-  //     setShowAnswer(false);
-  //   } else {
-  //     // Go back to deck details if no cards
-  //     navigate(`/deck/${deckId}`);
-  //   }
-  // };
-
   const handleBackToDeck = () => {
     navigate(`/deck/${deckId}`);
   };
@@ -213,13 +193,30 @@ export default function StudyNow() {
         </Title>
         <Card withBorder shadow="sm" radius="md" p="lg">
           <Stack align="center">
-            <Text size="32px" fw={700} lh={1.4} ta="center">
-              {currentCardState.card.front}
-            </Text>
+            {currentCardState.card.is_reversed ? (
+              <CodeBlockWithHeader
+                code={htmlDecode(currentCardState.card.front) || ''}
+                language={currentCardState.card.language}
+              />
+            ) : (
+              <Text size="32px" fw={700} lh={1.4} ta="center">
+                {currentCardState.card.front}
+              </Text>
+            )}
             <Divider my="xs" styles={{ root: { width: '100%' } }} />
             {showAnswer ? (
               <>
-                <CodeBlockWithHeader code={currentCardState.card.back} language={currentCardState.card.language} />
+                {!currentCardState.card.is_reversed ? (
+                  <CodeBlockWithHeader
+                    code={htmlDecode(currentCardState.card.back) || ''}
+                    language={currentCardState.card.language}
+                  />
+                ) : (
+                  <Text size="32px" fw={700} lh={1.4} ta="center">
+                    {currentCardState.card.back}
+                  </Text>
+                )}
+
                 <Group justify="center" mt="md">
                   <Button variant="outline" color="red" onClick={() => handleOptionClick(CardAnswer.Again)}>
                     Again
