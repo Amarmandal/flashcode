@@ -86,7 +86,6 @@ pub fn get_all_decks(
                 .map(|deck_with_counts| {
                     let (decks, counts) = deck_with_counts;
                     let mut decks_with_counts = Vec::new();
-                    let mut count = 0;
 
                     for deck in decks {
                         let (new_count, review_count, learning_count) =
@@ -99,11 +98,7 @@ pub fn get_all_decks(
                             review_count,
                             learning_count,
                         });
-
-                        count += 1;
                     }
-
-                    println!("Count called: {}", count);
 
                     SuccessResponseWithCount::new(
                         "All decks retrieved".into(),
@@ -257,6 +252,7 @@ pub fn create_flashcode(
     back: &str,
     deck_id: i64,
     language: &str,
+    is_reversed: bool,
 ) -> Result<SuccessResponse<Flashcode>, ErrorResponse> {
     let db_guard_result = state.db.lock();
     let back = format!("{}", escape(back));
@@ -265,7 +261,8 @@ pub fn create_flashcode(
         Ok(db_guard) => {
             let db = &*db_guard;
 
-            let result = Flashcode::create(db, front, back.as_str(), deck_id, language);
+            let result =
+                Flashcode::create(db, front, back.as_str(), deck_id, language, is_reversed);
 
             match result {
                 Ok(flash_code) => Ok(SuccessResponse::new(
