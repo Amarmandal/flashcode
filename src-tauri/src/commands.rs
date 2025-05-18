@@ -98,8 +98,6 @@ pub fn get_all_decks(
                             review_count,
                             learning_count,
                         });
-
-                        count += 1;
                     }
 
                     SuccessResponseWithCount::new(
@@ -254,6 +252,7 @@ pub fn create_flashcode(
     back: &str,
     deck_id: i64,
     language: &str,
+    // is_reversed: bool,
 ) -> Result<SuccessResponse<Flashcode>, ErrorResponse> {
     let db_guard_result = state.db.lock();
     let back = format!("{}", escape(back));
