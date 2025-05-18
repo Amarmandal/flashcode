@@ -1,7 +1,7 @@
-import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title, Progress } from '@mantine/core';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { IconAlertCircle, IconEye } from '@tabler/icons-react';
+import { IconAlertCircle, IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload } from '@tabler/icons-react';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { Congratulations } from '../components/common/Congratulations';
 import { invoke } from '@tauri-apps/api/core';
@@ -197,24 +197,20 @@ export default function StudyNow() {
             <Group gap={4}>
               {currentCardState.card?.is_reversed && <IconEye size={16} color="#228be6" />}
               <Text size="sm" fw={500} c={currentCardState.card?.is_reversed ? 'blue.7' : 'gray.7'}>
-                {currentCardState.card?.is_reversed ? 'Reversed' : 'Normal'}
+                {currentCardState.card?.is_reversed ? 'Reversed' : 'Basic'}
               </Text>
             </Group>
           </Card>
         </Group>
         {/* Progress bar */}
-        <div style={{ width: '100%', background: '#e9ecef', borderRadius: 8, height: 10, marginBottom: 16 }}>
-          <div
-            style={{
-              width: `${((currentCardState.index + 1) / (flashcards.length || 1)) * 100}%`,
-              background: '#228be6',
-              height: 10,
-              borderRadius: 8,
-              transition: 'width 0.3s',
-            }}
-          />
-        </div>
-        <Card withBorder shadow="sm" radius="md" p="lg" bg="gray.0">
+        <Progress
+          value={((currentCardState.index + 1) / (flashcards.length || 1)) * 100}
+          radius="md"
+          size="md"
+          color="blue"
+          mb={16}
+        />
+        <Card withBorder shadow="sm" radius="md" p="lg">
           <Stack align="center" gap="xs">
             {/* FRONT label */}
             <Text size="xs" fw={700} c="gray.6" style={{ alignSelf: 'flex-start' }}>
@@ -253,7 +249,7 @@ export default function StudyNow() {
                   <Button
                     variant="outline"
                     color="red"
-                    leftSection={<IconAlertCircle size={18} />}
+                    leftSection={<IconReload size={18} />}
                     onClick={() => handleOptionClick(CardAnswer.Again)}
                   >
                     Again
@@ -269,15 +265,15 @@ export default function StudyNow() {
                   <Button
                     variant="outline"
                     color="teal"
-                    leftSection={<IconEye size={18} />}
+                    leftSection={<IconCircleCheckFilled size={18} />}
                     onClick={() => handleOptionClick(CardAnswer.Good)}
                   >
                     Good
                   </Button>
                   <Button
                     variant="outline"
-                    color="green"
-                    leftSection={<IconEye size={18} />}
+                    color="blue"
+                    leftSection={<IconBoltFilled size={18} />}
                     onClick={() => handleOptionClick(CardAnswer.Easy)}
                   >
                     Easy
