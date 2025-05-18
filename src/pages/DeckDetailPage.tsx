@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { FlashcardForm } from '../components/flashcard/FlashcardForm';
 import { invoke } from '@tauri-apps/api/core';
 import { SuccessApiResponse } from '../types/successApiResponse';
-import { htmlDecode } from './StudyNowPage';
 import { Deck as DeckType } from '../types/deck';
 
 interface CardStatus {
@@ -63,12 +62,7 @@ export default function DeckDetail() {
 
         if (res.success) {
           // Update flashcards state
-          const processedFlashcards = Array.isArray(res.data.cards)
-            ? res.data.cards.map((flashcard) => ({
-                ...flashcard,
-                back: htmlDecode(flashcard.back) || '',
-              }))
-            : [];
+          const processedFlashcards = Array.isArray(res.data.cards) ? res.data.cards.map((flashcard) => flashcard) : [];
           setFlashcards(processedFlashcards);
 
           // Update statuses state
