@@ -1,9 +1,42 @@
-import { Modal, TextInput, Button, Group, Select, Textarea, Box, Alert } from '@mantine/core';
+import {
+  Modal,
+  TextInput,
+  Button,
+  Group,
+  Select,
+  Textarea,
+  Box,
+  Alert,
+  Radio,
+  Tooltip,
+  Text,
+  Image,
+  SelectProps,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { CodeHighlight } from '@mantine/code-highlight';
-import { IconAlertCircle, IconEye, IconEyeOff } from '@tabler/icons-react';
+import {
+  IconAlertCircle,
+  IconEye,
+  IconEyeOff,
+  IconHelpCircle,
+  IconArrowsExchange,
+  IconCheck,
+} from '@tabler/icons-react';
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+
+import {
+  cppIcon,
+  goIcon,
+  javaIcon,
+  javascriptIcon,
+  phpIcon,
+  pythonIcon,
+  rustIcon,
+  swiftIcon,
+  typescriptIcon,
+} from '../../assets/language-icons'; // Adjust the import path as necessary
 
 interface FlashcardFormProps {
   opened: boolean;
@@ -11,12 +44,43 @@ interface FlashcardFormProps {
   deckId: string;
 }
 
+// Create a mapping of language values to their icon images
+const languageIcons: Record<string, string> = {
+  rust: rustIcon,
+  javascript: javascriptIcon,
+  python: pythonIcon,
+  java: javaIcon,
+  cpp: cppIcon,
+  go: goIcon,
+  typescript: typescriptIcon,
+  php: phpIcon,
+  swift: swiftIcon,
+};
+
+// Custom render function for Select options
+const renderLanguageOption: SelectProps['renderOption'] = ({ option, checked }) => (
+  <Group wrap="nowrap" gap="xs">
+    {option.value && languageIcons[option.value] ? (
+      <Image
+        src={languageIcons[option.value]}
+        alt={option.label}
+        width={20}
+        height={20}
+        style={{ objectFit: 'contain' }}
+      />
+    ) : null}
+    <Text size="sm">{option.label}</Text>
+    {checked && <IconCheck size={16} style={{ marginInlineStart: 'auto' }} />}
+  </Group>
+);
+
 export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
   const form = useForm({
     initialValues: {
       front: '',
       back: '',
-      language: 'javascript',
+      language: 'rust',
+      flashcardType: 'basic' as 'basic' | 'reverse',
     },
     validate: {
       front: (value: string) => (value.trim().length > 0 ? null : 'Title is required'),
@@ -26,14 +90,20 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
   const [isPreview, setIsPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (values: { front: string; back: string; language: string }) => {
+  const handleSubmit = async (values: {
+    front: string;
+    back: string;
+    language: string;
+    flashcardType: 'basic' | 'reverse';
+  }) => {
     try {
       // Call the Tauri command with all required parameters
       await invoke('create_flashcode', {
         front: values.front,
         back: values.back,
-        deckId: Number(deckId), // Assuming deckId is available in scope
+        deckId: Number(deckId),
         language: values.language,
+        isReverse: values.flashcardType === 'reverse',
       });
 
       form.reset();
@@ -48,9 +118,8 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
     const pastedText = event.clipboardData.getData('text');
 
     form.setValues({
-      front: form.values.front,
+      ...form.values,
       back: pastedText,
-      language: form.values.language,
     });
 
     setIsPreview(true);
@@ -103,10 +172,59 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
             { value: 'python', label: 'Python' },
             { value: 'java', label: 'Java' },
             { value: 'cpp', label: 'C++' },
+            { value: 'go', label: 'Go' },
+            { value: 'typescript', label: 'TypeScript' },
+            { value: 'php', label: 'PHP' },
+            { value: 'swift', label: 'Swift' },
           ]}
+          renderOption={renderLanguageOption}
           mb="md"
           {...form.getInputProps('language')}
         />
+
+        {/* Flashcard Type Section */}
+        <Box mb="md">
+          <Text mb="xs">Flashcard Type</Text>
+          <Radio.Group {...form.getInputProps('flashcardType')}>
+            <Group>
+              <Group gap="xs">
+                <Radio value="basic" label="Basic" id="basic" />
+                <Tooltip label="Shows front, asks for back" withArrow position="top">
+                  <IconHelpCircle size={16} style={{ cursor: 'pointer' }} />
+                </Tooltip>
+              </Group>
+
+              <Group gap="xs">
+                <Radio value="reverse" label="Reverse" id="reverse" />
+                <Tooltip
+                  label="Creates two cards - one shows front, asks back; another shows back, asks front"
+                  withArrow
+                  position="top"
+                  multiline
+                  w={220}
+                >
+                  <IconHelpCircle size={16} style={{ cursor: 'pointer' }} />
+                </Tooltip>
+              </Group>
+            </Group>
+          </Radio.Group>
+
+          {form.values.flashcardType === 'reverse' && (
+            <Group justify="center" mt="sm">
+              <Box px="md" py="xs" bg="gray.7" style={{ borderRadius: '4px' }}>
+                <Group gap="xs">
+                  <Text size="sm">Front</Text>
+                  <IconArrowsExchange size={16} color="var(--mantine-color-blue-filled)" />
+                  <Text size="sm">Back</Text>
+                  <Text size="sm" c="dimmed" ml="xs">
+                    (two cards will be created)
+                  </Text>
+                </Group>
+              </Box>
+            </Group>
+          )}
+        </Box>
+
         <Box mb="md" pos="relative">
           <TextInput label="Back (Code)" value="" disabled styles={{ input: { display: 'none' } }} my="sm" />
           <Button
