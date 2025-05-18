@@ -252,7 +252,7 @@ pub fn create_flashcode(
     back: &str,
     deck_id: i64,
     language: &str,
-    // is_reversed: bool,
+    is_reversed: bool,
 ) -> Result<SuccessResponse<Flashcode>, ErrorResponse> {
     let db_guard_result = state.db.lock();
     let back = format!("{}", escape(back));
@@ -261,7 +261,8 @@ pub fn create_flashcode(
         Ok(db_guard) => {
             let db = &*db_guard;
 
-            let result = Flashcode::create(db, front, back.as_str(), deck_id, language);
+            let result =
+                Flashcode::create(db, front, back.as_str(), deck_id, language, is_reversed);
 
             match result {
                 Ok(flash_code) => Ok(SuccessResponse::new(

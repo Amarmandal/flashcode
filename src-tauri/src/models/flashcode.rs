@@ -1,10 +1,13 @@
+use chrono::{DateTime, Utc};
 use std::time::SystemTime;
-use chrono::{Utc, DateTime};
 
 use rusqlite::{params, Error};
 use serde::{Deserialize, Serialize};
 
-use crate::{database::DatabaseConnection, sm2::{calculate_sm2, Answer}};
+use crate::{
+    database::DatabaseConnection,
+    sm2::{calculate_sm2, Answer},
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Flashcode {
@@ -18,6 +21,7 @@ pub struct Flashcode {
     pub interval: u32,
     pub created_at: String,
     pub due_date: u64,
+    pub is_reversed: bool,
 }
 
 impl Flashcode {
@@ -41,6 +45,7 @@ impl Flashcode {
             interval: 1,
             created_at,
             due_date,
+            is_reversed: false,
         }
     }
 
@@ -50,6 +55,7 @@ impl Flashcode {
         back: &str,
         deck_id: i64,
         language: &str,
+        is_reversed: bool,
     ) -> Result<Self, Error> {
         let conn = db.get_connection();
         let new_flashcode = Flashcode {
@@ -62,7 +68,19 @@ impl Flashcode {
         };
 
         conn.execute(
-            "INSERT INTO flashcodes (front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            "INSERT INTO flashcodes (
+                front,
+                back, 
+                deck_id,
+                language,
+                ease_factor,
+                repetitions,
+                interval,
+                created_at,
+                due_date
+            ) VALUES (
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9
+            )",
             params![
                 new_flashcode.front,
                 new_flashcode.back,
@@ -71,10 +89,41 @@ impl Flashcode {
                 new_flashcode.ease_factor,
                 new_flashcode.repetitions,
                 new_flashcode.interval,
-                new_flashcode.created_at, 
+                new_flashcode.created_at,
                 new_flashcode.due_date,
             ],
         )?;
+
+        if is_reversed {
+            conn.execute(
+                "INSERT INTO flashcodes (
+                    front,
+                    back, 
+                    deck_id,
+                    language,
+                    ease_factor,
+                    repetitions,
+                    interval,
+                    created_at,
+                    due_date,
+                    is_reversed
+                ) VALUES (
+                    ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10
+                )",
+                params![
+                    new_flashcode.back,
+                    new_flashcode.front,
+                    new_flashcode.deck_id,
+                    new_flashcode.language,
+                    new_flashcode.ease_factor,
+                    new_flashcode.repetitions,
+                    new_flashcode.interval,
+                    new_flashcode.created_at,
+                    new_flashcode.due_date,
+                    is_reversed
+                ],
+            )?;
+        }
 
         Ok(new_flashcode)
     }
@@ -82,7 +131,19 @@ impl Flashcode {
     pub fn get(db: &DatabaseConnection, id: i64) -> Result<Self, Error> {
         let conn = db.get_connection();
         conn.query_row(
-            "SELECT id, front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date FROM flashcodes WHERE id = ?1",
+            "SELECT 
+                id, 
+                front, 
+                back, 
+                deck_id, 
+                language, 
+                ease_factor, 
+                repetitions, 
+                interval, 
+                created_at, 
+                due_date, 
+                is_reversed 
+            FROM flashcodes WHERE id = ?1",
             params![id],
             |row| {
                 Ok(Flashcode {
@@ -92,10 +153,11 @@ impl Flashcode {
                     deck_id: row.get("deck_id")?,
                     language: row.get("language")?,
                     ease_factor: row.get("ease_factor")?,
-                    repetitions: row.get("repetitions")?,            // Default value
-                    interval: row.get("interval")?,               // Default value
-                    created_at: row.get("created_at")?, // Placeholder value
-                    due_date: row.get("due_date")?, // Placeholder value
+                    repetitions: row.get("repetitions")?,
+                    interval: row.get("interval")?,
+                    created_at: row.get("created_at")?,
+                    due_date: row.get("due_date")?,
+                    is_reversed: row.get("is_reversed")?,
                 })
             },
         )
@@ -105,7 +167,19 @@ impl Flashcode {
         let conn = db.get_connection();
 
         let mut stmt = conn.prepare(
-            "SELECT id, front, back, deck_id, language, ease_factor, repetitions, interval, created_at, due_date FROM flashcodes WHERE deck_id = ?1",
+            "SELECT 
+                id, 
+                front, 
+                back, 
+                deck_id, 
+                language, 
+                ease_factor, 
+                repetitions, 
+                interval, 
+                created_at, 
+                due_date, 
+                is_reversed 
+            FROM flashcodes WHERE deck_id = ?1",
         )?;
 
         let flashcodes = stmt.query_map(params![deck_id], |row| {
@@ -120,6 +194,7 @@ impl Flashcode {
                 interval: row.get("interval")?,
                 created_at: row.get("created_at")?,
                 due_date: row.get("due_date")?,
+                is_reversed: row.get("is_reversed")?,
             })
         })?;
 
@@ -138,12 +213,12 @@ impl Flashcode {
     ) -> Result<(Vec<Flashcode>, usize, usize, usize), rusqlite::Error> {
         // Step 1: Retrieve all cards from the database filtered by deck_id
         let cards = Flashcode::get_by_deck_id(db, deck_id)?;
-        
+
         // Step 2: Build queues using the queue_builder method
         let queues = crate::build_queues(cards);
-        
+
         let (new_count, learning_count, review_count) = queues.counts();
-        
+
         // Step 3: Merge the queues
         let merged_cards = crate::merge_queues(queues);
 
@@ -162,11 +237,22 @@ impl Flashcode {
         Ok("Flashcode has been updated successfully".to_string())
     }
 
-    pub fn update_based_on_answer(db: &DatabaseConnection, id: &str,  answer: Answer) -> Result<String, Error> {
+    pub fn update_based_on_answer(
+        db: &DatabaseConnection,
+        id: &str,
+        answer: Answer,
+    ) -> Result<String, Error> {
         let conn = db.get_connection();
 
         let flashcode = conn.query_row(
-            "SELECT id, ease_factor, repetitions, interval, due_date FROM flashcodes WHERE id = ?1",
+            "SELECT 
+                id, 
+                ease_factor, 
+                repetitions, 
+                interval, 
+                due_date, 
+                is_reversed
+            FROM flashcodes WHERE id = ?1",
             params![id],
             |row| {
                 Ok(Flashcode {
@@ -175,6 +261,7 @@ impl Flashcode {
                     repetitions: row.get("repetitions")?,
                     interval: row.get("interval")?,
                     due_date: row.get("due_date")?,
+                    is_reversed: row.get("is_reversed")?,
                     ..Flashcode::default()
                 })
             },
@@ -198,16 +285,26 @@ impl Flashcode {
                 due += result.interval as u64;
 
                 conn.execute(
-                    "UPDATE flashcodes SET ease_factor = printf('%.4f', ?1), repetitions = ?2, interval = ?3, due_date = ?4 WHERE id = ?5",
-                    params![result.ease_factor, result.repetitions, result.interval, due, id],
+                    "UPDATE flashcodes SET 
+                        ease_factor = ?1, 
+                        repetitions = ?2, 
+                        interval = ?3, 
+                        due_date = ?4 
+                    WHERE id = ?5",
+                    params![
+                        result.ease_factor,
+                        result.repetitions,
+                        result.interval,
+                        due,
+                        id
+                    ],
                 )?;
-            },
+            }
             Err(e) => {
                 eprintln!("Error retrieving flashcode: {}", e);
                 return Err(Error::QueryReturnedNoRows);
             }
         };
-
 
         Ok("Flashcode has been updated successfully".to_string())
     }
@@ -220,8 +317,7 @@ impl Flashcode {
         Ok("Flashcode has been deleted successfully".to_string())
     }
 
-
-    // function to get flashcard counts based 
+    // function to get flashcard counts based
     pub fn get_flashcard_count_by_category(
         db: &DatabaseConnection,
         deck_id: i64,
@@ -250,7 +346,6 @@ impl Flashcode {
             params![deck_id, today],
             |row| row.get(0),
         )?;
-
 
         Ok((new_count, learning_count, review_count))
     }
