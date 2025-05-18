@@ -59,6 +59,8 @@ export default function DeckDetail() {
           SuccessApiResponse<{ cards: Flashcard[]; new: number; learning: number; to_review: number }>
         >('get_queues_for_today', { deckId: Number(deckId) });
 
+        console.log('Flashcards response:', res);
+
         if (res.success) {
           // Update flashcards state
           const processedFlashcards = Array.isArray(res.data.cards)

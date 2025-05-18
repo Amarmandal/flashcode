@@ -103,7 +103,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
         back: values.back,
         deckId: Number(deckId),
         language: values.language,
-        isReverse: values.flashcardType === 'reverse',
+        isReversed: values.flashcardType === 'reverse',
       });
 
       form.reset();
