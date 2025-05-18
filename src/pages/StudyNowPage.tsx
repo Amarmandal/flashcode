@@ -185,49 +185,101 @@ export default function StudyNow() {
     );
   }
 
+  // Progress bar and header
   return (
     <Container size="md" py="xl">
       <Stack>
-        <Title order={2}>
-          Studying Deck #{deckId} - Card {currentCardState.index + 1} of {flashcards.length}
-        </Title>
-        <Card withBorder shadow="sm" radius="md" p="lg">
-          <Stack align="center">
-            {currentCardState.card.is_reversed ? (
+        <Group justify="space-between" align="center" mb="xs">
+          <Title order={2}>
+            Studying Deck #{deckId} - Card {currentCardState.index + 1} of {flashcards.length}
+          </Title>
+          <Card radius="xl" px="md" py={4} bg={currentCardState.card?.is_reversed ? 'blue.1' : 'gray.1'} withBorder>
+            <Group gap={4}>
+              {currentCardState.card?.is_reversed && <IconEye size={16} color="#228be6" />}
+              <Text size="sm" fw={500} c={currentCardState.card?.is_reversed ? 'blue.7' : 'gray.7'}>
+                {currentCardState.card?.is_reversed ? 'Reversed' : 'Normal'}
+              </Text>
+            </Group>
+          </Card>
+        </Group>
+        {/* Progress bar */}
+        <div style={{ width: '100%', background: '#e9ecef', borderRadius: 8, height: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              width: `${((currentCardState.index + 1) / (flashcards.length || 1)) * 100}%`,
+              background: '#228be6',
+              height: 10,
+              borderRadius: 8,
+              transition: 'width 0.3s',
+            }}
+          />
+        </div>
+        <Card withBorder shadow="sm" radius="md" p="lg" bg="gray.0">
+          <Stack align="center" gap="xs">
+            {/* FRONT label */}
+            <Text size="xs" fw={700} c="gray.6" style={{ alignSelf: 'flex-start' }}>
+              FRONT
+            </Text>
+            {currentCardState.card?.is_reversed ? (
               <CodeBlockWithHeader
                 code={htmlDecode(currentCardState.card.front) || ''}
                 language={currentCardState.card.language}
               />
             ) : (
-              <Text size="32px" fw={700} lh={1.4} ta="center">
-                {currentCardState.card.front}
+              <Text size="xl" fw={700} lh={1.4} ta="center" mb="md">
+                {currentCardState.card?.front}
               </Text>
             )}
-            <Divider my="xs" styles={{ root: { width: '100%' } }} />
+            <Divider my="xs" style={{ width: '100%' }} />
+            {/* Show Answer Button or BACK section */}
             {showAnswer ? (
               <>
-                {!currentCardState.card.is_reversed ? (
+                {/* BACK label */}
+                <Text size="xs" fw={700} c="gray.6" style={{ alignSelf: 'flex-start' }}>
+                  BACK
+                </Text>
+                {!currentCardState.card?.is_reversed ? (
                   <CodeBlockWithHeader
-                    code={htmlDecode(currentCardState.card.back) || ''}
-                    language={currentCardState.card.language}
+                    code={htmlDecode(currentCardState.card?.back || '') || ''}
+                    language={currentCardState.card?.language}
                   />
                 ) : (
-                  <Text size="32px" fw={700} lh={1.4} ta="center">
-                    {currentCardState.card.back}
+                  <Text size="xl" fw={700} lh={1.4} ta="center" mb="md">
+                    {currentCardState.card?.back}
                   </Text>
                 )}
-
-                <Group justify="center" mt="md">
-                  <Button variant="outline" color="red" onClick={() => handleOptionClick(CardAnswer.Again)}>
+                {/* Feedback buttons with icons */}
+                <Group justify="center" mt="md" gap="sm">
+                  <Button
+                    variant="outline"
+                    color="red"
+                    leftSection={<IconAlertCircle size={18} />}
+                    onClick={() => handleOptionClick(CardAnswer.Again)}
+                  >
                     Again
                   </Button>
-                  <Button variant="outline" color="orange" onClick={() => handleOptionClick(CardAnswer.Hard)}>
+                  <Button
+                    variant="outline"
+                    color="orange"
+                    leftSection={<IconEye size={18} />}
+                    onClick={() => handleOptionClick(CardAnswer.Hard)}
+                  >
                     Hard
                   </Button>
-                  <Button variant="outline" color="teal" onClick={() => handleOptionClick(CardAnswer.Good)}>
+                  <Button
+                    variant="outline"
+                    color="teal"
+                    leftSection={<IconEye size={18} />}
+                    onClick={() => handleOptionClick(CardAnswer.Good)}
+                  >
                     Good
                   </Button>
-                  <Button variant="outline" color="green" onClick={() => handleOptionClick(CardAnswer.Easy)}>
+                  <Button
+                    variant="outline"
+                    color="green"
+                    leftSection={<IconEye size={18} />}
+                    onClick={() => handleOptionClick(CardAnswer.Easy)}
+                  >
                     Easy
                   </Button>
                 </Group>
@@ -239,6 +291,7 @@ export default function StudyNow() {
                 color="teal"
                 leftSection={<IconEye size={20} />}
                 onClick={handleShowAnswer}
+                mt="md"
               >
                 Show Answer
               </Button>
