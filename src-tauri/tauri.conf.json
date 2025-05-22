@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage", "msi", "app", "dmg", "updater"],
+    "targets": ["deb", "appimage", "msi", "app", "dmg"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -68,17 +68,18 @@
       },
       "wix": null
     },
-    "deb": {
-      "depends": [
-        "libwebkit2gtk-4.0-37",
-        "libgtk-3-0",
-        "librsvg2-common",
-        "libappindicator3-1"
-      ],
-      "files": {}
-    },
-    "appimage": {
-      "bundleMediaFramework": false
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.0-37",
+          "libgtk-3-0",
+          "librsvg2-common",
+          "libappindicator3-1"
+        ]
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
     }
   }
 }
