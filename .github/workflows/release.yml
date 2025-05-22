@@ -23,6 +23,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: List available code signing identities
+        if: matrix.platform == 'macos-latest'
+        run: security find-identity -v -p codesigning
+
+      - name: Check signing identity match
+        if: matrix.platform == 'macos-latest'
+        run: |
+          EXPECTED_IDENTITY="Apple Development: Amar Mandal (9882Y6QT8F)"
+          security find-identity -v -p codesigning | grep "$EXPECTED_IDENTITY"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
