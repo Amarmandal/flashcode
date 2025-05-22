@@ -52,7 +52,7 @@
       "exceptionDomain": null,
       "frameworks": [],
       "minimumSystemVersion": "10.13",
-      "signingIdentity": "AB31F4929F8775CB2032D4AD024C345345D4B6AF"
+      "signingIdentity": "D3743110E374992E2FEF006F7AB662B4D494B875"
     }, 
     "windows": {
       "allowDowngrades": true,
