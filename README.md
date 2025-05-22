@@ -138,8 +138,4 @@ If you're planning a larger change, it's a good idea to open an issue first to d
 
 ## License
 
-This project is currently unlicensed. 
-
-It is recommended to choose an open-source license if you intend for others to use, modify, or contribute to your project. A common choice is the [MIT License](https://opensource.org/licenses/MIT), but please choose one that best suits your needs.
-
-Once you choose a license, you can add a `LICENSE` file to the root of your project and update this section to reflect your choice (e.g., "This project is licensed under the MIT License - see the LICENSE file for details.").
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
