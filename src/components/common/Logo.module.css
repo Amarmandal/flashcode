@@ -1,7 +1,7 @@
 .logoText {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  color: #f3f4f6;
+  color: var(--mantine-color-text);
   text-align: center;
   background: linear-gradient(90deg, #6366f1, #10b981);
   -webkit-background-clip: text;

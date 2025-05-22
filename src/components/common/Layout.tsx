@@ -5,6 +5,7 @@ import classes from './Layout.module.css';
 import AppLogo from './Logo';
 import { IconCards, IconHeart } from '@tabler/icons-react';
 import { SearchBar } from '../search/SearchBar';
+import { ThemeToggle } from './ThemeToggle'; // Import the new component
 
 const Layout = () => {
   const [opened, { toggle }] = useDisclosure();
@@ -26,7 +27,11 @@ const Layout = () => {
 
           <AppLogo size="medium" />
 
-          <SearchBar />
+          {/* Using a Flex to group SearchBar and ThemeToggle for better layout control */}
+          <Flex align="center" gap="md">
+            <SearchBar />
+            <ThemeToggle />
+          </Flex>
         </Flex>
       </AppShell.Header>
 
