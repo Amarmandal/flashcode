@@ -1,16 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App'; // This is the original App component
-import { MantineProvider } from '@mantine/core';
+import App from './App';
+import { createTheme, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { useTheme } from './hooks/useTheme'; // Import the hook
+import { ThemeProvider, useTheme } from './hooks/useTheme';
 
-// New wrapper component
+// Wrapper component using the theme context
 function AppWrapper() {
-  const { colorScheme } = useTheme(); // Get the current theme
+  const { colorScheme } = useTheme();
+
+  const theme = createTheme({});
 
   return (
-    <MantineProvider theme={{ colorScheme }}>
+    <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
       <App />
     </MantineProvider>
   );
@@ -18,6 +20,8 @@ function AppWrapper() {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <AppWrapper /> {/* Render the wrapper */}
+    <ThemeProvider>
+      <AppWrapper />
+    </ThemeProvider>
   </React.StrictMode>
 );
