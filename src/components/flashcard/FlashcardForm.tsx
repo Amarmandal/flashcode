@@ -211,7 +211,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
 
           {form.values.flashcardType === 'reverse' && (
             <Group justify="center" mt="sm">
-              <Box px="md" py="xs" bg="gray.7" style={{ borderRadius: '4px' }}>
+              <Box px="md" py="xs" bg="var(--mantine-color-gray-light)" style={{ borderRadius: '4px' }}>
                 <Group gap="xs">
                   <Text size="sm">Front</Text>
                   <IconArrowsExchange size={16} color="var(--mantine-color-blue-filled)" />
