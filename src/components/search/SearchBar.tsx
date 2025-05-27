@@ -91,7 +91,6 @@ export function SearchBar() {
         <Paper
           shadow="md"
           p="md"
-          bg="dark.6"
           styles={{
             root: {
               position: 'absolute',
@@ -110,7 +109,6 @@ export function SearchBar() {
                 key={`${result.type}-${result.id}`}
                 p="sm"
                 withBorder
-                bg="dark.5"
                 style={{ cursor: 'pointer' }}
                 onClick={() => handleResultClick(result)}
               >
@@ -138,7 +136,6 @@ export function SearchBar() {
         <Paper
           shadow="md"
           p="md"
-          bg="dark.6"
           styles={{
             root: {
               position: 'absolute',
