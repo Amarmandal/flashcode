@@ -48,7 +48,7 @@ impl SearchResult {
         let deck_rows = stmt
             .query_map([format!("%{}%", keyword)], |row| {
                 Ok(SearchResult::new(
-                    row.get::<_, String>(0)?,
+                    row.get::<_, i64>(0)?.to_string(),
                     row.get::<_, String>(1)?,
                     SearchType::Deck,
                     0, // Decks don't have a card count in this context
@@ -63,12 +63,13 @@ impl SearchResult {
             }
         }
 
-        let card_query = "SELECT id, front, back FROM cards WHERE front LIKE ?1 OR back LIKE ?1";
+        let card_query =
+            "SELECT id, front, back FROM flashcodes WHERE (front LIKE ?1 OR back LIKE ?1) AND is_reversed = 0";
         let mut stmt = conn.prepare(card_query).map_err(|e| e.to_string())?;
         let card_rows = stmt
             .query_map([format!("%{}%", keyword)], |row| {
                 Ok(SearchResult::new(
-                    row.get::<_, String>(0)?,
+                    row.get::<_, i64>(0)?.to_string(),
                     row.get::<_, String>(1)?,
                     SearchType::Card,
                     0, // Card count is not applicable here, but can be set if needed
