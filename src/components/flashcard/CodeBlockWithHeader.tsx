@@ -30,14 +30,14 @@ export function CodeBlockWithHeader({ code, language }: CodeBlockWithHeaderProps
         justify="space-between"
         px="sm"
         py="xs"
-        bg="gray.8"
+        bg="var(--mantine-color-gray-light)"
         style={{
           borderTopLeftRadius: '4px',
           borderTopRightRadius: '4px',
           borderBottom: 'none',
         }}
       >
-        <Text size="sm" c="gray.3">
+        <Text size="sm" c="dimmed">
           {language}
         </Text>
         <FontSizeControls
