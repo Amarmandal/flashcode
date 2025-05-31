@@ -2,45 +2,50 @@ import { useState } from 'react';
 import { Input, Stack, Paper, Text, Group, ActionIcon } from '@mantine/core';
 import { IconSearch, IconX, IconCards } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { invoke } from '@tauri-apps/api/core';
 
 interface SearchResult {
   id: string;
   title: string;
-  type: string;
-  cardCount?: number;
+  entityType: 'Card' | 'Deck';
+  cardCount: number;
 }
 
 export function SearchBar() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleSearch = async (searchQuery: string) => {
-    const mockResults: SearchResult[] = [
-      {
-        id: '1',
-        title: 'JavaScript Basics',
-        type: 'deck',
-        cardCount: 24,
-      },
-      {
-        id: '2',
-        title: 'React Hooks',
-        type: 'deck',
-        cardCount: 12,
-      },
-      {
-        id: '3',
-        title: 'What is a closure?',
-        type: 'flashcard',
-      },
-    ].filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    setResults(mockResults);
+    if (!searchQuery) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+    try {
+      const response = await invoke<{
+        message: string;
+        data: Array<SearchResult>;
+      }>('search', { keyword: searchQuery });
+      const mappedResults: SearchResult[] = (response.data || []).map((item) => {
+        return {
+          id: String(item.id),
+          title: item.title,
+          entityType: item.entityType === 'Deck' ? 'Deck' : 'Card',
+          cardCount: typeof item.cardCount === 'number' ? item.cardCount : 0,
+        };
+      });
+      setResults(mappedResults);
+      setError(null);
+    } catch (err) {
+      setResults([]);
+      setError('Failed to search.');
+    }
   };
 
   const handleResultClick = (result: SearchResult) => {
-    if (result.type === 'deck') {
+    if (result.entityType === 'Deck') {
       navigate(`/deck/${result.id}`);
     } else {
       navigate(`/flashcard/${result.id}`);
@@ -70,6 +75,7 @@ export function SearchBar() {
             onClick={() => {
               setQuery('');
               setResults([]);
+              setError(null);
             }}
             styles={{
               root: {
@@ -87,7 +93,25 @@ export function SearchBar() {
         )}
       </Group>
 
-      {query && results.length > 0 && (
+      {query && error && (
+        <Paper
+          shadow="md"
+          p="md"
+          styles={{
+            root: {
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 100,
+            },
+          }}
+        >
+          <Text c="red">{error}</Text>
+        </Paper>
+      )}
+
+      {query && !error && results.length > 0 && (
         <Paper
           shadow="md"
           p="md"
@@ -106,7 +130,7 @@ export function SearchBar() {
           <Stack gap="xs">
             {results.map((result) => (
               <Paper
-                key={`${result.type}-${result.id}`}
+                key={`${result.entityType}-${result.id}`}
                 p="sm"
                 withBorder
                 style={{ cursor: 'pointer' }}
@@ -114,7 +138,7 @@ export function SearchBar() {
               >
                 <Group justify="space-between">
                   <Text fw={500}>{result.title}</Text>
-                  {result.type === 'deck' && (
+                  {result.entityType === 'Deck' && (
                     <Group gap={4}>
                       <IconCards size={14} />
                       <Text size="sm" c="dimmed">
@@ -124,7 +148,7 @@ export function SearchBar() {
                   )}
                 </Group>
                 <Text size="xs" c="dimmed" mt={4}>
-                  {result.type === 'deck' ? 'Deck' : 'Flashcard'}
+                  {result.entityType === 'Deck' ? 'Deck' : 'Flashcard'}
                 </Text>
               </Paper>
             ))}
@@ -132,7 +156,7 @@ export function SearchBar() {
         </Paper>
       )}
 
-      {query && results.length === 0 && (
+      {query && !error && results.length === 0 && (
         <Paper
           shadow="md"
           p="md"

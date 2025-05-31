@@ -2,14 +2,12 @@ use std::sync::Mutex;
 use tauri::State;
 use v_htmlescape::escape;
 
-use crate::responses::{DeckWithCount, SuccessResponseWithCount};
-
-use super::{
-    database::DatabaseConnection,
-    models::{Deck, DeckQueryParams, Flashcode},
-    responses::{ErrorResponse, SuccessResponse, TodayQueuesResponse},
-    sm2::Answer,
+use crate::database::DatabaseConnection;
+use crate::models::{Deck, DeckQueryParams, Flashcode, SearchResult};
+use crate::responses::{
+    DeckWithCount, ErrorResponse, SuccessResponse, SuccessResponseWithCount, TodayQueuesResponse,
 };
+use crate::sm2::Answer;
 
 pub struct AppState {
     pub db: Mutex<DatabaseConnection>,
@@ -463,6 +461,34 @@ pub fn delete_flashcode(
                         "Failed to delete flashcard with id {}.",
                         id
                     )))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn search(
+    state: State<'_, AppState>,
+    keyword: String,
+) -> Result<SuccessResponse<Vec<super::models::SearchResult>>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match SearchResult::search(db, keyword) {
+                Ok(results) => Ok(SuccessResponse::new(
+                    "Search results retrieved successfully".into(),
+                    results,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to search: {:?}", e);
+                    Err(ErrorResponse::new("Failed to perform search.".into()))
                 }
             }
         }
