@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input, Stack, Paper, Text, Group, ActionIcon } from '@mantine/core';
 import { IconSearch, IconX, IconCards } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
+import { SuccessApiResponse } from '../../types/successApiResponse';
 
 interface SearchResult {
   id: string;
@@ -15,19 +16,21 @@ export function SearchBar() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSearch = async (searchQuery: string) => {
-    if (!searchQuery) {
+  const performSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
       setResults([]);
       setError(null);
+      setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
     try {
-      const response = await invoke<{
-        message: string;
-        data: Array<SearchResult>;
-      }>('search', { keyword: searchQuery });
+      const response = await invoke<SuccessApiResponse<SearchResult[]>>('search', { keyword: searchQuery });
+
       const mappedResults: SearchResult[] = (response.data || []).map((item) => {
         return {
           id: String(item.id),
@@ -41,7 +44,31 @@ export function SearchBar() {
     } catch (err) {
       setResults([]);
       setError('Failed to search.');
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
+
+  // Debounce the search function
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      performSearch(query);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [query, performSearch]);
+
+  const handleSearch = async (searchQuery: string) => {
+    // This function is now just for updating the query state
+    // The actual search is handled by the useEffect with debouncing
+    setQuery(searchQuery);
   };
 
   const handleResultClick = (result: SearchResult) => {
@@ -64,10 +91,10 @@ export function SearchBar() {
           w={{ base: '100%', sm: 400, md: 600 }}
           value={query}
           onChange={(e) => {
-            setQuery(e.currentTarget.value);
             handleSearch(e.currentTarget.value);
           }}
           leftSection={<IconSearch size={16} />}
+          disabled={isLoading}
         />
         {query && (
           <ActionIcon
@@ -76,6 +103,7 @@ export function SearchBar() {
               setQuery('');
               setResults([]);
               setError(null);
+              setIsLoading(false);
             }}
             styles={{
               root: {
