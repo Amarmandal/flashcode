@@ -962,6 +962,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "flashcodes"
+version = "0.1.2"
+dependencies = [
+ "chrono",
+ "refinery",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "v_htmlescape",
+]
+
+[[package]]
 name = "flate2"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3664,22 +3680,6 @@ dependencies = [
  "webview2-com",
  "window-vibrancy",
  "windows 0.61.1",
-]
-
-[[package]]
-name = "tauri-app"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "refinery",
- "rusqlite",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "v_htmlescape",
 ]
 
 [[package]]
