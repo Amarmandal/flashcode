@@ -44,14 +44,21 @@ impl SearchResult {
         // interlieved the result of deck and flashcard to the SearchResult type and return vector response
         let mut results = Vec::new();
         let deck_query = "SELECT id, name FROM decks WHERE name LIKE ?1";
+        let card_count_query =
+            "SELECT COUNT(*) FROM flashcodes WHERE deck_id = ?1 AND is_reversed = 0";
         let mut stmt = conn.prepare(deck_query).map_err(|e| e.to_string())?;
         let deck_rows = stmt
             .query_map([format!("%{}%", keyword)], |row| {
+                let deck_id: i64 = row.get(0)?;
+                let card_count: i32 = conn
+                    .query_row(card_count_query, [deck_id], |r| r.get(0))
+                    .unwrap_or(0); // Default to 0 if no cards found
+
                 Ok(SearchResult::new(
-                    row.get::<_, i64>(0)?.to_string(),
+                    deck_id.to_string(),
                     row.get::<_, String>(1)?,
                     SearchType::Deck,
-                    0, // Decks don't have a card count in this context
+                    card_count, // Decks don't have a card count in this context
                 ))
             })
             .map_err(|e| e.to_string())?;
