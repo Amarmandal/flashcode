@@ -3,7 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import classes from './Layout.module.css';
 import AppLogo from './Logo';
-import { IconCards, IconHeart, IconSearch } from '@tabler/icons-react';
+import { IconCards, IconHeart, IconDatabaseSearch } from '@tabler/icons-react';
 import { SearchBar } from '../search/SearchBar';
 import { ThemeToggle } from './ThemeToggle'; // Import the new component
 
@@ -55,7 +55,7 @@ const Layout = () => {
         <NavLink
           className={classes.navLabel}
           label="Browse"
-          leftSection={<IconSearch size={18} />}
+          leftSection={<IconDatabaseSearch size={18} />}
           component={Link}
           to="/browse"
           active={location.pathname === '/browse'}

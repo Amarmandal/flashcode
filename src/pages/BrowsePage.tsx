@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Container, Grid, Card, Text, Stack, Title, Group, ActionIcon, Alert, Flex } from '@mantine/core';
+import { Container, Grid, Card, Text, Stack, Title, Group, ActionIcon, Alert, Flex, Image, Chip } from '@mantine/core';
 import { IconCards, IconPencil, IconTrash, IconAlertCircle, IconSearch } from '@tabler/icons-react';
 import { invoke } from '@tauri-apps/api/core';
-import { Deck as DeckType } from '../types/deck';
+import { Deck as DeckType, DeckWithCount } from '../types/deck';
 import { SuccessApiResponse } from '../types/successApiResponse';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 import { FlashcardEditModal } from '../components/flashcard/FlashcardEditModal';
+import {
+  cppIcon,
+  goIcon,
+  javaIcon,
+  javascriptIcon,
+  phpIcon,
+  pythonIcon,
+  rustIcon,
+  swiftIcon,
+  typescriptIcon,
+} from '../assets/language-icons';
 
 interface Flashcard {
   id: number;
@@ -20,6 +31,19 @@ interface Flashcard {
   due_date: number;
   is_reversed: boolean;
 }
+
+// Create a mapping of language values to their icon images
+const languageIcons: Record<string, string> = {
+  rust: rustIcon,
+  javascript: javascriptIcon,
+  python: pythonIcon,
+  java: javaIcon,
+  cpp: cppIcon,
+  go: goIcon,
+  typescript: typescriptIcon,
+  php: phpIcon,
+  swift: swiftIcon,
+};
 
 export default function BrowsePage() {
   const [decks, setDecks] = useState<DeckType[]>([]);
@@ -36,12 +60,15 @@ export default function BrowsePage() {
   useEffect(() => {
     const fetchDecks = async () => {
       try {
-        const res = await invoke<SuccessApiResponse<any[]>>('get_all_decks', {
+        const res = await invoke<SuccessApiResponse<DeckWithCount[]>>('get_all_decks', {
           queryParams: { page: 1, limit: 100 },
         });
 
         if (res.success) {
-          const deckList = res.data.map((deckWithCount: any) => deckWithCount.deck);
+          const deckList = res.data.map((deckWithCount: DeckWithCount) => ({
+            ...deckWithCount.deck,
+            id: deckWithCount.deck.id.toString(), // Convert number to string
+          }));
           setDecks(deckList);
         }
       } catch (error) {
@@ -128,9 +155,9 @@ export default function BrowsePage() {
 
   const getStatusDisplay = (flashcard: Flashcard) => {
     if (flashcard.repetitions === 0) {
-      return { text: 'New', color: 'blue' };
+      return { text: 'New', color: 'cyan' };
     } else if (flashcard.repetitions === 1) {
-      return { text: 'Learning', color: 'orange' };
+      return { text: 'Learning', color: 'teal' };
     } else {
       return { text: 'Review', color: 'green' };
     }
@@ -253,27 +280,13 @@ export default function BrowsePage() {
                                 <Text fw={600} lineClamp={1}>
                                   {flashcard.front}
                                 </Text>
-                                <Card
-                                  p="xs"
-                                  radius="sm"
-                                  bg={`${status.color}.1`}
-                                  style={{ border: `1px solid var(--mantine-color-${status.color}-3)` }}
-                                >
-                                  <Text size="xs" fw={500} c={`${status.color}.7`}>
-                                    {status.text}
-                                  </Text>
-                                </Card>
+                                <Chip checked={true} size="xs" color={status.color} variant="light">
+                                  {status.text}
+                                </Chip>
                                 {flashcard.is_reversed && (
-                                  <Card
-                                    p="xs"
-                                    radius="sm"
-                                    bg="indigo.1"
-                                    style={{ border: '1px solid var(--mantine-color-indigo-3)' }}
-                                  >
-                                    <Text size="xs" fw={500} c="indigo.7">
-                                      Reversed
-                                    </Text>
-                                  </Card>
+                                  <Chip checked={true} size="xs" color="orange" variant="light">
+                                    Reversed
+                                  </Chip>
                                 )}
                               </Group>
                               <Text size="sm" c="dimmed" lineClamp={2}>
@@ -281,9 +294,18 @@ export default function BrowsePage() {
                                   ? `${flashcard.back.substring(0, 100)}...`
                                   : flashcard.back}
                               </Text>
-                              <Group gap="xs">
+                              <Group gap="xs" align="center">
+                                {languageIcons[flashcard.language] ? (
+                                  <Image
+                                    src={languageIcons[flashcard.language]}
+                                    alt={flashcard.language}
+                                    width={14}
+                                    height={14}
+                                    style={{ objectFit: 'contain' }}
+                                  />
+                                ) : null}
                                 <Text size="xs" c="dimmed">
-                                  Language: {flashcard.language}
+                                  {flashcard.language}
                                 </Text>
                                 <Text size="xs" c="dimmed">
                                   •
