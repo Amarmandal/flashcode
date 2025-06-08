@@ -20,13 +20,13 @@ use queues::{build_queues, merge_queues};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_handle = app.handle();
             let db = DatabaseConnection::new(&app_handle).unwrap();
             app.manage(AppState { db: Mutex::new(db) });
             Ok(())
         })
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
