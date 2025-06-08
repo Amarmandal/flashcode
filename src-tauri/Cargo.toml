@@ -28,3 +28,6 @@ tauri-plugin-fs = "2.2.1"
 chrono = "0.4"
 refinery = { version = "0.8", features = ["rusqlite-bundled"] }
 
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+
