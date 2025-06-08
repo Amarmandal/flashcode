@@ -20,6 +20,7 @@ use queues::{build_queues, merge_queues};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_handle = app.handle();
             let db = DatabaseConnection::new(&app_handle).unwrap();

@@ -25,6 +25,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": [
       "deb",
       "appimage",
@@ -86,6 +87,13 @@
       "appimage": {
         "bundleMediaFramework": false
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://api.github.com/repos/Amarmandal/flashcode/releases/latest"
+      ]
     }
   }
 }
