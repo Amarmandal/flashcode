@@ -26,7 +26,10 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const tagName = context.ref.replace('refs/tags/', '');
+            const ref = context.ref;
+            const prefix = 'refs/tags/';
+            const tagName = ref.startsWith(prefix) ? ref.slice(prefix.length) : ref;
+            
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -34,9 +37,9 @@ jobs:
               name: `Flash Code ${tagName}`,
               body: 'Take a look at the assets to download and install this app.',
               draft: true,
-              prerelease: false
-            })
-            return data.id
+              prerelease: false,
+            });
+            return data.id;
 
   build-tauri:
     needs: create-release
