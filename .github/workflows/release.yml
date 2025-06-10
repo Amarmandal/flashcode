@@ -147,8 +147,8 @@ jobs:
         with:
           ref: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate updater JSON
+          
+      - name: Download and copy latest.json
         uses: actions/github-script@v6
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
@@ -156,71 +156,35 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // Get release info
-            const { data: release } = await github.rest.repos.getRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: process.env.release_id
-            });
-
-            // Get assets
+            // Get assets from the release
             const { data: assets } = await github.rest.repos.listReleaseAssets({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: process.env.release_id
             });
 
-            // Generate platforms object
-            const platforms = {};
-
-            for (const asset of assets) {
-              let platform = null;
-              
-              if (asset.name.endsWith('aarch64.dmg') && !asset.name.endsWith('.sig')) {
-                platform = 'darwin-aarch64';
-              } else if (asset.name.endsWith('amd64.AppImage') && !asset.name.endsWith('.sig')) {
-                platform = 'linux-x86_64';
-              } else if (asset.name.endsWith('amd64.deb') && !asset.name.endsWith('.sig')) {
-                platform = 'linux-deb-x86_64';
-              } else if (asset.name.endsWith('x64_en-US.msi') && !asset.name.endsWith('.sig')) {
-                platform = 'windows-x86_64';
-              } else if (asset.name.endsWith('aarch64.app.tar.gz') && !asset.name.endsWith('.sig')) {
-                platform = 'darwin-aarch64-tar';
-              }
-              
-              if (platform) {
-                // Find corresponding signature file
-                const sigAsset = assets.find(a => a.name === asset.name + '.sig');
-                
-                if (sigAsset) {
-                  // Get signature content
-                  const sigResponse = await github.rest.repos.getReleaseAsset({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    asset_id: sigAsset.id,
-                    headers: {
-                      Accept: 'application/octet-stream'
-                    }
-                  });
-                  
-                  platforms[platform] = {
-                    signature: Buffer.from(sigResponse.data).toString('base64'),
-                    url: asset.browser_download_url
-                  };
-                }
-              }
+            // Find the latest.json file
+            const latestJsonAsset = assets.find(asset => asset.name === 'latest.json');
+            
+            if (!latestJsonAsset) {
+              throw new Error('latest.json not found in release assets');
             }
 
-            // Create updater JSON
-            const updaterJson = {
-              version: release.tag_name.replace('v', ''),
-              notes: release.body || 'New release',
-              pub_date: release.published_at,
-              platforms: platforms
-            };
+            // Download the latest.json content
+            const latestJsonResponse = await github.rest.repos.getReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              asset_id: latestJsonAsset.id,
+              headers: {
+                Accept: 'application/octet-stream'
+              }
+            });
 
-            // Write to file
-            fs.writeFileSync('releases.json', JSON.stringify(updaterJson, null, 2));
+            // Convert the response to string and write to releases.json
+            const latestJsonContent = new TextDecoder().decode(new Uint8Array(latestJsonResponse.data));
+            fs.writeFileSync('releases.json', latestJsonContent);
+            
+            console.log('Successfully copied latest.json to releases.json');
 
       - name: Commit and push
         run: |
