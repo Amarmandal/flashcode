@@ -1,19 +1,19 @@
 {
-  "version": "",
-  "notes": "",
-  "pub_date": "",
+  "version": "0.1.4",
+  "notes": "Take a look at the assets to download and install this app.",
+  "pub_date": "2025-06-10T06:06:37Z",
   "platforms": {
     "linux-x86_64": {
-      "signature": "",
-      "url": ""
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZSV0hBeWVGUjNXRUppT0hWMlJsZHZWa04yWTBSVllXSkpWbWRXZERWeVJEQXdObkk0VWtOa1lVdzRVWE4xVGxOeWVGcFRiSFkxWWtOV01XMXFkRk5ZY1ZNNWMwdG5ORmwzUXpKR01YWktTbTQyUkhJelpHRTBUR012VjNaWk5uYzRQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpRNU5UTTFNemd4Q1dacGJHVTZSbXhoYzJnZ1EyOWtaVjh3TGpFdU5WOWhiV1EyTkM1QmNIQkpiV0ZuWlFwdWNHSTVWa3hpZDNkb2RsRkpNa3RoTUhKVVZtRnNTazRyZERaM1ZYQXZha0ZZTm5scVYyZ3dOV2RGWkdaRlVIYzVaRlZ1ZDJ4bk0wMUJTM0k0ZDFwU1RrTmxNVXBCZG5VMWFEZEdhSEJ3S3pOVE9XOUJkejA5Q2c9PQ==",
+      "url": "https://github.com/Amarmandal/flashcode/releases/download/v0.1.4/Flash.Code_0.1.5_amd64.AppImage"
     },
     "windows-x86_64": {
-      "signature": "",
-      "url": ""
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZSV0hBeWVGUjNXRUppT0hSelIwUTJVamRCVUdWTmIwSTJjREJzU2xJd2VYVkNORmxpVFhBMWJYUTBMMWRIVVRSNVNVSXJTRlZOYjA5WldWSnRSMVl5UjI1UFJFdE1WMm80TVV4UU9ESjJla2syVFdkUmEweFNjRTl3TkVOcFpuZGpQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpRNU5UTTFOVGcxQ1dacGJHVTZSbXhoYzJnZ1EyOWtaVjh3TGpFdU5WOTROalJmWlc0dFZWTXViWE5wQ2xKTlVGSnROVTQ0TkhNM0x6RjBRemhMZDI1bGFrazVZMkpSZHpKNWVqQXliRFozVlRrcllrZzBXbmxSUmxSMGVsTjRSV3Q2ZWxrdk1VZzBjelZJTkZORVJHUk9aSFUzYjFaaVJubFJOSE5rUkVobkswSjNQVDBL",
+      "url": "https://github.com/Amarmandal/flashcode/releases/download/v0.1.4/Flash.Code_0.1.5_x64_en-US.msi"
     },
-    "darwin-x86_64": {
-      "signature": "",
-      "url": ""
+    "darwin-aarch64-tar": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZSV0hBeWVGUjNXRUppT0hBdmNucDZjMnRKVm5Cc1REUTRRelZpUW5sa05GY3ZVV05ZUkRZMFEwZFBPV281TTJaQlNtTlBkRzFsVTNScU5VRnZRbkJKUm1GeFRrdE9ka3B5VWxsTWFuUlpVa2xDVlVkdWJITkhjVzFUUm14RVZYZFpQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpRNU5UTTFNVGN4Q1dacGJHVTZSbXhoYzJnZ1EyOWtaUzVoY0hBdWRHRnlMbWQ2Q2t0ck5sQnBaamhXYkRkV2NVcHFSa3h0WVRWUFVscEVUMjVyTDNKNGFsbzFURnA1TDA1V2QxcEJjR0Y0Ukd0T2FVUmtkVXhNZUVSeFlsWmxMMkkxY0d4SlN6RTRUMHgwZEZWeU1rTjVWbmxKWkhoNWVrUlJQVDBL",
+      "url": "https://github.com/Amarmandal/flashcode/releases/download/v0.1.4/Flash.Code_aarch64.app.tar.gz"
     }
   }
 }
