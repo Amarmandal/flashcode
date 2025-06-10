@@ -25,8 +25,8 @@ pub fn run() {
             let db = DatabaseConnection::new(&app_handle).unwrap();
             app.manage(AppState { db: Mutex::new(db) });
             Ok(())
-        })
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        })        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
