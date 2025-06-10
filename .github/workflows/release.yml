@@ -26,11 +26,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const tagName = context.ref.replace('refs/tags/', '');
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `${context.ref.replace('refs/tags/', '')}`,
-              name: `Flash Code ${context.ref.replace('refs/tags/', '')}`,
+              tag_name: tagName,
+              name: `Flash Code ${tagName}`,
               body: 'Take a look at the assets to download and install this app.',
               draft: true,
               prerelease: false
