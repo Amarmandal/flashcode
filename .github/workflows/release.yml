@@ -6,11 +6,41 @@ on:
   workflow_dispatch:
 
 jobs:
-  release:
+  create-release:
     permissions:
       contents: write
-      id-token: write
-      pull-requests: write
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: create release
+        id: create-release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `${context.ref.replace('refs/tags/', '')}`,
+              name: `Flash Code ${context.ref.replace('refs/tags/', '')}`,
+              body: 'Take a look at the assets to download and install this app.',
+              draft: true,
+              prerelease: false
+            })
+            return data.id
+
+  build-tauri:
+    needs: create-release
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -18,8 +48,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -32,14 +61,14 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install Rust stable
+      - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install dependencies (ubuntu only)
+      - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libgtk-3-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install frontend dependencies
         run: pnpm install
@@ -69,17 +98,130 @@ jobs:
           echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
           echo "Certificate imported."
 
-      - name: Build the app
-        uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ env.CERT_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          packageManager: pnpm
-          tagName: v__VERSION__ # This will be replaced by the app version
-          releaseName: 'Flash Code v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: ${{ matrix.args }}
+
+  publish-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    needs: [create-release, build-tauri]
+
+    steps:
+      - name: publish release
+        id: publish-release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id,
+              draft: false,
+              prerelease: false
+            })
+
+  update-json:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    needs: [create-release, build-tauri, publish-release]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate updater JSON
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Get release info
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id
+            });
+
+            // Get assets
+            const { data: assets } = await github.rest.repos.listReleaseAssets({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id
+            });
+
+            // Generate platforms object
+            const platforms = {};
+
+            for (const asset of assets) {
+              let platform = null;
+              
+              if (asset.name.endsWith('aarch64.dmg') && !asset.name.endsWith('.sig')) {
+                platform = 'darwin-aarch64';
+              } else if (asset.name.endsWith('amd64.AppImage') && !asset.name.endsWith('.sig')) {
+                platform = 'linux-x86_64';
+              } else if (asset.name.endsWith('amd64.deb') && !asset.name.endsWith('.sig')) {
+                platform = 'linux-deb-x86_64';
+              } else if (asset.name.endsWith('x64_en-US.msi') && !asset.name.endsWith('.sig')) {
+                platform = 'windows-x86_64';
+              } else if (asset.name.endsWith('aarch64.app.tar.gz') && !asset.name.endsWith('.sig')) {
+                platform = 'darwin-aarch64-tar';
+              }
+              
+              if (platform) {
+                // Find corresponding signature file
+                const sigAsset = assets.find(a => a.name === asset.name + '.sig');
+                
+                if (sigAsset) {
+                  // Get signature content
+                  const sigResponse = await github.rest.repos.getReleaseAsset({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    asset_id: sigAsset.id,
+                    headers: {
+                      Accept: 'application/octet-stream'
+                    }
+                  });
+                  
+                  platforms[platform] = {
+                    signature: Buffer.from(sigResponse.data).toString('base64'),
+                    url: asset.browser_download_url
+                  };
+                }
+              }
+            }
+
+            // Create updater JSON
+            const updaterJson = {
+              version: release.tag_name.replace('v', ''),
+              notes: release.body || 'New release',
+              pub_date: release.published_at,
+              platforms: platforms
+            };
+
+            // Write to file
+            fs.writeFileSync('releases.json', JSON.stringify(updaterJson, null, 2));
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add releases.json
+          git commit -m "Update releases.json for ${{ github.ref_name }}" || exit 0
+          git push
