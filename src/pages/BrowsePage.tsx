@@ -161,9 +161,7 @@ export default function BrowsePage() {
     } else {
       return { text: 'Review', color: 'green' };
     }
-  };
-
-  return (
+  };  return (
     <Container size="xl" py="md">
       {error && (
         <Alert
