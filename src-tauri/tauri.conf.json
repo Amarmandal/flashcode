@@ -12,11 +12,27 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Flash Code",
         "width": 800,
         "height": 600,
         "resizable": true,
-        "devtools": true
+        "devtools": true, 
+        "visible": false
+      },
+     {
+        "label": "splashscreen",
+        "title": "Flash Code",
+        "url": "/splashscreen",
+        "width": 400,
+        "height": 300,
+        "center": true,
+        "visible": true,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true
       }
     ],
     "security": {
@@ -91,6 +107,7 @@
   },
   "plugins": {
     "updater": {
+      "active": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYyNUI3MEMxNTM2Q0E3MTcKUldRWHAyeFR3WEJiOGtKa2w0OHhxaXhlRm1mdEo3QlhIWTdGb1lWQ2VMdmc3ZURtSXpjU1RVekwK",
       "endpoints": [
         "https://amarmandal.github.io/flashcode/releases.json"
