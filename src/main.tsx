@@ -25,3 +25,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// Hide the preload splash screen after React mounts
+const preloadSplash = document.getElementById('preload-splash');
+if (preloadSplash) {
+  preloadSplash.style.display = 'none';
+}
