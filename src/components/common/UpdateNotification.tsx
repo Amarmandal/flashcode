@@ -1,23 +1,6 @@
 import React from 'react';
-import {
-  Modal,
-  Text,
-  Button,
-  Progress,
-  Group,
-  Stack,
-  Alert,
-  Title,
-  Divider,
-  Badge,
-} from '@mantine/core';
-import {
-  IconDownload,
-  IconRefresh,
-  IconAlertCircle,
-  IconCheck,
-  IconX,
-} from '@tabler/icons-react';
+import { Modal, Text, Button, Progress, Group, Stack, Alert, Title, Divider, Badge } from '@mantine/core';
+import { IconDownload, IconRefresh, IconAlertCircle, IconCheck, IconX } from '@tabler/icons-react';
 import { useUpdater } from '../../hooks/useUpdater';
 
 interface UpdateNotificationProps {
@@ -25,10 +8,7 @@ interface UpdateNotificationProps {
   onClose: () => void;
 }
 
-export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
-  opened,
-  onClose,
-}) => {
+export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ opened, onClose }) => {
   const {
     isChecking,
     isUpdateAvailable,
@@ -76,19 +56,10 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
     >
       <Stack gap="md">
         {error && (
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            color="red"
-            title="Update Error"
-          >
+          <Alert icon={<IconAlertCircle size={16} />} color="red" title="Update Error">
             {error}
             <Group mt="sm">
-              <Button
-                size="xs"
-                variant="light"
-                onClick={checkForUpdates}
-                loading={isChecking}
-              >
+              <Button size="xs" variant="light" onClick={checkForUpdates} loading={isChecking}>
                 Retry
               </Button>
             </Group>
@@ -103,7 +74,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                   Current Version
                 </Text>
                 <Badge variant="light" color="gray">
-                  v0.1.3
+                  {formatVersion(update.currentVersion)}
                 </Badge>
               </Group>
               <Group justify="space-between" mb="sm">
@@ -113,7 +84,8 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                 <Badge variant="light" color="blue">
                   {formatVersion(update.version)}
                 </Badge>
-              </Group>              <Text size="xs" c="dimmed">
+              </Group>{' '}
+              <Text size="xs" c="dimmed">
                 Released: {update.date ? formatDate(update.date) : 'Unknown'}
               </Text>
             </div>
@@ -160,11 +132,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
         )}
 
         {!isUpdateAvailable && !error && !isChecking && (
-          <Alert
-            icon={<IconCheck size={16} />}
-            color="green"
-            title="Up to Date"
-          >
+          <Alert icon={<IconCheck size={16} />} color="green" title="Up to Date">
             You're running the latest version of Flash Code.
           </Alert>
         )}
@@ -172,20 +140,11 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
         <Group justify="flex-end" mt="md">
           {!isDownloading && !isInstalling && (
             <>
-              <Button
-                variant="subtle"
-                color="gray"
-                onClick={handleDismiss}
-                leftSection={<IconX size={16} />}
-              >
+              <Button variant="subtle" color="gray" onClick={handleDismiss} leftSection={<IconX size={16} />}>
                 {isUpdateAvailable ? 'Skip Update' : 'Close'}
               </Button>
               {isUpdateAvailable && (
-                <Button
-                  onClick={handleDownload}
-                  leftSection={<IconDownload size={16} />}
-                  loading={isDownloading}
-                >
+                <Button onClick={handleDownload} leftSection={<IconDownload size={16} />} loading={isDownloading}>
                   Download & Install
                 </Button>
               )}

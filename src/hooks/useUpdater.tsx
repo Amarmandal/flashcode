@@ -24,27 +24,27 @@ export const useUpdater = () => {
   });
 
   const checkForUpdates = useCallback(async () => {
-    setState(prev => ({ ...prev, isChecking: true, error: null }));
-    
+    setState((prev) => ({ ...prev, isChecking: true, error: null }));
+
     try {
       const update = await check();
-      
+
       if (update?.available) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isChecking: false,
           isUpdateAvailable: true,
           update,
         }));
       } else {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isChecking: false,
           isUpdateAvailable: false,
         }));
       }
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isChecking: false,
         error: error instanceof Error ? error.message : 'Failed to check for updates',
@@ -55,24 +55,25 @@ export const useUpdater = () => {
   const downloadAndInstall = useCallback(async () => {
     if (!state.update) return;
 
-    setState(prev => ({ ...prev, isDownloading: true, error: null }));
+    setState((prev) => ({ ...prev, isDownloading: true, error: null }));
 
-    try {      // Start download with progress tracking
+    try {
+      // Start download with progress tracking
       await state.update.downloadAndInstall((event) => {
         switch (event.event) {
           case 'Started':
             console.log('Download started');
-            setState(prev => ({ ...prev, downloadProgress: 0 }));
+            setState((prev) => ({ ...prev, downloadProgress: 0 }));
             break;
           case 'Progress':
             const progress = event.data.chunkLength || 0;
-            setState(prev => ({
+            setState((prev) => ({
               ...prev,
               downloadProgress: Math.min(progress, 100),
             }));
             break;
           case 'Finished':
-            setState(prev => ({
+            setState((prev) => ({
               ...prev,
               isDownloading: false,
               isInstalling: true,
@@ -83,12 +84,12 @@ export const useUpdater = () => {
       });
 
       console.log('Update downloaded and installed');
-      
+
       // Relaunch the app
       await relaunch();
     } catch (error) {
-        console.log("Error during download and install:", error);
-      setState(prev => ({
+      console.log('Error during download and install:', error);
+      setState((prev) => ({
         ...prev,
         isDownloading: false,
         isInstalling: false,
@@ -98,7 +99,7 @@ export const useUpdater = () => {
   }, [state.update]);
 
   const dismissUpdate = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isUpdateAvailable: false,
       update: null,
