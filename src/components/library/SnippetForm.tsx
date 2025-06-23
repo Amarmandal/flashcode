@@ -16,7 +16,7 @@ import { useForm } from '@mantine/form';
 import { invoke } from '@tauri-apps/api/core';
 import { Snippet, SnippetFolder, SnippetFormData } from '../../types/snippet';
 import { SuccessApiResponse } from '../../types/successApiResponse';
-import { IconCheck, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconCheck, IconEye, IconEyeOff, IconFilter } from '@tabler/icons-react';
 import { CodeHighlight } from '@mantine/code-highlight';
 import { LANGUAGES, languageIcons } from '../../assets/language-constants';
 
@@ -160,6 +160,13 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
             placeholder="Select language"
             data={LANGUAGES}
             renderOption={renderLanguageOption}
+            leftSection={
+                form.values.language && languageIcons[form.values.language] ? (
+                  <Image src={languageIcons[form.values.language]} alt={form.values.language} width={16} height={16} />
+                ) : (
+                  <IconFilter size={16} />
+                )
+            }
             required
             {...form.getInputProps('language')}
           />

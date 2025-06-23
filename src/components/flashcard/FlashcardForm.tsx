@@ -22,11 +22,12 @@ import {
   IconHelpCircle,
   IconArrowsExchange,
   IconCheck,
+  IconFilter,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import { languageIcons } from '../../assets/language-constants'; // Centralized constants file
+import { languageIcons, LANGUAGES } from '../../assets/language-constants'; // Centralized constants file
 
 interface FlashcardFormProps {
   opened: boolean;
@@ -143,19 +144,15 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
         />
         <Select
           label="Language"
-          data={[
-            { value: 'rust', label: 'Rust' },
-            { value: 'javascript', label: 'JavaScript' },
-            { value: 'python', label: 'Python' },
-            { value: 'java', label: 'Java' },
-            { value: 'cpp', label: 'C++' },
-            { value: 'go', label: 'Go' },
-            { value: 'typescript', label: 'TypeScript' },
-            { value: 'php', label: 'PHP' },
-            { value: 'swift', label: 'Swift' },
-            { value: 'bash', label: 'Bash' },
-          ]}
+          data={LANGUAGES}
           renderOption={renderLanguageOption}
+          leftSection={
+              form.values.language && languageIcons[form.values.language] ? (
+                <Image src={languageIcons[form.values.language]} alt={form.values.language} width={16} height={16} />
+              ) : (
+                <IconFilter size={16} />
+              )
+            }
           mb="md"
           {...form.getInputProps('language')}
         />

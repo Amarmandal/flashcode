@@ -22,6 +22,7 @@ import {
   IconGrid3x3,
   IconList,
   IconHeart,
+  IconCheck,
 } from '@tabler/icons-react';
 import { SnippetFolder } from '../../types/snippet';
 import { LANGUAGES, languageIcons } from '../../assets/language-constants';
@@ -74,6 +75,22 @@ export function LibraryFilters({
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
+    const renderLanguageOption = ({ option, checked }: any) => (
+    <Group wrap="nowrap" gap="xs">
+      {languageIcons[option.value] && (
+        <Image
+          src={languageIcons[option.value]}
+          alt={option.label}
+          width={20}
+          height={20}
+          style={{ objectFit: 'contain' }}
+        />
+      )}
+      <Text size="sm">{option.label}</Text>
+      {checked && <IconCheck size={16} style={{ marginInlineStart: 'auto' }} />}
+    </Group>
+  );
+
   return (
     <Card withBorder p="md">
       <Stack gap="md">
@@ -102,6 +119,7 @@ export function LibraryFilters({
                   <IconFilter size={16} />
                 )
               }
+              renderOption={renderLanguageOption}
               clearable
             />
           </Grid.Col>
