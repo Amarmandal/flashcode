@@ -3,7 +3,7 @@ use tauri::State;
 use v_htmlescape::escape;
 
 use crate::database::DatabaseConnection;
-use crate::models::{Deck, DeckQueryParams, Flashcode, SearchResult};
+use crate::models::{Deck, DeckQueryParams, Flashcode, SearchResult, Snippet, SnippetFolder, SnippetQueryParams};
 use crate::responses::{
     DeckWithCount, ErrorResponse, SuccessResponse, SuccessResponseWithCount, TodayQueuesResponse,
 };
@@ -489,6 +489,289 @@ pub fn search(
                 Err(e) => {
                     eprintln!("Failed to search: {:?}", e);
                     Err(ErrorResponse::new("Failed to perform search.".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+// Snippet commands
+#[tauri::command]
+pub fn create_snippet(
+    state: State<'_, AppState>,
+    title: String,
+    code: String,
+    language: String,
+    description: Option<String>,
+    tags: Option<String>,
+    folder_id: Option<i64>,
+) -> Result<SuccessResponse<Snippet>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            let code_escaped = escape(&code).to_string();
+
+            match Snippet::create(
+                db,
+                &title,
+                &code_escaped,
+                &language,
+                description.as_deref(),
+                tags.as_deref(),
+                folder_id,
+            ) {
+                Ok(snippet) => Ok(SuccessResponse::new(
+                    "Snippet created successfully".into(),
+                    snippet,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to create snippet: {:?}", e);
+                    Err(ErrorResponse::new("Failed to create snippet".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_snippet(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<Snippet>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Snippet::get(db, id) {
+                Ok(snippet) => Ok(SuccessResponse::new(
+                    "Snippet retrieved successfully".into(),
+                    snippet,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to get snippet: {:?}", e);
+                    Err(ErrorResponse::new(format!("Snippet with id {} not found", id)))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_all_snippets(
+    state: State<'_, AppState>,
+    query_params: SnippetQueryParams,
+) -> Result<SuccessResponseWithCount<Vec<Snippet>>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Snippet::get_all(db, query_params) {
+                Ok((snippets, total_count)) => Ok(SuccessResponseWithCount::new(
+                    "Snippets retrieved successfully".into(),
+                    snippets,
+                    total_count,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to get snippets: {:?}", e);
+                    Err(ErrorResponse::new("Failed to retrieve snippets".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn update_snippet(
+    state: State<'_, AppState>,
+    snippet: Snippet,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+    let updated_snippet = Snippet {
+        code: escape(&snippet.code).to_string(),
+        ..snippet
+    };
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match updated_snippet.update(db) {
+                Ok(message) => Ok(SuccessResponse::new(
+                    message,
+                    format!("Snippet with id {} updated", snippet.id),
+                )),
+                Err(e) => {
+                    eprintln!("Failed to update snippet {}: {:?}", snippet.id, e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to update snippet with id {}",
+                        snippet.id
+                    )))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn delete_snippet(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Snippet::delete_by_id(db, id) {
+                Ok(message) => Ok(SuccessResponse::new(
+                    message,
+                    format!("Snippet with id {} deleted", id),
+                )),
+                Err(e) => {
+                    eprintln!("Failed to delete snippet {}: {:?}", id, e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to delete snippet with id {}",
+                        id
+                    )))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn search_snippets(
+    state: State<'_, AppState>,
+    keyword: String,
+) -> Result<SuccessResponse<Vec<Snippet>>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match Snippet::search(db, keyword) {
+                Ok(snippets) => Ok(SuccessResponse::new(
+                    "Snippet search completed successfully".into(),
+                    snippets,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to search snippets: {:?}", e);
+                    Err(ErrorResponse::new("Failed to search snippets".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+// Snippet folder commands
+#[tauri::command]
+pub fn create_snippet_folder(
+    state: State<'_, AppState>,
+    name: String,
+    parent_id: Option<i64>,
+) -> Result<SuccessResponse<SnippetFolder>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match SnippetFolder::create(db, &name, parent_id) {
+                Ok(folder) => Ok(SuccessResponse::new(
+                    "Folder created successfully".into(),
+                    folder,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to create folder: {:?}", e);
+                    Err(ErrorResponse::new("Failed to create folder".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_snippet_folders(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<Vec<SnippetFolder>>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match SnippetFolder::get_all(db) {
+                Ok(folders) => Ok(SuccessResponse::new(
+                    "Folders retrieved successfully".into(),
+                    folders,
+                )),
+                Err(e) => {
+                    eprintln!("Failed to get folders: {:?}", e);
+                    Err(ErrorResponse::new("Failed to retrieve folders".into()))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Error acquiring the lock: {:?}", e);
+            Err(ErrorResponse::new("Internal server error".into()))
+        }
+    }
+}
+
+#[tauri::command]
+pub fn delete_snippet_folder(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let db_guard_result = state.db.lock();
+
+    match db_guard_result {
+        Ok(db_guard) => {
+            let db = &*db_guard;
+            match SnippetFolder::delete_by_id(db, id) {
+                Ok(message) => Ok(SuccessResponse::new(
+                    message,
+                    format!("Folder with id {} deleted", id),
+                )),
+                Err(e) => {
+                    eprintln!("Failed to delete folder {}: {:?}", id, e);
+                    Err(ErrorResponse::new(format!(
+                        "Failed to delete folder with id {}",
+                        id
+                    )))
                 }
             }
         }

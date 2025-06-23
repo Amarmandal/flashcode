@@ -6,6 +6,7 @@ import DeckDetail from './pages/DeckDetailPage';
 import StudyNow from './pages/StudyNowPage';
 import FavoritePage from './pages/FavoritePage';
 import BrowsePage from './pages/BrowsePage';
+import LibraryPage from './pages/LibraryPage';
 import SplashScreen from './pages/SplashScreen';
 
 export const routes: RouteObject[] = [
@@ -31,10 +32,13 @@ export const routes: RouteObject[] = [
       {
         path: 'favorite',
         element: <FavoritePage />,
-      },
-      {
+      },      {
         path: 'browse',
         element: <BrowsePage />,
+      },
+      {
+        path: 'library',
+        element: <LibraryPage />,
       },
       {
         path: '*',

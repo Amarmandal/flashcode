@@ -26,36 +26,13 @@ import {
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import {
-  cppIcon,
-  goIcon,
-  javaIcon,
-  javascriptIcon,
-  phpIcon,
-  pythonIcon,
-  rustIcon,
-  swiftIcon,
-  typescriptIcon,
-} from '../../assets/language-icons'; // Adjust the import path as necessary
+import { languageIcons } from '../../assets/language-constants'; // Centralized constants file
 
 interface FlashcardFormProps {
   opened: boolean;
   onClose: (isSuccessful: boolean) => void;
   deckId: string;
 }
-
-// Create a mapping of language values to their icon images
-const languageIcons: Record<string, string> = {
-  rust: rustIcon,
-  javascript: javascriptIcon,
-  python: pythonIcon,
-  java: javaIcon,
-  cpp: cppIcon,
-  go: goIcon,
-  typescript: typescriptIcon,
-  php: phpIcon,
-  swift: swiftIcon,
-};
 
 // Custom render function for Select options
 const renderLanguageOption: SelectProps['renderOption'] = ({ option, checked }) => (
@@ -176,6 +153,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
             { value: 'typescript', label: 'TypeScript' },
             { value: 'php', label: 'PHP' },
             { value: 'swift', label: 'Swift' },
+            { value: 'bash', label: 'Bash' },
           ]}
           renderOption={renderLanguageOption}
           mb="md"

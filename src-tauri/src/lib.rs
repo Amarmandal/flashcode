@@ -12,6 +12,8 @@ use commands::{
     answer_flashcard, create_deck, create_flashcode, delete_deck, delete_flashcode, get_all_decks,
     get_deck, get_flashcard_counts, get_flashcode, get_flashcodes_by_deck, get_queues_for_today,
     reset_deck, search, update_deck, update_flashcode, AppState,
+    create_snippet, get_snippet, get_all_snippets, update_snippet, delete_snippet, search_snippets,
+    create_snippet_folder, get_snippet_folders, delete_snippet_folder,
 };
 use database::DatabaseConnection;
 use models::{seconds_to_days, Flashcode};
@@ -29,8 +31,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![
+        .plugin(tauri_plugin_fs::init())        .invoke_handler(tauri::generate_handler![
             create_deck,
             get_deck,
             delete_deck,
@@ -45,7 +46,16 @@ pub fn run() {
             get_queues_for_today,
             get_flashcard_counts,
             reset_deck,
-            search
+            search,
+            create_snippet,
+            get_snippet,
+            get_all_snippets,
+            update_snippet,
+            delete_snippet,
+            search_snippets,
+            create_snippet_folder,
+            get_snippet_folders,
+            delete_snippet_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
