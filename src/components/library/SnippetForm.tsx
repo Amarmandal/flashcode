@@ -9,16 +9,16 @@ import {
   Group,
   TagsInput,
   Text,
-  Image,
   Box,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { invoke } from '@tauri-apps/api/core';
 import { Snippet, SnippetFolder, SnippetFormData } from '../../types/snippet';
 import { SuccessApiResponse } from '../../types/successApiResponse';
-import { IconCheck, IconEye, IconEyeOff, IconFilter } from '@tabler/icons-react';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { CodeHighlight } from '@mantine/code-highlight';
-import { LANGUAGES, languageIcons } from '../../assets/language-constants';
+import { LANGUAGES } from '../../assets/language-constants';
+import { renderLanguageOption, getLanguageSelectLeftSection } from '../common/LanguageSelectUtils';
 
 interface SnippetFormProps {
   opened: boolean;
@@ -108,22 +108,6 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
     }
   };
 
-  const renderLanguageOption = ({ option, checked }: any) => (
-    <Group wrap="nowrap" gap="xs">
-      {languageIcons[option.value] && (
-        <Image
-          src={languageIcons[option.value]}
-          alt={option.label}
-          width={20}
-          height={20}
-          style={{ objectFit: 'contain' }}
-        />
-      )}
-      <Text size="sm">{option.label}</Text>
-      {checked && <IconCheck size={16} style={{ marginInlineStart: 'auto' }} />}
-    </Group>
-  );
-
   const folderOptions = [
     { value: '', label: 'No Folder' },
     ...folders.map((folder) => ({
@@ -160,13 +144,7 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
             placeholder="Select language"
             data={LANGUAGES}
             renderOption={renderLanguageOption}
-            leftSection={
-                form.values.language && languageIcons[form.values.language] ? (
-                  <Image src={languageIcons[form.values.language]} alt={form.values.language} width={16} height={16} />
-                ) : (
-                  <IconFilter size={16} />
-                )
-            }
+            leftSection={getLanguageSelectLeftSection(form.values.language)}
             required
             {...form.getInputProps('language')}
           />

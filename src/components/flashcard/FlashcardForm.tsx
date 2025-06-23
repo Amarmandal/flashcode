@@ -9,48 +9,28 @@ import {
   Alert,
   Radio,
   Tooltip,
-  Text,
-  Image,
-  SelectProps,
+  Text
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { CodeHighlight } from '@mantine/code-highlight';
 import {
   IconAlertCircle,
   IconEye,
   IconEyeOff,
   IconHelpCircle,
   IconArrowsExchange,
-  IconCheck,
-  IconFilter,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import { languageIcons, LANGUAGES } from '../../assets/language-constants'; // Centralized constants file
+import { LANGUAGES } from '../../assets/language-constants';
+import { renderLanguageOption, getLanguageSelectLeftSection } from '../common/LanguageSelectUtils';
+import { CodeHighlight } from '@mantine/code-highlight';
 
 interface FlashcardFormProps {
   opened: boolean;
   onClose: (isSuccessful: boolean) => void;
   deckId: string;
 }
-
-// Custom render function for Select options
-const renderLanguageOption: SelectProps['renderOption'] = ({ option, checked }) => (
-  <Group wrap="nowrap" gap="xs">
-    {option.value && languageIcons[option.value] ? (
-      <Image
-        src={languageIcons[option.value]}
-        alt={option.label}
-        width={20}
-        height={20}
-        style={{ objectFit: 'contain' }}
-      />
-    ) : null}
-    <Text size="sm">{option.label}</Text>
-    {checked && <IconCheck size={16} style={{ marginInlineStart: 'auto' }} />}
-  </Group>
-);
 
 export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
   const form = useForm({
@@ -146,13 +126,7 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
           label="Language"
           data={LANGUAGES}
           renderOption={renderLanguageOption}
-          leftSection={
-              form.values.language && languageIcons[form.values.language] ? (
-                <Image src={languageIcons[form.values.language]} alt={form.values.language} width={16} height={16} />
-              ) : (
-                <IconFilter size={16} />
-              )
-            }
+          leftSection={getLanguageSelectLeftSection(form.values.language)}
           mb="md"
           {...form.getInputProps('language')}
         />

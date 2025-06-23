@@ -11,21 +11,19 @@ import {
   ActionIcon,
   Badge,
   Button,
-  Image,
 } from '@mantine/core';
 import {
   IconSearch,
-  IconFilter,
-  IconFolder,
   IconSortAscending,
   IconSortDescending,
   IconGrid3x3,
   IconList,
   IconHeart,
-  IconCheck,
+  IconFolder,
 } from '@tabler/icons-react';
 import { SnippetFolder } from '../../types/snippet';
-import { LANGUAGES, languageIcons } from '../../assets/language-constants';
+import { LANGUAGES } from '../../assets/language-constants';
+import { renderLanguageOption, getLanguageSelectLeftSection } from '../common/LanguageSelectUtils';
 
 const SORT_OPTIONS = [
   { value: 'date_modified', label: 'Last Modified' },
@@ -75,22 +73,6 @@ export function LibraryFilters({
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
-    const renderLanguageOption = ({ option, checked }: any) => (
-    <Group wrap="nowrap" gap="xs">
-      {languageIcons[option.value] && (
-        <Image
-          src={languageIcons[option.value]}
-          alt={option.label}
-          width={20}
-          height={20}
-          style={{ objectFit: 'contain' }}
-        />
-      )}
-      <Text size="sm">{option.label}</Text>
-      {checked && <IconCheck size={16} style={{ marginInlineStart: 'auto' }} />}
-    </Group>
-  );
-
   return (
     <Card withBorder p="md">
       <Stack gap="md">
@@ -112,13 +94,7 @@ export function LibraryFilters({
               data={LANGUAGES}
               value={selectedLanguage}
               onChange={(value) => setSelectedLanguage(value || '')}
-              leftSection={
-                selectedLanguage && languageIcons[selectedLanguage] ? (
-                  <Image src={languageIcons[selectedLanguage]} alt={selectedLanguage} width={16} height={16} />
-                ) : (
-                  <IconFilter size={16} />
-                )
-              }
+              leftSection={getLanguageSelectLeftSection(selectedLanguage)}
               renderOption={renderLanguageOption}
               clearable
             />
