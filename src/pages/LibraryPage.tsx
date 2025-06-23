@@ -54,14 +54,15 @@ export default function LibraryPage() {
         sortOrder,
       };
 
-      const response = await invoke<SuccessApiResponse<{ data: Snippet[]; totalCount: number }>>(
-        'get_all_snippets',
-        { queryParams }
-      );
+      const response = await invoke<SuccessApiResponse<Snippet[]>>('get_all_snippets', {
+        queryParams,
+      });
+
+      console.log('Code snippets is here...', response);
 
       if (response.success) {
-        setSnippets(response.data.data);
-        setTotalCount(response.data.totalCount);
+        setSnippets(response.data);
+        setTotalCount(response.totalCount || 0);
       }
     } catch (err) {
       console.error('Failed to fetch snippets:', err);

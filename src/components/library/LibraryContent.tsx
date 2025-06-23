@@ -25,7 +25,7 @@ const languageIcons: Record<string, string> = {
   typescript: typescriptIcon,
   php: phpIcon,
   swift: swiftIcon,
-  bash: bashIcon
+  bash: bashIcon,
 };
 
 interface LibraryContentProps {
@@ -55,13 +55,13 @@ export function LibraryContent({
     );
   }
 
-  if (snippets?.length === 0) {
+  if (snippets.length === 0) {
     return <NoData message="No snippets found. Create your first snippet to get started!" />;
   }
 
   return (
     <Grid gutter="md">
-      {snippets?.map((snippet) => (
+      {snippets.map((snippet) => (
         <Grid.Col key={snippet.id} span={viewMode === 'grid' ? { base: 12, sm: 6, lg: 4 } : 12}>
           <SnippetCard
             snippet={snippet}
