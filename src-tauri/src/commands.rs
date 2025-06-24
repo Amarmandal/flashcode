@@ -3,7 +3,9 @@ use tauri::State;
 use v_htmlescape::escape;
 
 use crate::database::DatabaseConnection;
-use crate::models::{Deck, DeckQueryParams, Flashcode, SearchResult, Snippet, SnippetFolder, SnippetQueryParams};
+use crate::models::{
+    Deck, DeckQueryParams, Flashcode, SearchResult, Snippet, SnippetFolder, SnippetQueryParams,
+};
 use crate::responses::{
     DeckWithCount, ErrorResponse, SuccessResponse, SuccessResponseWithCount, TodayQueuesResponse,
 };
@@ -560,7 +562,10 @@ pub fn get_snippet(
                 )),
                 Err(e) => {
                     eprintln!("Failed to get snippet: {:?}", e);
-                    Err(ErrorResponse::new(format!("Snippet with id {} not found", id)))
+                    Err(ErrorResponse::new(format!(
+                        "Snippet with id {} not found",
+                        id
+                    )))
                 }
             }
         }
@@ -606,10 +611,12 @@ pub fn update_snippet(
     snippet: Snippet,
 ) -> Result<SuccessResponse<String>, ErrorResponse> {
     let db_guard_result = state.db.lock();
-    let description = snippet.description.as_ref().map(|d| ammonia::clean(d).to_string());
+    let description = snippet
+        .description
+        .as_ref()
+        .map(|d| ammonia::clean(d).to_string());
     let updated_snippet = Snippet {
-        code: escape(&snippet.code).to_string(),
-        description, 
+        description,
         ..snippet
     };
 
