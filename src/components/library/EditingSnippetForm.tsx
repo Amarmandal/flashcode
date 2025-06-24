@@ -79,10 +79,11 @@ export function EditSnippetModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      size="xl"
+      size="75vw"
       title={
         <Group justify="space-between" w="100%">
-          <Group>            <MantineText fw={600} size="lg">
+          <Group>
+            <MantineText fw={600} size="lg">
               {snippet.title}
             </MantineText>
           </Group>
