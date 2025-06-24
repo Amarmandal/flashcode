@@ -10,8 +10,14 @@ import {
 } from '@tabler/icons-react';
 import { Snippet } from '../../types/snippet';
 import { CodeHighlight } from '@mantine/code-highlight';
-import { UsageNotesModal } from './EditingSnippetForm';
+import { EditSnippetModal } from './EditingSnippetForm';
 import { useState } from 'react';
+
+enum CardAction {
+  DELETE = 'delete',
+  EDIT = 'edit',
+  NOTHING = 'nothing',
+}
 
 interface SnippetCardProps {
   snippet: Snippet;
@@ -60,19 +66,36 @@ export function SnippetCard({
 
   const tags = parseTags(snippet.tags);
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = (e: React.MouseEvent, action: CardAction) => {
     // Prevent opening modal when clicking on action icons or menu
     const target = e.target as HTMLElement;
     if (target.closest('.mantine-ActionIcon-root') || target.closest('.mantine-Menu-root')) {
       return;
     }
-    setUsageModalOpen(true);
+
+    if (action === CardAction.EDIT && target.innerText.toLocaleLowerCase() !== CardAction.DELETE) {
+      onEdit(snippet);
+      setUsageModalOpen(true);
+      return;
+    }
+
+    if (action === CardAction.DELETE && target.innerText.toLocaleLowerCase() === CardAction.DELETE) {
+      onDelete(snippet);
+      return;
+    }
   };
 
   if (viewMode === 'list') {
     return (
       <>
-        <Card withBorder shadow="sm" radius="md" p="md" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+        <Card
+          withBorder
+          shadow="sm"
+          radius="md"
+          p="md"
+          onClick={(e) => handleCardClick(e, CardAction.EDIT)}
+          style={{ cursor: 'pointer' }}
+        >
           <Group justify="space-between" align="flex-start">
             <Stack gap="xs" style={{ flex: 1 }}>
               <Group gap="xs">
@@ -148,10 +171,14 @@ export function SnippetCard({
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
-                  <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => onEdit(snippet)}>
+                  <Menu.Item leftSection={<IconEdit size={14} />} onClick={(e) => handleCardClick(e, CardAction.EDIT)}>
                     Edit
                   </Menu.Item>
-                  <Menu.Item leftSection={<IconTrash size={14} />} color="red" onClick={() => onDelete(snippet)}>
+                  <Menu.Item
+                    leftSection={<IconTrash size={14} />}
+                    color="red"
+                    onClick={(e) => handleCardClick(e, CardAction.DELETE)}
+                  >
                     Delete
                   </Menu.Item>
                 </Menu.Dropdown>
@@ -159,7 +186,7 @@ export function SnippetCard({
             </Group>
           </Group>
         </Card>
-        <UsageNotesModal
+        <EditSnippetModal
           opened={usageModalOpen}
           onClose={() => setUsageModalOpen(false)}
           code={snippet.code}
@@ -182,7 +209,15 @@ export function SnippetCard({
   // Grid view
   return (
     <>
-      <Card withBorder shadow="sm" radius="md" p="md" h="100%" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+      <Card
+        withBorder
+        shadow="sm"
+        radius="md"
+        p="md"
+        h="100%"
+        onClick={(e) => handleCardClick(e, CardAction.EDIT)}
+        style={{ cursor: 'pointer' }}
+      >
         <Stack gap="xs" h="100%">
           <Group justify="space-between" align="flex-start">
             <Group gap="xs" style={{ flex: 1 }}>
@@ -199,10 +234,14 @@ export function SnippetCard({
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => onEdit(snippet)}>
+                <Menu.Item leftSection={<IconEdit size={14} />} onClick={(e) => handleCardClick(e, CardAction.EDIT)}>
                   Edit
                 </Menu.Item>
-                <Menu.Item leftSection={<IconTrash size={14} />} color="red" onClick={() => onDelete(snippet)}>
+                <Menu.Item
+                  leftSection={<IconTrash size={14} />}
+                  color="red"
+                  onClick={(e) => handleCardClick(e, CardAction.DELETE)}
+                >
                   Delete
                 </Menu.Item>
               </Menu.Dropdown>
@@ -273,7 +312,7 @@ export function SnippetCard({
           </Group>
         </Stack>
       </Card>
-      <UsageNotesModal
+      <EditSnippetModal
         opened={usageModalOpen}
         onClose={() => setUsageModalOpen(false)}
         code={snippet.code}
@@ -281,7 +320,6 @@ export function SnippetCard({
         title={snippet.title}
         initialNotes={usageNotes}
         onSave={setUsageNotes}
-        onDelete={() => onDelete(snippet)}
         onToggleFavorite={() => onToggleFavorite(snippet)}
         isFavorite={snippet.isFavorite}
         createdAt={snippet.createdAt}

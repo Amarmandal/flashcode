@@ -6,9 +6,9 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
-import { IconCopy, IconX, IconStar, IconStarFilled, IconEdit } from '@tabler/icons-react';
+import { IconCopy, IconStar, IconStarFilled, IconEdit } from '@tabler/icons-react';
 
-interface UsageNotesModalProps {
+interface EditSnippetModalProps {
   opened: boolean;
   onClose: () => void;
   code: string;
@@ -16,7 +16,6 @@ interface UsageNotesModalProps {
   title: string;
   initialNotes: string;
   onSave: (notes: string) => void;
-  onDelete?: () => void;
   onToggleFavorite?: () => void;
   isFavorite?: boolean;
   createdAt?: string;
@@ -27,7 +26,7 @@ interface UsageNotesModalProps {
   readOnly?: boolean;
 }
 
-export function UsageNotesModal({
+export function EditSnippetModal({
   opened,
   onClose,
   code,
@@ -43,7 +42,7 @@ export function UsageNotesModal({
   onAddTag,
   onRemoveTag,
   readOnly,
-}: UsageNotesModalProps) {
+}: EditSnippetModalProps) {
   const [notes, setNotes] = useState(initialNotes);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 
