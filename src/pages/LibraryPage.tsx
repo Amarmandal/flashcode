@@ -58,8 +58,6 @@ export default function LibraryPage() {
         queryParams,
       });
 
-      console.log('Code snippets is here...', response);
-
       if (response.success) {
         setSnippets(response.data);
         setTotalCount(response.totalCount || 0);
@@ -98,7 +96,6 @@ export default function LibraryPage() {
 
   const handleEditSnippet = (snippet: Snippet) => {
     setEditingSnippet(snippet);
-    setIsSnippetFormOpen(true);
   };
 
   const handleDeleteSnippet = (snippet: Snippet) => {
@@ -241,7 +238,7 @@ export default function LibraryPage() {
         }}
         confirmRemove={confirmDeleteSnippet}
         title="Delete Snippet?"
-        message={`Are you sure you want to delete "${deleteSnippet?.title}"? This action cannot be undone.`}
+        message={'Are you sure you want to delete? This action cannot be undone.'}
       />
     </Container>
   );

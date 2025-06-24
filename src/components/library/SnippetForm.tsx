@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import {
   Modal,
   TextInput,
-  Textarea,
+  Textarea as MantineTextarea,
   Select,
   Button,
   Stack,
   Group,
-  TagsInput,
-  Text,
+  Text as MantineText,
   Box,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -38,8 +37,6 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
       title: '',
       code: '',
       language: 'javascript',
-      description: '',
-      tags: [],
       folderId: undefined,
     },
     validate: {
@@ -51,13 +48,10 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
 
   useEffect(() => {
     if (snippet) {
-      const tags = snippet.tags ? JSON.parse(snippet.tags) : [];
       form.setValues({
         title: snippet.title,
         code: snippet.code,
         language: snippet.language,
-        description: snippet.description || '',
-        tags,
         folderId: snippet.folderId,
       });
     } else {
@@ -72,8 +66,6 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
     setError(null);
 
     try {
-      const tagsString = values.tags && values.tags.length > 0 ? JSON.stringify(values.tags) : undefined;
-
       if (snippet) {
         // Update existing snippet
         const updatedSnippet: Snippet = {
@@ -81,8 +73,6 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
           title: values.title,
           code: values.code,
           language: values.language,
-          description: values.description || undefined,
-          tags: tagsString,
           folderId: values.folderId,
         };
 
@@ -93,8 +83,6 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
           title: values.title,
           code: values.code,
           language: values.language,
-          description: values.description || null,
-          tags: tagsString || null,
           folderId: values.folderId || null,
         });
       }
@@ -117,27 +105,16 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
   ];
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={snippet ? 'Edit Snippet' : 'Add New Snippet'}
-      size="lg"
-      centered
-    >
+    <Modal opened={opened} onClose={onClose} title={snippet ? 'Edit Snippet' : 'Add New Snippet'} size="lg" centered>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
           {error && (
-            <Text c="red" size="sm">
+            <MantineText c="red" size="sm">
               {error}
-            </Text>
+            </MantineText>
           )}
 
-          <TextInput
-            label="Title"
-            placeholder="Enter snippet title..."
-            required
-            {...form.getInputProps('title')}
-          />
+          <TextInput label="Title" placeholder="Enter snippet title..." required {...form.getInputProps('title')} />
 
           <Select
             label="Language"
@@ -158,25 +135,14 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
             clearable
           />
 
-          <Textarea
-            label="Description"
-            placeholder="Brief description of the snippet (optional)"
-            rows={2}
-            {...form.getInputProps('description')}
-          />
-
-          <TagsInput
-            label="Tags"
-            placeholder="Add tags..."
-            description="Press Enter to add a tag"
-            {...form.getInputProps('tags')}
-          />
-
           <Box>
             <Group justify="space-between" mb="xs">
-              <Text size="sm" fw={500}>
-                Code <Text span c="red">*</Text>
-              </Text>
+              <MantineText size="sm" fw={500}>
+                Code{' '}
+                <MantineText span c="red">
+                  *
+                </MantineText>
+              </MantineText>
               <Button
                 variant="light"
                 size="compact-sm"
@@ -203,7 +169,7 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
                 />
               </Box>
             ) : (
-              <Textarea
+              <MantineTextarea
                 placeholder="Enter your code here..."
                 rows={12}
                 styles={{

@@ -9,6 +9,7 @@ export interface Snippet {
   folderId?: number;
   createdAt: string;
   updatedAt: string;
+  usageNotes?: string; // Added usageNotes for rich text usage notes
 }
 
 export interface SnippetFolder {
