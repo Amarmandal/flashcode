@@ -1,19 +1,19 @@
 {
-  "version": "0.1.8",
+  "version": "0.1.9",
   "notes": "",
-  "pub_date": "2025-06-24T06:28:49.199Z",
+  "pub_date": "2025-06-24T15:05:22.237Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWHAyeFR3WEJiOHYvanVQNENqa0xBVGkzbWl3MUJ0aWUyV1cveURFN2wrTTFsYitEU0VsS3FMWFVkSVJyd2hmdXlpRi9rQU5pNTlTdVRxZGNveGhCa2pNNGQxayt1YXdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzUwNzQ2Mjg3CWZpbGU6Rmxhc2ggQ29kZS5hcHAudGFyLmd6Cm5zamhXeHFFWFBTckh5OTYwU3lBaDUrNkpWS2p0WWtaTTRPZ25EcndhWEdwYlZFZjlCL2VYVlYyeVpkaHJDbC9jK2dRWXBrVkF0Rzk4YXFYWHlKL0NnPT0K",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWHAyeFR3WEJiOGorMjRNVklaUktYMEFIL1FxNXJMdkJqMWl0aGE3RTZjR3hFSmRMNXdnenRmcnA0QXY2bjd0OFlid3M2MG50QU1FS3UwU3hMcHpsMFcvWWpVS2ErdmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzUwNzc3MTg0CWZpbGU6Rmxhc2ggQ29kZS5hcHAudGFyLmd6ClVrYW56MWh4eUpFY0pwYm9RbnE5MkJJSGYxN0lWTDZXeEVxaHFmUlg2QUlqMFBQMHVMWmdBMFFuT2xDU0FRK1lmMmlrWkxIYktxOXFPYVFQYmwvb0RBPT0K",
       "url": "https://github.com/Amarmandal/flashcode/releases/latest/download/Flash.Code_aarch64.app.tar.gz"
     },
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWHAyeFR3WEJiOHRkZzhXVXlGWFNUSzgyM2YxMW9SQ2thdTNOT0RiQU9QUU9oeHp0TmExRThXRHNtTE9EUm1LM1ZIbUgxTGxFZ2dhYzRqNFdkMXkya3o0YjBBajdvZlFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzUwNzQ2NDY4CWZpbGU6Rmxhc2ggQ29kZV8wLjEuOF9hbWQ2NC5BcHBJbWFnZQpWMzQ2ODBGWkZUWTVGWEtPL2x1RjA4R2lEQ3RnVHc3WG1vM29OS0dZTTh2WkZrRG11WWI5eEQveXNDMHpGNk1CL1dIbmFlWEk2WXVGSUkrYUpNVENEdz09Cg==",
-      "url": "https://github.com/Amarmandal/flashcode/releases/latest/download/Flash.Code_0.1.8_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWHAyeFR3WEJiOHVBQ3B4bWRtdkdzZFhtVnFZeWk1dlA4ZnFiVDV6OE84aWxHSmhmQjRGM1FNdXE4a1BYVG8rS3hFWEFVOVJESVJodWYycUF1eTFaVjJWQnhia2grWGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzUwNzc3MzEwCWZpbGU6Rmxhc2ggQ29kZV8wLjEuOV9hbWQ2NC5BcHBJbWFnZQpvdk1ka1E3R1pxQUlvMTZkQ0Z2MWtGVVhwSEE3dTcxT0xpd3kzcGk4OUwza1lkekpYMjlkU1VGTkdqRnQyaW1lTXRhcGFTOGtock1GcUVhZXR1UWRDQT09Cg==",
+      "url": "https://github.com/Amarmandal/flashcode/releases/latest/download/Flash.Code_0.1.9_amd64.AppImage"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWHAyeFR3WEJiOHZjT3BhWnZBODhKSUtUYjgxcWcreVJTZUtxa2ZQeFdtM0htZkZLSFB0bTNsdFNOeXVOWk9sbzRLNTVXb05PeWd6NGVzalYzSWNXSmJ3cjlmcjJKZGdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzUwNzQ2NTI3CWZpbGU6Rmxhc2ggQ29kZV8wLjEuOF94NjRfZW4tVVMubXNpCmQ2bkkzMVpqL3ZwY1hnWGJPOGI2bjFEOTNaaDFzK043R2FhR0VsUDk5UHBQdGVQQUt1Q1pybTBrZUxSMkhIanJCWEo4RlZDdlF0Qnk5bi9JTlRlNUNRPT0K",
-      "url": "https://github.com/Amarmandal/flashcode/releases/latest/download/Flash.Code_0.1.8_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWHAyeFR3WEJiOGh1UzJkWEZBOC9NdUt1NDdqVVZTckh0byt5NFVsZjRyUzJQRldxcStYZWJLNnF3bzh1VzNTNy9xbmRvcG51c1lTNnNvQTRnYlhvWUZCSUhpcVNVQnc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzUwNzc3NTIwCWZpbGU6Rmxhc2ggQ29kZV8wLjEuOV94NjRfZW4tVVMubXNpCm5mNGx1MHlVU2w0Sm9HQXhqNEsvR1VBN004SEY1bW5EblZRcXJ1NHE3dytnT3FKQy9WYWJ3aE9ucFUxTVQvc29USjEwWVdWdzhQVi9GUmkvWFpzNkNRPT0K",
+      "url": "https://github.com/Amarmandal/flashcode/releases/latest/download/Flash.Code_0.1.9_x64_en-US.msi"
     }
   }
 }
