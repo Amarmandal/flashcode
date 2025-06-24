@@ -9,70 +9,28 @@ import {
   Alert,
   Radio,
   Tooltip,
-  Text,
-  Image,
-  SelectProps,
+  Text
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { CodeHighlight } from '@mantine/code-highlight';
 import {
   IconAlertCircle,
   IconEye,
   IconEyeOff,
   IconHelpCircle,
   IconArrowsExchange,
-  IconCheck,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import {
-  cppIcon,
-  goIcon,
-  javaIcon,
-  javascriptIcon,
-  phpIcon,
-  pythonIcon,
-  rustIcon,
-  swiftIcon,
-  typescriptIcon,
-} from '../../assets/language-icons'; // Adjust the import path as necessary
+import { LANGUAGES } from '../../assets/language-constants';
+import { renderLanguageOption, getLanguageSelectLeftSection } from '../common/LanguageSelectUtils';
+import { CodeHighlight } from '@mantine/code-highlight';
 
 interface FlashcardFormProps {
   opened: boolean;
   onClose: (isSuccessful: boolean) => void;
   deckId: string;
 }
-
-// Create a mapping of language values to their icon images
-const languageIcons: Record<string, string> = {
-  rust: rustIcon,
-  javascript: javascriptIcon,
-  python: pythonIcon,
-  java: javaIcon,
-  cpp: cppIcon,
-  go: goIcon,
-  typescript: typescriptIcon,
-  php: phpIcon,
-  swift: swiftIcon,
-};
-
-// Custom render function for Select options
-const renderLanguageOption: SelectProps['renderOption'] = ({ option, checked }) => (
-  <Group wrap="nowrap" gap="xs">
-    {option.value && languageIcons[option.value] ? (
-      <Image
-        src={languageIcons[option.value]}
-        alt={option.label}
-        width={20}
-        height={20}
-        style={{ objectFit: 'contain' }}
-      />
-    ) : null}
-    <Text size="sm">{option.label}</Text>
-    {checked && <IconCheck size={16} style={{ marginInlineStart: 'auto' }} />}
-  </Group>
-);
 
 export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
   const form = useForm({
@@ -166,18 +124,9 @@ export function FlashcardForm({ opened, onClose, deckId }: FlashcardFormProps) {
         />
         <Select
           label="Language"
-          data={[
-            { value: 'rust', label: 'Rust' },
-            { value: 'javascript', label: 'JavaScript' },
-            { value: 'python', label: 'Python' },
-            { value: 'java', label: 'Java' },
-            { value: 'cpp', label: 'C++' },
-            { value: 'go', label: 'Go' },
-            { value: 'typescript', label: 'TypeScript' },
-            { value: 'php', label: 'PHP' },
-            { value: 'swift', label: 'Swift' },
-          ]}
+          data={LANGUAGES}
           renderOption={renderLanguageOption}
+          leftSection={getLanguageSelectLeftSection(form.values.language)}
           mb="md"
           {...form.getInputProps('language')}
         />

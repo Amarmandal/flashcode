@@ -3,7 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import classes from './Layout.module.css';
 import AppLogo from './Logo';
-import { IconCards, IconHeart, IconDatabaseSearch, IconRefresh } from '@tabler/icons-react';
+import { IconCards, IconHeart, IconDatabaseSearch, IconRefresh, IconCode } from '@tabler/icons-react';
 import { SearchBar } from '../search/SearchBar';
 import { ThemeToggle } from './ThemeToggle';
 import { UpdateBanner } from './UpdateBanner';
@@ -97,7 +97,16 @@ const Layout = () => {
             component={Link}
             to="/browse"
             active={location.pathname === '/browse'}
-          />          <NavLink
+          />
+          <NavLink
+            className={classes.navLabel}
+            label="Library"
+            leftSection={<IconCode size={18} />}
+            component={Link}
+            to="/library"
+            active={location.pathname === '/library'}
+          />
+          <NavLink
             className={classes.navLabel}
             label="Check for Updates"
             leftSection={isChecking ? <Loader size={18} /> : <IconRefresh size={18} />}

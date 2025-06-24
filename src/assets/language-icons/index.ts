@@ -8,3 +8,4 @@ export { default as pythonIcon } from './python.svg';
 export { default as rustIcon } from './rust.svg';
 export { default as swiftIcon } from './swift.svg';
 export { default as typescriptIcon } from './typescript.svg';
+export { default as bashIcon } from './bash.svg';

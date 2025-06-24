@@ -2,8 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { createTheme, MantineProvider } from '@mantine/core';
-import '@mantine/core/styles.css';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
+import '@mantine/core/styles.css';
+import '@mantine/tiptap/styles.css';
 
 // Wrapper component using the theme context
 function AppWrapper() {
