@@ -522,7 +522,7 @@ pub fn create_snippet(
                 &title,
                 &code_escaped,
                 &language,
-                description.as_deref(),
+                description.as_ref().map(|d| ammonia::clean(d)).as_deref(),
                 tags.as_deref(),
                 folder_id,
             ) {
@@ -606,8 +606,10 @@ pub fn update_snippet(
     snippet: Snippet,
 ) -> Result<SuccessResponse<String>, ErrorResponse> {
     let db_guard_result = state.db.lock();
+    let description = snippet.description.as_ref().map(|d| ammonia::clean(d).to_string());
     let updated_snippet = Snippet {
         code: escape(&snippet.code).to_string(),
+        description, 
         ..snippet
     };
 

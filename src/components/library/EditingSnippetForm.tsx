@@ -23,7 +23,6 @@ interface EditSnippetModalProps {
   tags?: string[];
   onAddTag?: (tag: string) => void;
   onRemoveTag?: (tag: string) => void;
-  readOnly?: boolean;
 }
 
 export function EditSnippetModal({
@@ -41,28 +40,18 @@ export function EditSnippetModal({
   tags = [],
   onAddTag,
   onRemoveTag,
-  readOnly,
 }: EditSnippetModalProps) {
   const [notes, setNotes] = useState(initialNotes);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-      }),
+      StarterKit,
       UnderlineExtension,
       LinkExtension,
     ],
     content: notes,
-    editable: !readOnly && isEditingNotes,
+    editable: true,
     onUpdate: ({ editor }) => setNotes(editor.getHTML()),
   });
 
@@ -147,43 +136,41 @@ export function EditSnippetModal({
           </Group>
 
           {/* Rich Text Editor */}
-          <Box style={{ flex: 1, marginBottom: '1rem' }}>
+          <Box>
             <RichTextEditor
               editor={editor}
-              style={{
-                minHeight: 250,
-                background: 'var(--mantine-color-gray-9)',
-                borderRadius: 8,
-                border: '1px solid var(--mantine-color-gray-6)',
-              }}
+              style={{ background: 'transparent' }}
             >
-              {isEditingNotes && (
-                <RichTextEditor.Toolbar sticky stickyOffset={0}>
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.Bold />
-                    <RichTextEditor.Italic />
-                    <RichTextEditor.Underline />
-                  </RichTextEditor.ControlsGroup>
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.BulletList />
-                    <RichTextEditor.OrderedList />
-                  </RichTextEditor.ControlsGroup>
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.Code />
-                    <RichTextEditor.Link />
-                  </RichTextEditor.ControlsGroup>
-                </RichTextEditor.Toolbar>
-              )}
-              <RichTextEditor.Content />
+              <RichTextEditor.Toolbar sticky stickyOffset={0}>
+                <RichTextEditor.ControlsGroup>
+                  <RichTextEditor.Bold />
+                  <RichTextEditor.Italic />
+                  <RichTextEditor.Underline />
+                </RichTextEditor.ControlsGroup>
+                <RichTextEditor.ControlsGroup>
+                  <RichTextEditor.BulletList />
+                  <RichTextEditor.OrderedList />
+                </RichTextEditor.ControlsGroup>
+                <RichTextEditor.ControlsGroup>
+                  <RichTextEditor.Code />
+                  <RichTextEditor.Link />
+                </RichTextEditor.ControlsGroup>
+              </RichTextEditor.Toolbar>
+              <RichTextEditor.Content
+                style={{
+                  minHeight: 330,
+                  background: 'var(--mantine-color-dark-7)',
+                  borderRadius: 8,
+                  color: 'var(--mantine-color-white)',
+                  fontSize: 14,
+                }}
+              />
             </RichTextEditor>
-
-            {isEditingNotes && (
-              <Group justify="flex-end" mt="xs">
-                <Button size="xs" onClick={handleSave}>
-                  Save Notes
-                </Button>
-              </Group>
-            )}
+            <Group justify="flex-end" mt="xs">
+              <Button size="xs" onClick={handleSave}>
+                Save Notes
+              </Button>
+            </Group>
           </Box>
 
           {/* Tags Section */}
