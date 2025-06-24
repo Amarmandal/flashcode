@@ -6,7 +6,7 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
-import { IconCopy, IconStar, IconStarFilled, IconEdit } from '@tabler/icons-react';
+import { IconCopy, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { Snippet } from '../../types/snippet';
 
 interface EditSnippetModalProps {
@@ -28,9 +28,8 @@ export function EditSnippetModal({
   onAddTag,
   onRemoveTag,
 }: EditSnippetModalProps) {
-  const [notes, setNotes] = useState(snippet.usageNotes || '');
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
-
+  const [notes, setNotes] = useState(snippet.description || '');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -39,7 +38,13 @@ export function EditSnippetModal({
     ],
     content: notes,
     editable: true,
-    onUpdate: ({ editor }) => setNotes(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      setNotes(editor.getHTML());
+      setHasUnsavedChanges(true);
+    },
+    onFocus: () => {
+      setHasUnsavedChanges(true);
+    },
   });
 
   const parseTags = (tagsString?: string): string[] => {
@@ -52,13 +57,9 @@ export function EditSnippetModal({
   };
 
   const tags = parseTags(snippet.tags);
-
   const handleSave = () => {
     onSave(notes);
-
-    // also save to the database
-
-    setIsEditingNotes(false);
+    setHasUnsavedChanges(false);
   };
 
   const formatDate = (dateString?: string) => {
@@ -85,7 +86,8 @@ export function EditSnippetModal({
             </MantineText>
           </Group>
           <Group>
-            {onToggleFavorite && (              <ActionIcon variant="subtle" color={snippet.isFavorite ? 'yellow' : 'gray'} onClick={onToggleFavorite}>
+            {onToggleFavorite && (
+              <ActionIcon variant="subtle" color={snippet.isFavorite ? 'yellow' : 'gray'} onClick={onToggleFavorite}>
                 {snippet.isFavorite ? <IconStarFilled size={20} /> : <IconStar size={20} />}
               </ActionIcon>
             )}
@@ -128,9 +130,6 @@ export function EditSnippetModal({
         <Box style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <Group justify="space-between" mb="xs">
             <MantineText fw={500}>Usage Notes</MantineText>
-            <ActionIcon variant="light" size="sm" onClick={() => setIsEditingNotes(!isEditingNotes)}>
-              <IconEdit size={14} />
-            </ActionIcon>
           </Group>
 
           {/* Rich Text Editor */}
@@ -163,10 +162,13 @@ export function EditSnippetModal({
                   fontSize: 14,
                 }}
               />
-            </RichTextEditor>
-            <Group justify="flex-end" mt="xs">
-              <Button size="xs" onClick={handleSave}>
-                Save Notes
+            </RichTextEditor>            <Group justify="flex-end" mt="xs">
+              <Button 
+                size="xs" 
+                onClick={handleSave}
+                disabled={!hasUnsavedChanges}
+              >
+                {hasUnsavedChanges ? "Save Notes" : "Saved"}
               </Button>
             </Group>
           </Box>

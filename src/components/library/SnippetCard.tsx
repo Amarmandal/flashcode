@@ -12,6 +12,7 @@ import { Snippet } from '../../types/snippet';
 import { CodeHighlight } from '@mantine/code-highlight';
 import { EditSnippetModal } from './EditingSnippetForm';
 import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 enum CardAction {
   DELETE = 'delete',
@@ -40,9 +41,13 @@ export function SnippetCard({
 }: SnippetCardProps) {
   const [usageModalOpen, setUsageModalOpen] = useState(false);
 
-  const handleSaveNotes = (notes: string) => {
-    // TODO: Implement saving notes to backend
-    console.log('Save notes:', notes);
+  const handleSaveNotes = async (notes: string) => {
+     try {
+      const updatedSnippet: Snippet = { ...snippet, description: notes };
+      await invoke('update_snippet', { snippet: updatedSnippet });
+    } catch (err) {
+      console.error('Failed to update snippet:', err);
+    }
   };
 
   const formatDate = (dateString: string) => {
