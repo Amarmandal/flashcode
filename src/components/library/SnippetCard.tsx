@@ -39,7 +39,11 @@ export function SnippetCard({
   languageIcon,
 }: SnippetCardProps) {
   const [usageModalOpen, setUsageModalOpen] = useState(false);
-  const [usageNotes, setUsageNotes] = useState(snippet.usageNotes || '');
+
+  const handleSaveNotes = (notes: string) => {
+    // TODO: Implement saving notes to backend
+    console.log('Save notes:', notes);
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -183,22 +187,14 @@ export function SnippetCard({
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
-            </Group>
-          </Group>
+            </Group>          </Group>
         </Card>
         <EditSnippetModal
           opened={usageModalOpen}
           onClose={() => setUsageModalOpen(false)}
-          code={snippet.code}
-          language={snippet.language}
-          title={snippet.title}
-          initialNotes={usageNotes}
-          onSave={setUsageNotes}
+          snippet={snippet}
+          onSave={handleSaveNotes}
           onToggleFavorite={() => onToggleFavorite(snippet)}
-          isFavorite={snippet.isFavorite}
-          createdAt={snippet.createdAt}
-          updatedAt={snippet.updatedAt}
-          tags={tags}
           onAddTag={(tag) => console.log('Add tag:', tag)}
           onRemoveTag={(tag) => console.log('Remove tag:', tag)}
         />
@@ -310,21 +306,13 @@ export function SnippetCard({
               </Tooltip>
             </Group>
           </Group>
-        </Stack>
-      </Card>
+        </Stack>      </Card>
       <EditSnippetModal
         opened={usageModalOpen}
         onClose={() => setUsageModalOpen(false)}
-        code={snippet.code}
-        language={snippet.language}
-        title={snippet.title}
-        initialNotes={usageNotes}
-        onSave={setUsageNotes}
+        snippet={snippet}
+        onSave={handleSaveNotes}
         onToggleFavorite={() => onToggleFavorite(snippet)}
-        isFavorite={snippet.isFavorite}
-        createdAt={snippet.createdAt}
-        updatedAt={snippet.updatedAt}
-        tags={tags}
         onAddTag={(tag) => console.log('Add tag:', tag)}
         onRemoveTag={(tag) => console.log('Remove tag:', tag)}
       />

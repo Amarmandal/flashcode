@@ -7,20 +7,14 @@ import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
 import { IconCopy, IconStar, IconStarFilled, IconEdit } from '@tabler/icons-react';
+import { Snippet } from '../../types/snippet';
 
 interface EditSnippetModalProps {
   opened: boolean;
   onClose: () => void;
-  code: string;
-  language: string;
-  title: string;
-  initialNotes: string;
+  snippet: Snippet;
   onSave: (notes: string) => void;
   onToggleFavorite?: () => void;
-  isFavorite?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  tags?: string[];
   onAddTag?: (tag: string) => void;
   onRemoveTag?: (tag: string) => void;
 }
@@ -28,20 +22,13 @@ interface EditSnippetModalProps {
 export function EditSnippetModal({
   opened,
   onClose,
-  code,
-  language,
-  title,
-  initialNotes,
+  snippet,
   onSave,
   onToggleFavorite,
-  isFavorite,
-  createdAt,
-  updatedAt,
-  tags = [],
   onAddTag,
   onRemoveTag,
 }: EditSnippetModalProps) {
-  const [notes, setNotes] = useState(initialNotes);
+  const [notes, setNotes] = useState(snippet.usageNotes || '');
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 
   const editor = useEditor({
@@ -55,8 +42,22 @@ export function EditSnippetModal({
     onUpdate: ({ editor }) => setNotes(editor.getHTML()),
   });
 
+  const parseTags = (tagsString?: string): string[] => {
+    if (!tagsString) return [];
+    try {
+      return JSON.parse(tagsString);
+    } catch {
+      return [];
+    }
+  };
+
+  const tags = parseTags(snippet.tags);
+
   const handleSave = () => {
     onSave(notes);
+
+    // also save to the database
+
     setIsEditingNotes(false);
   };
 
@@ -68,9 +69,8 @@ export function EditSnippetModal({
       day: 'numeric',
     });
   };
-
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(snippet.code);
   };
 
   return (
@@ -80,15 +80,13 @@ export function EditSnippetModal({
       size="xl"
       title={
         <Group justify="space-between" w="100%">
-          <Group>
-            <MantineText fw={600} size="lg">
-              {title}
+          <Group>            <MantineText fw={600} size="lg">
+              {snippet.title}
             </MantineText>
           </Group>
           <Group>
-            {onToggleFavorite && (
-              <ActionIcon variant="subtle" color={isFavorite ? 'yellow' : 'gray'} onClick={onToggleFavorite}>
-                {isFavorite ? <IconStarFilled size={20} /> : <IconStar size={20} />}
+            {onToggleFavorite && (              <ActionIcon variant="subtle" color={snippet.isFavorite ? 'yellow' : 'gray'} onClick={onToggleFavorite}>
+                {snippet.isFavorite ? <IconStarFilled size={20} /> : <IconStar size={20} />}
               </ActionIcon>
             )}
           </Group>
@@ -105,7 +103,7 @@ export function EditSnippetModal({
         <Box style={{ flex: 3, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <Group justify="space-between" mb="xs">
             <MantineText fw={500} size="sm" c="dimmed">
-              Language: {language}
+              Language: {snippet.language}
             </MantineText>
             <Group gap="xs">
               <Tooltip label="Copy Code">
@@ -122,7 +120,7 @@ export function EditSnippetModal({
             </Group>
           </Group>
           <Box style={{ flex: 1, overflow: 'auto' }}>
-            <CodeHighlight code={code} language={language} withCopyButton={false} />
+            <CodeHighlight code={snippet.code} language={snippet.language} withCopyButton={false} />
           </Box>
         </Box>
 
@@ -210,11 +208,10 @@ export function EditSnippetModal({
       {/* Footer */}
       <Group justify="space-between" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-6)' }}>
         <Group gap="lg">
-          <MantineText size="xs" c="dimmed">
-            Created: {formatDate(createdAt)}
+          <MantineText size="xs" c="dimmed">            Created: {formatDate(snippet.createdAt)}
           </MantineText>
           <MantineText size="xs" c="dimmed">
-            Last modified: {formatDate(updatedAt)}
+            Last modified: {formatDate(snippet.updatedAt)}
           </MantineText>
         </Group>
       </Group>
