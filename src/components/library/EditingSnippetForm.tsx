@@ -8,6 +8,7 @@ import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
 import { IconCopy, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { Snippet } from '../../types/snippet';
+import { htmlDecode } from '../../pages/StudyNowPage';
 
 interface EditSnippetModalProps {
   opened: boolean;
@@ -122,7 +123,7 @@ export function EditSnippetModal({
             </Group>
           </Group>
           <Box style={{ flex: 1, overflow: 'auto' }}>
-            <CodeHighlight code={snippet.code} language={snippet.language} withCopyButton={false} />
+            <CodeHighlight code={htmlDecode(snippet.code)} language={snippet.language} withCopyButton={false} />
           </Box>
         </Box>
 

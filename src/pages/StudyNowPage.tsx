@@ -37,7 +37,7 @@ interface CurrentCardState {
 
 export function htmlDecode(input: string) {
   const doc = new DOMParser().parseFromString(input, 'text/html');
-  return doc.documentElement.textContent;
+  return doc.documentElement.textContent || '';
 }
 
 export default function StudyNow() {
@@ -84,7 +84,6 @@ export default function StudyNow() {
             });
           } else {
             // No cards to study or API error
-            console.error('No flashcards available to study or API error:', res.message);
             setCurrentCardState({
               index: 0,
               card: null,
@@ -102,7 +101,6 @@ export default function StudyNow() {
   }, [deckId, passedFlashcards]);
 
   const handleShowAnswer = () => {
-    console.log('Show answer clicked for card:', currentCardState.card?.id);
     setShowAnswer(true);
   };
 

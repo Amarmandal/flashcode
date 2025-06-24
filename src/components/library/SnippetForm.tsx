@@ -165,7 +165,7 @@ export function SnippetForm({ opened, onClose, snippet, folders, onSuccess }: Sn
                 <CodeHighlight
                   code={form.values.code || '// Enter your code...'}
                   language={form.values.language}
-                  withCopyButton={true}
+                  withCopyButton={false}
                 />
               </Box>
             ) : (
