@@ -4,7 +4,8 @@ use v_htmlescape::escape;
 
 use crate::database::DatabaseConnection;
 use crate::models::{
-    Deck, DeckQueryParams, Flashcode, SearchResult, Snippet, SnippetFolder, SnippetQueryParams,
+    Deck, DeckQueryParams, Flashcode, NormalCard, NormalDeck, NormalQueuesResponse, SearchResult,
+    Snippet, SnippetFolder, SnippetQueryParams,
 };
 use crate::responses::{
     DeckWithCount, ErrorResponse, SuccessResponse, SuccessResponseWithCount, TodayQueuesResponse,
@@ -789,4 +790,173 @@ pub fn delete_snippet_folder(
             Err(ErrorResponse::new("Internal server error".into()))
         }
     }
+}
+
+// ===== Normal Deck Commands =====
+
+#[tauri::command]
+pub fn create_normal_deck(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<SuccessResponse<NormalDeck>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalDeck::create(&*db_guard, &name)
+                .map(|deck| SuccessResponse::new("Normal deck created successfully".into(), deck))
+                .map_err(|e| ErrorResponse::new(e))
+        })
+}
+
+#[tauri::command]
+pub fn get_all_normal_decks(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<Vec<NormalDeck>>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalDeck::get_all(&*db_guard)
+                .map(|decks| SuccessResponse::new("Normal decks retrieved".into(), decks))
+                .map_err(|e| ErrorResponse::new(e.to_string()))
+        })
+}
+
+#[tauri::command]
+pub fn get_normal_deck(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<NormalDeck>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalDeck::get(&*db_guard, id)
+                .map(|deck| SuccessResponse::new("Normal deck found".into(), deck))
+                .map_err(|_| ErrorResponse::new(format!("Normal deck with id {} not found", id)))
+        })
+}
+
+#[tauri::command]
+pub fn update_normal_deck(
+    state: State<'_, AppState>,
+    deck: NormalDeck,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            deck.update(&*db_guard)
+                .map(|msg| SuccessResponse::new(msg.clone(), msg))
+                .map_err(|e| ErrorResponse::new(e.to_string()))
+        })
+}
+
+#[tauri::command]
+pub fn delete_normal_deck(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            let db = &*db_guard;
+            NormalDeck::get(db, id)
+                .map_err(|_| ErrorResponse::new(format!("Normal deck with id {} not found", id)))
+                .and_then(|deck| {
+                    deck.delete(db)
+                        .map(|msg| SuccessResponse::new(msg.clone(), msg))
+                        .map_err(|e| ErrorResponse::new(e.to_string()))
+                })
+        })
+}
+
+#[tauri::command]
+pub fn create_normal_card(
+    state: State<'_, AppState>,
+    deck_id: i64,
+    front: String,
+    back: String,
+) -> Result<SuccessResponse<NormalCard>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalCard::create(&*db_guard, deck_id, &front, &back)
+                .map(|c| SuccessResponse::new("Card created successfully".into(), c))
+                .map_err(|e| ErrorResponse::new(e))
+        })
+}
+
+#[tauri::command]
+pub fn get_normal_cards_by_deck(
+    state: State<'_, AppState>,
+    deck_id: i64,
+) -> Result<SuccessResponse<Vec<NormalCard>>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalCard::get_by_deck_id(&*db_guard, deck_id)
+                .map(|cards| SuccessResponse::new("Cards retrieved".into(), cards))
+                .map_err(|e| ErrorResponse::new(e.to_string()))
+        })
+}
+
+#[tauri::command]
+pub fn get_normal_queues_for_today(
+    state: State<'_, AppState>,
+    deck_id: i64,
+) -> Result<SuccessResponse<NormalQueuesResponse>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalCard::get_queues_for_today(&*db_guard, deck_id)
+                .map(|q| SuccessResponse::new("Queues retrieved".into(), q))
+                .map_err(|e| ErrorResponse::new(e.to_string()))
+        })
+}
+
+#[tauri::command]
+pub fn answer_normal_card(
+    state: State<'_, AppState>,
+    id: i64,
+    answer: crate::sm2::Answer,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalCard::update_based_on_answer(&*db_guard, id, answer)
+                .map(|msg| SuccessResponse::new(msg.clone(), msg))
+                .map_err(|e| ErrorResponse::new(e.to_string()))
+        })
+}
+
+#[tauri::command]
+pub fn delete_normal_card(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    state
+        .db
+        .lock()
+        .map_err(|_| ErrorResponse::new("Failed to acquire database lock".into()))
+        .and_then(|db_guard| {
+            NormalCard::delete(&*db_guard, id)
+                .map(|msg| SuccessResponse::new(msg.clone(), msg))
+                .map_err(|e| ErrorResponse::new(e.to_string()))
+        })
 }

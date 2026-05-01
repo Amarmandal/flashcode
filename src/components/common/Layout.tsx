@@ -3,7 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import classes from './Layout.module.css';
 import AppLogo from './Logo';
-import { IconCards, IconHeart, IconDatabaseSearch, IconRefresh, IconCode } from '@tabler/icons-react';
+import { IconCards, IconHeart, IconDatabaseSearch, IconRefresh, IconCode, IconBrain } from '@tabler/icons-react';
 import { SearchBar } from '../search/SearchBar';
 import { ThemeToggle } from './ThemeToggle';
 import { UpdateBanner } from './UpdateBanner';
@@ -77,11 +77,19 @@ const Layout = () => {
         <AppShell.Navbar p="md">
           <NavLink
             className={classes.navLabel}
-            label="Decks"
+            label="Code Deck"
             leftSection={<IconCards size={18} />}
             component={Link}
             to="/"
-            active={location.pathname === '/' || location.pathname.includes('deck')}
+            active={location.pathname === '/' || (location.pathname.startsWith('/deck'))}
+          />
+          <NavLink
+            className={classes.navLabel}
+            label="Normal Deck"
+            leftSection={<IconBrain size={18} />}
+            component={Link}
+            to="/normal-deck"
+            active={location.pathname.startsWith('/normal-deck')}
           />
           <NavLink
             className={classes.navLabel}

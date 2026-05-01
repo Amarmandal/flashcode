@@ -8,6 +8,9 @@ import FavoritePage from './pages/FavoritePage';
 import BrowsePage from './pages/BrowsePage';
 import LibraryPage from './pages/LibraryPage';
 import SplashScreen from './pages/SplashScreen';
+import NormalDeckPage from './pages/NormalDeckPage';
+import NormalDeckDetailPage from './pages/NormalDeckDetailPage';
+import NormalStudyPage from './pages/NormalStudyPage';
 
 export const routes: RouteObject[] = [
   {
@@ -39,6 +42,18 @@ export const routes: RouteObject[] = [
       {
         path: 'library',
         element: <LibraryPage />,
+      },
+      {
+        path: 'normal-deck',
+        element: <NormalDeckPage />,
+      },
+      {
+        path: 'normal-deck/:deckId',
+        element: <NormalDeckDetailPage />,
+      },
+      {
+        path: 'normal-deck/:deckId/study',
+        element: <NormalStudyPage />,
       },
       {
         path: '*',
