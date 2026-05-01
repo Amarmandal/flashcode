@@ -155,6 +155,15 @@ export function SnippetCard({
                     root: {
                       fontSize: '12px',
                     },
+                    pre: {
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      overflowX: 'hidden',
+                    },
+                    code: {
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    },
                   }}
                 />
               </Box>
@@ -272,6 +281,15 @@ export function SnippetCard({
                   fontSize: '11px',
                   maxHeight: '140px',
                   overflow: 'hidden',
+                },
+                pre: {
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  overflowX: 'hidden',
+                },
+                code: {
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
                 },
               }}
             />
