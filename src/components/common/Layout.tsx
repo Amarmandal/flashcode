@@ -1,4 +1,4 @@
-import { AppShell, Burger, Flex, NavLink, Loader } from '@mantine/core';
+import { AppShell, Burger, Divider, Flex, NavLink, Loader } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import classes from './Layout.module.css';
@@ -11,10 +11,13 @@ import { UpdateNotification } from './UpdateNotification';
 import { useUpdater } from '../../hooks/useUpdater';
 import { useState } from 'react';
 
+const STUDY_ROUTES = ['/study-now', '/study'];
+
 const Layout = () => {
   const [opened, { toggle }] = useDisclosure();
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const location = useLocation();
+  const isStudyMode = STUDY_ROUTES.some((r) => location.pathname.endsWith(r));
     const {
     isUpdateAvailable,
     isDownloading,
@@ -56,72 +59,75 @@ const Layout = () => {
         navbar={{
           width: 200,
           breakpoint: 'sm',
-          collapsed: { mobile: !opened },
+          collapsed: { mobile: !opened, desktop: isStudyMode },
         }}
         padding="md"
       >
         <AppShell.Header>
-          <Flex align="center" justify="space-around" h="100%" pl="xl">
+          <Flex align="center" justify="space-between" h="100%" px="xl" gap="md">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-
             <AppLogo size="medium" />
-
-            {/* Using a Flex to group SearchBar and ThemeToggle for better layout control */}
-            <Flex align="center" gap="md">
-              <SearchBar />
+            <Flex align="center" gap="md" style={{ flex: 1, justifyContent: 'flex-end' }}>
+              {!isStudyMode && <SearchBar />}
               <ThemeToggle />
             </Flex>
           </Flex>
         </AppShell.Header>
 
-        <AppShell.Navbar p="md">
-          <NavLink
-            className={classes.navLabel}
-            label="Code Deck"
-            leftSection={<IconCards size={18} />}
-            component={Link}
-            to="/"
-            active={location.pathname === '/' || (location.pathname.startsWith('/deck'))}
-          />
-          <NavLink
-            className={classes.navLabel}
-            label="Normal Deck"
-            leftSection={<IconBrain size={18} />}
-            component={Link}
-            to="/normal-deck"
-            active={location.pathname.startsWith('/normal-deck')}
-          />
-          <NavLink
-            className={classes.navLabel}
-            label="Favorite"
-            leftSection={<IconHeart size={18} />}
-            component={Link}
-            to="/favorite"
-            active={location.pathname === '/favorite'}
-          />          <NavLink
-            className={classes.navLabel}
-            label="Browse"
-            leftSection={<IconDatabaseSearch size={18} />}
-            component={Link}
-            to="/browse"
-            active={location.pathname === '/browse'}
-          />
-          <NavLink
-            className={classes.navLabel}
-            label="Library"
-            leftSection={<IconCode size={18} />}
-            component={Link}
-            to="/library"
-            active={location.pathname === '/library'}
-          />
-          <NavLink
-            className={classes.navLabel}
-            label="Check for Updates"
-            leftSection={isChecking ? <Loader size={18} /> : <IconRefresh size={18} />}
-            onClick={handleManualUpdateCheck}
-            style={{ cursor: 'pointer' }}
-            disabled={isChecking}
-          />
+        <AppShell.Navbar p="md" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <NavLink
+              className={classes.navLabel}
+              label="Code Deck"
+              leftSection={<IconCards size={18} />}
+              component={Link}
+              to="/"
+              active={location.pathname === '/' || location.pathname.startsWith('/deck')}
+            />
+            <NavLink
+              className={classes.navLabel}
+              label="Normal Deck"
+              leftSection={<IconBrain size={18} />}
+              component={Link}
+              to="/normal-deck"
+              active={location.pathname.startsWith('/normal-deck')}
+            />
+            <NavLink
+              className={classes.navLabel}
+              label="Favorite"
+              leftSection={<IconHeart size={18} />}
+              component={Link}
+              to="/favorite"
+              active={location.pathname === '/favorite'}
+            />
+            <NavLink
+              className={classes.navLabel}
+              label="Browse"
+              leftSection={<IconDatabaseSearch size={18} />}
+              component={Link}
+              to="/browse"
+              active={location.pathname === '/browse'}
+            />
+            <NavLink
+              className={classes.navLabel}
+              label="Library"
+              leftSection={<IconCode size={18} />}
+              component={Link}
+              to="/library"
+              active={location.pathname === '/library'}
+            />
+          </div>
+          <div>
+            <Divider mb="xs" />
+            <NavLink
+              className={classes.navLabel}
+              label="Check for Updates"
+              leftSection={isChecking ? <Loader size={18} /> : <IconRefresh size={18} />}
+              onClick={handleManualUpdateCheck}
+              style={{ cursor: 'pointer' }}
+              disabled={isChecking}
+            />
+          </div>
         </AppShell.Navbar>
 
         <AppShell.Main>

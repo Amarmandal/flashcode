@@ -117,13 +117,16 @@ export function FavoriteDeckList({ favoriteDecks, onRemoveFavorite, cardCounts }
         ))}
       </SimpleGrid>
       {favoriteDecks.length === 0 && (
-        <Card withBorder shadow="sm" radius="md" p="md" mih={150}>
+        <Card withBorder shadow="sm" radius="md" p="xl" mih={180}>
           <Center h="100%">
-            <Stack align="center" gap="xs">
-              <IconCards size={36} color="gray" />
-              <Text size="sm" c="dimmed">
-                No favorite decks yet.
+            <Stack align="center" gap="md">
+              <IconCards size={40} stroke={1.5} color="gray" />
+              <Text size="sm" c="dimmed" ta="center">
+                No favorite decks yet. Star a deck to pin it here for quick access.
               </Text>
+              <Button variant="light" size="sm" component={Link} to="/" rightSection={<IconArrowRight size={14} />}>
+                Browse Decks
+              </Button>
             </Stack>
           </Center>
         </Card>

@@ -1,7 +1,7 @@
-import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title, Progress } from '@mantine/core';
+import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title, Progress, Tooltip } from '@mantine/core';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { IconAlertCircle, IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload } from '@tabler/icons-react';
+import { IconAlertCircle, IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload, IconArrowLeft } from '@tabler/icons-react';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { Congratulations } from '../components/common/Congratulations';
 import { invoke } from '@tauri-apps/api/core';
@@ -47,14 +47,22 @@ export default function StudyNow() {
   const passedFlashcards = location.state?.flashcards || [];
 
   const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
+  const [deckName, setDeckName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  // Include completed flag in state
   const [currentCardState, setCurrentCardState] = useState<CurrentCardState>({
     index: 0,
     card: passedFlashcards.length > 0 ? passedFlashcards[0] : null,
     completed: false,
   });
   const [showAnswer, setShowAnswer] = useState(false);
+
+  useEffect(() => {
+    if (deckId) {
+      invoke<SuccessApiResponse<{ name: string }>>('get_deck', { id: Number(deckId) })
+        .then((res) => { if (res.success) setDeckName((res.data as any).name || ''); })
+        .catch(() => {});
+    }
+  }, [deckId]);
 
   useEffect(() => {
     // If we already have flashcards from location state, use them
@@ -154,6 +162,23 @@ export default function StudyNow() {
     navigate(`/deck/${deckId}`);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (!showAnswer && e.code === 'Space') {
+        e.preventDefault();
+        handleShowAnswer();
+      } else if (showAnswer) {
+        if (e.key === '1') handleOptionClick(CardAnswer.Again);
+        else if (e.key === '2') handleOptionClick(CardAnswer.Hard);
+        else if (e.key === '3') handleOptionClick(CardAnswer.Good);
+        else if (e.key === '4') handleOptionClick(CardAnswer.Easy);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showAnswer, currentCardState]);
+
   if (error) {
     return (
       <Container size="md" py="xl">
@@ -189,16 +214,30 @@ export default function StudyNow() {
       <Stack>
         <Group justify="space-between" align="center" mb="xs">
           <Title order={2}>
-            Studying Deck #{deckId} - Card {currentCardState.index + 1} of {flashcards.length}
+            {deckName ? `${deckName} — ` : ''}Card {currentCardState.index + 1} of {flashcards.length}
           </Title>
-          <Card radius="xl" px="md" py={4} bg={currentCardState.card?.is_reversed ? 'blue.1' : 'gray.1'} withBorder>
-            <Group gap={4}>
-              {currentCardState.card?.is_reversed && <IconEye size={16} color="#228be6" />}
-              <Text size="sm" fw={500} c={currentCardState.card?.is_reversed ? 'blue.7' : 'gray.7'}>
-                {currentCardState.card?.is_reversed ? 'Reversed' : 'Basic'}
-              </Text>
-            </Group>
-          </Card>
+          <Group gap="sm">
+            <Tooltip
+              label={currentCardState.card?.is_reversed ? 'Answer shows the question (reversed)' : 'Answer shows the code solution'}
+              withArrow
+            >
+              <Card radius="xl" px="md" py={4} withBorder style={{ cursor: 'default' }}>
+                <Group gap={4}>
+                  {currentCardState.card?.is_reversed && <IconEye size={16} />}
+                  <Text size="sm" fw={500} c="dimmed">
+                    {currentCardState.card?.is_reversed ? 'Reversed' : 'Basic'}
+                  </Text>
+                </Group>
+              </Card>
+            </Tooltip>
+            <Button
+              variant="subtle"
+              leftSection={<IconArrowLeft size={16} />}
+              onClick={handleBackToDeck}
+            >
+              Back to Deck
+            </Button>
+          </Group>
         </Group>
         {/* Progress bar */}
         <Progress
@@ -244,51 +283,61 @@ export default function StudyNow() {
                 )}
                 {/* Feedback buttons with icons */}
                 <Group justify="center" mt="md" gap="sm">
-                  <Button
-                    variant="outline"
-                    color="red"
-                    leftSection={<IconReload size={18} />}
-                    onClick={() => handleOptionClick(CardAnswer.Again)}
-                  >
-                    Again
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="orange"
-                    leftSection={<IconEye size={18} />}
-                    onClick={() => handleOptionClick(CardAnswer.Hard)}
-                  >
-                    Hard
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="teal"
-                    leftSection={<IconCircleCheckFilled size={18} />}
-                    onClick={() => handleOptionClick(CardAnswer.Good)}
-                  >
-                    Good
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="blue"
-                    leftSection={<IconBoltFilled size={18} />}
-                    onClick={() => handleOptionClick(CardAnswer.Easy)}
-                  >
-                    Easy
-                  </Button>
+                  <Tooltip label="Press 1" withArrow>
+                    <Button
+                      variant="outline"
+                      color="red"
+                      leftSection={<IconReload size={18} />}
+                      onClick={() => handleOptionClick(CardAnswer.Again)}
+                    >
+                      Again
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="Press 2" withArrow>
+                    <Button
+                      variant="outline"
+                      color="orange"
+                      leftSection={<IconEye size={18} />}
+                      onClick={() => handleOptionClick(CardAnswer.Hard)}
+                    >
+                      Hard
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="Press 3" withArrow>
+                    <Button
+                      variant="outline"
+                      color="teal"
+                      leftSection={<IconCircleCheckFilled size={18} />}
+                      onClick={() => handleOptionClick(CardAnswer.Good)}
+                    >
+                      Good
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="Press 4" withArrow>
+                    <Button
+                      variant="outline"
+                      color="blue"
+                      leftSection={<IconBoltFilled size={18} />}
+                      onClick={() => handleOptionClick(CardAnswer.Easy)}
+                    >
+                      Easy
+                    </Button>
+                  </Tooltip>
                 </Group>
               </>
             ) : (
-              <Button
-                size="lg"
-                variant="filled"
-                color="teal"
-                leftSection={<IconEye size={20} />}
-                onClick={handleShowAnswer}
-                mt="md"
-              >
-                Show Answer
-              </Button>
+              <Stack align="center" gap="xs" mt="md">
+                <Button
+                  size="lg"
+                  variant="filled"
+                  color="teal"
+                  leftSection={<IconEye size={20} />}
+                  onClick={handleShowAnswer}
+                >
+                  Show Answer
+                </Button>
+                <Text size="xs" c="dimmed">Press Space to reveal</Text>
+              </Stack>
             )}
           </Stack>
         </Card>

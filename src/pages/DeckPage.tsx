@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Alert, Box, Button, Container, Group, Pagination, Stack, Text, Title } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import { useEffect, useState, useRef } from 'react';
 import { DeckList } from '../components/deck/DeckList';
 import { DeckForm } from '../components/deck/DeckForm';
@@ -134,7 +135,7 @@ export default function Deck() {
       <Stack>
         <Group justify="space-between">
           <Title order={2}>Decks</Title>
-          <Button onClick={() => openForm()}>Create New Deck</Button>
+          <Button leftSection={<IconPlus size={16} />} onClick={() => openForm()}>Create New Deck</Button>
         </Group>
         <Box style={{ minHeight: '60vh' }}>
           {decks.length === 0 ? (

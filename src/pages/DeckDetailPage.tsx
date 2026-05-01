@@ -1,4 +1,4 @@
-import { Button, Container, Group, Stack, Title, Modal, Text } from '@mantine/core';
+import { Button, Container, Group, Stack, Title, Modal, Text, Anchor, Breadcrumbs } from '@mantine/core';
 import { IconBook, IconPlus, IconRefresh } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router-dom';
 import { StatusCard } from '../components/deck/StatusCard';
@@ -123,6 +123,10 @@ export default function DeckDetail() {
   return (
     <Container size="md" py="xl">
       <Stack>
+        <Breadcrumbs mb="xs">
+          <Anchor component={Link} to="/" size="sm">Code Decks</Anchor>
+          <Text size="sm">{deckDetail?.name}</Text>
+        </Breadcrumbs>
         <Group justify="space-between">
           <Title order={2}>{deckDetail?.name}</Title>
           <Group>

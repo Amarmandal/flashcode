@@ -1,12 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box,
+  Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box, Anchor, Breadcrumbs,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { IconPlus, IconTrash, IconBook } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconBook, IconFileImport } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { NormalDeck, NormalCard, NormalQueuesResponse } from '../types/normalDeck';
 import { NormalCardForm } from '../components/normal-deck/NormalCardForm';
+import { BulkImportModal } from '../components/normal-deck/BulkImportModal';
 import { StatusCard } from '../components/deck/StatusCard';
 import { SuccessApiResponse } from '../types/successApiResponse';
 
@@ -16,6 +18,7 @@ export default function NormalDeckDetailPage() {
   const [cards, setCards] = useState<NormalCard[]>([]);
   const [queues, setQueues] = useState({ new: 0, learning: 0, toReview: 0 });
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   const fetchData = async () => {
     const [deckRes, queuesRes] = await Promise.all([
@@ -67,16 +70,36 @@ export default function NormalDeckDetailPage() {
     }
   };
 
+  const handleImportComplete = (addedCount: number, skippedCount: number) => {
+    notifications.show({
+      title: 'Import complete',
+      message: `${addedCount} cards added. ${skippedCount} skipped (duplicates or invalid).`,
+      color: 'teal',
+    });
+    fetchData();
+  };
+
   const totalDue = queues.new + queues.learning + queues.toReview;
 
   return (
     <Container size="md" py="xl">
       <Stack>
+        <Breadcrumbs mb="xs">
+          <Anchor component={Link} to="/normal-deck" size="sm">Normal Decks</Anchor>
+          <Text size="sm">{deck?.name}</Text>
+        </Breadcrumbs>
         <Group justify="space-between">
           <Title order={2}>{deck?.name}</Title>
           <Group>
             <Button leftSection={<IconPlus size={16} />} onClick={() => setIsFormOpen(true)}>
               Add Card
+            </Button>
+            <Button
+              leftSection={<IconFileImport size={16} />}
+              variant="light"
+              onClick={() => setIsBulkImportOpen(true)}
+            >
+              Bulk Import
             </Button>
             <Button
               variant="filled"
@@ -126,6 +149,14 @@ export default function NormalDeckDetailPage() {
         opened={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleAddCard}
+      />
+
+      <BulkImportModal
+        opened={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        deckId={Number(deckId)}
+        existingFronts={cards.map((c) => c.front)}
+        onImportComplete={handleImportComplete}
       />
     </Container>
   );

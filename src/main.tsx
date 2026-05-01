@@ -2,8 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { createTheme, MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
 import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import '@mantine/tiptap/styles.css';
 
 // Wrapper component using the theme context
@@ -14,6 +16,7 @@ function AppWrapper() {
 
   return (
     <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
+      <Notifications />
       <App />
     </MantineProvider>
   );
