@@ -1,6 +1,6 @@
 [package]
 name = "flashcodes"
-version = "0.1.10"
+version = "0.1.11"
 description = "Anki like tools but for the developer"
 authors = ["Amar Kumar Mandal"]
 edition = "2021"

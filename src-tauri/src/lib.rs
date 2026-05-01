@@ -14,6 +14,9 @@ use commands::{
     reset_deck, search, update_deck, update_flashcode, AppState,
     create_snippet, get_snippet, get_all_snippets, update_snippet, delete_snippet, search_snippets,
     create_snippet_folder, get_snippet_folders, delete_snippet_folder,
+    create_normal_deck, get_all_normal_decks, get_normal_deck, update_normal_deck, delete_normal_deck,
+    create_normal_card, get_normal_cards_by_deck, get_normal_queues_for_today,
+    answer_normal_card, delete_normal_card,
 };
 use database::DatabaseConnection;
 use models::{seconds_to_days, Flashcode};
@@ -55,7 +58,17 @@ pub fn run() {
             search_snippets,
             create_snippet_folder,
             get_snippet_folders,
-            delete_snippet_folder
+            delete_snippet_folder,
+            create_normal_deck,
+            get_all_normal_decks,
+            get_normal_deck,
+            update_normal_deck,
+            delete_normal_deck,
+            create_normal_card,
+            get_normal_cards_by_deck,
+            get_normal_queues_for_today,
+            answer_normal_card,
+            delete_normal_card,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
