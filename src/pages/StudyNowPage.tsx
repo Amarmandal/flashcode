@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Container, Divider, Group, Stack, Text, Title, Progress, Tooltip } from '@mantine/core';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { IconAlertCircle, IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload } from '@tabler/icons-react';
+import { IconAlertCircle, IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload, IconArrowLeft } from '@tabler/icons-react';
 import { CodeBlockWithHeader } from '../components/flashcard/CodeBlockWithHeader';
 import { Congratulations } from '../components/common/Congratulations';
 import { invoke } from '@tauri-apps/api/core';
@@ -216,19 +216,28 @@ export default function StudyNow() {
           <Title order={2}>
             {deckName ? `${deckName} — ` : ''}Card {currentCardState.index + 1} of {flashcards.length}
           </Title>
-          <Tooltip
-            label={currentCardState.card?.is_reversed ? 'Answer shows the question (reversed)' : 'Answer shows the code solution'}
-            withArrow
-          >
-            <Card radius="xl" px="md" py={4} withBorder style={{ cursor: 'default' }}>
-              <Group gap={4}>
-                {currentCardState.card?.is_reversed && <IconEye size={16} />}
-                <Text size="sm" fw={500} c="dimmed">
-                  {currentCardState.card?.is_reversed ? 'Reversed' : 'Basic'}
-                </Text>
-              </Group>
-            </Card>
-          </Tooltip>
+          <Group gap="sm">
+            <Tooltip
+              label={currentCardState.card?.is_reversed ? 'Answer shows the question (reversed)' : 'Answer shows the code solution'}
+              withArrow
+            >
+              <Card radius="xl" px="md" py={4} withBorder style={{ cursor: 'default' }}>
+                <Group gap={4}>
+                  {currentCardState.card?.is_reversed && <IconEye size={16} />}
+                  <Text size="sm" fw={500} c="dimmed">
+                    {currentCardState.card?.is_reversed ? 'Reversed' : 'Basic'}
+                  </Text>
+                </Group>
+              </Card>
+            </Tooltip>
+            <Button
+              variant="subtle"
+              leftSection={<IconArrowLeft size={16} />}
+              onClick={handleBackToDeck}
+            >
+              Back to Deck
+            </Button>
+          </Group>
         </Group>
         {/* Progress bar */}
         <Progress

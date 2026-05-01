@@ -5,7 +5,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload, IconAlertCircle,
+  IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload, IconAlertCircle, IconArrowLeft,
 } from '@tabler/icons-react';
 import { SuccessApiResponse } from '../types/successApiResponse';
 import { NormalCard, NormalQueuesResponse } from '../types/normalDeck';
@@ -146,6 +146,13 @@ export default function NormalStudyPage() {
           <Title order={2}>
             {deckName ? `${deckName} — ` : ''}Card {currentCardState.index + 1} of {cards.length}
           </Title>
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={16} />}
+            onClick={() => navigate(`/normal-deck/${deckId}`)}
+          >
+            Back to Deck
+          </Button>
         </Group>
 
         <Progress value={progress} radius="md" size="md" color="blue" mb={16} />
