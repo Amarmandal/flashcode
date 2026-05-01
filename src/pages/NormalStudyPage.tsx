@@ -1,15 +1,15 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Container, Stack, Title, Text, Button, Group, Card, Divider, Progress,
+  Container, Stack, Title, Text, Button, Group, Card, Divider, Progress, Tooltip,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   IconEye, IconCircleCheckFilled, IconBoltFilled, IconReload, IconAlertCircle,
 } from '@tabler/icons-react';
+import { SuccessApiResponse } from '../types/successApiResponse';
 import { NormalCard, NormalQueuesResponse } from '../types/normalDeck';
 import { Congratulations } from '../components/common/Congratulations';
-import { SuccessApiResponse } from '../types/successApiResponse';
 
 enum CardAnswer {
   Again = 'Again',
@@ -29,6 +29,7 @@ export default function NormalStudyPage() {
   const navigate = useNavigate();
 
   const [cards, setCards] = useState<NormalCard[]>([]);
+  const [deckName, setDeckName] = useState<string>('');
   const [showAnswer, setShowAnswer] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentCardState, setCurrentCardState] = useState<CurrentCardState>({
@@ -36,6 +37,31 @@ export default function NormalStudyPage() {
     card: null,
     completed: false,
   });
+
+  useEffect(() => {
+    if (deckId) {
+      invoke<SuccessApiResponse<{ name: string }>>('get_normal_deck', { id: Number(deckId) })
+        .then((res) => { if (res.success) setDeckName((res.data as any).name || ''); })
+        .catch(() => {});
+    }
+  }, [deckId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (!showAnswer && e.code === 'Space') {
+        e.preventDefault();
+        setShowAnswer(true);
+      } else if (showAnswer) {
+        if (e.key === '1') handleAnswer(CardAnswer.Again);
+        else if (e.key === '2') handleAnswer(CardAnswer.Hard);
+        else if (e.key === '3') handleAnswer(CardAnswer.Good);
+        else if (e.key === '4') handleAnswer(CardAnswer.Easy);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showAnswer, currentCardState]);
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -118,7 +144,7 @@ export default function NormalStudyPage() {
       <Stack>
         <Group justify="space-between" align="center" mb="xs">
           <Title order={2}>
-            Card {currentCardState.index + 1} of {cards.length}
+            {deckName ? `${deckName} — ` : ''}Card {currentCardState.index + 1} of {cards.length}
           </Title>
         </Group>
 
@@ -145,51 +171,41 @@ export default function NormalStudyPage() {
                   dangerouslySetInnerHTML={{ __html: card.back }}
                 />
                 <Group justify="center" mt="md" gap="sm">
-                  <Button
-                    variant="outline"
-                    color="red"
-                    leftSection={<IconReload size={18} />}
-                    onClick={() => handleAnswer(CardAnswer.Again)}
-                  >
-                    Again
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="orange"
-                    leftSection={<IconEye size={18} />}
-                    onClick={() => handleAnswer(CardAnswer.Hard)}
-                  >
-                    Hard
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="teal"
-                    leftSection={<IconCircleCheckFilled size={18} />}
-                    onClick={() => handleAnswer(CardAnswer.Good)}
-                  >
-                    Good
-                  </Button>
-                  <Button
-                    variant="outline"
-                    color="blue"
-                    leftSection={<IconBoltFilled size={18} />}
-                    onClick={() => handleAnswer(CardAnswer.Easy)}
-                  >
-                    Easy
-                  </Button>
+                  <Tooltip label="Press 1" withArrow>
+                    <Button variant="outline" color="red" leftSection={<IconReload size={18} />} onClick={() => handleAnswer(CardAnswer.Again)}>
+                      Again
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="Press 2" withArrow>
+                    <Button variant="outline" color="orange" leftSection={<IconEye size={18} />} onClick={() => handleAnswer(CardAnswer.Hard)}>
+                      Hard
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="Press 3" withArrow>
+                    <Button variant="outline" color="teal" leftSection={<IconCircleCheckFilled size={18} />} onClick={() => handleAnswer(CardAnswer.Good)}>
+                      Good
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="Press 4" withArrow>
+                    <Button variant="outline" color="blue" leftSection={<IconBoltFilled size={18} />} onClick={() => handleAnswer(CardAnswer.Easy)}>
+                      Easy
+                    </Button>
+                  </Tooltip>
                 </Group>
               </>
             ) : (
-              <Button
-                size="lg"
-                variant="filled"
-                color="teal"
-                leftSection={<IconEye size={20} />}
-                onClick={() => setShowAnswer(true)}
-                mt="md"
-              >
-                Show Answer
-              </Button>
+              <Stack align="center" gap="xs" mt="md">
+                <Button
+                  size="lg"
+                  variant="filled"
+                  color="teal"
+                  leftSection={<IconEye size={20} />}
+                  onClick={() => setShowAnswer(true)}
+                >
+                  Show Answer
+                </Button>
+                <Text size="xs" c="dimmed">Press Space to reveal</Text>
+              </Stack>
             )}
           </Stack>
         </Card>

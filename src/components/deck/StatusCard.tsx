@@ -8,11 +8,18 @@ interface StatusCardProps {
 
 export function StatusCard({ label, count, color }: StatusCardProps) {
   return (
-    <Card withBorder shadow="sm" radius="md" p="lg" bg={`${color}.0`} style={{ textAlign: 'center' }}>
-      <Text size="lg" fw={600} c="black">
+    <Card
+      radius="md"
+      p="lg"
+      style={{
+        textAlign: 'center',
+        border: `2px solid var(--mantine-color-${color}-6)`,
+      }}
+    >
+      <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: 1 }}>
         {label}
       </Text>
-      <Text size="xl" fw={700} c={color}>
+      <Text size="2rem" fw={800} c={color} mt={4}>
         {count}
       </Text>
     </Card>

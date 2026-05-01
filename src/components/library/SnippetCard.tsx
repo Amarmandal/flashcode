@@ -64,6 +64,11 @@ export function SnippetCard({
     return lines.slice(0, maxLines).join('\n') + '\n...';
   };
 
+  const stripHtml = (html: string): string => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim();
+  };
+
   const parseTags = (tagsString?: string): string[] => {
     if (!tagsString) return [];
     try {
@@ -127,7 +132,7 @@ export function SnippetCard({
 
               {snippet.description && (
                 <Text size="sm" c="dimmed" lineClamp={2}>
-                  {snippet.description}
+                  {stripHtml(snippet.description)}
                 </Text>
               )}
 

@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box,
+  Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box, Anchor, Breadcrumbs,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
@@ -72,6 +72,10 @@ export default function NormalDeckDetailPage() {
   return (
     <Container size="md" py="xl">
       <Stack>
+        <Breadcrumbs mb="xs">
+          <Anchor component={Link} to="/normal-deck" size="sm">Normal Decks</Anchor>
+          <Text size="sm">{deck?.name}</Text>
+        </Breadcrumbs>
         <Group justify="space-between">
           <Title order={2}>{deck?.name}</Title>
           <Group>

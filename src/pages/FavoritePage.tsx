@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Alert, Container, Stack, Text, Title } from '@mantine/core';
+import { Alert, Container, Stack, Title } from '@mantine/core';
 import { useEffect, useState, useRef } from 'react';
 import { Deck as DeckType, DeckWithCount } from '../types/deck';
 import { IconAlertCircle } from '@tabler/icons-react';
@@ -77,11 +77,6 @@ export default function FavoritePage() {
           favoriteDecks={favoriteDecks}
           cardCounts={cardCounts}
         />
-        {favoriteDecks.length === 0 && !error && (
-          <Text c="dimmed" ta="center" mt="md">
-            You haven't marked any decks as favorite yet.
-          </Text>
-        )}
       </Stack>
     </Container>
   );
