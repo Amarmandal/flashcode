@@ -2,7 +2,7 @@
   "name": "flashcode",
   "productName": "Flashcode",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.12",
   "type": "module",
   "scripts": {
     "dev": "vite",
