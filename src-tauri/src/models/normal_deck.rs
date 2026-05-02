@@ -100,6 +100,17 @@ impl NormalDeck {
         conn.execute("DELETE FROM normal_decks WHERE id = ?1", params![self.id])?;
         Ok("Deck deleted successfully".to_string())
     }
+
+    pub fn reset_all_cards(db: &DatabaseConnection, deck_id: i64) -> Result<String, Error> {
+        let conn = db.get_connection();
+
+        conn.execute(
+            "UPDATE normal_cards SET ease_factor = 2.5, interval = 1, repetitions = 0 WHERE deck_id = ?1",
+            params![deck_id],
+        )?;
+
+        Ok("Deck has been reset successfully".to_string())
+    }
 }
 
 impl NormalCard {
