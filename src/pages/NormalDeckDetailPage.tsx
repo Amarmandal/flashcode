@@ -1,10 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box, Anchor, Breadcrumbs,
+  Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box, Anchor, Breadcrumbs, Modal,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { IconPlus, IconTrash, IconBook, IconFileImport } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconBook, IconFileImport, IconRefresh } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { NormalDeck, NormalCard, NormalQueuesResponse } from '../types/normalDeck';
 import { NormalCardForm } from '../components/normal-deck/NormalCardForm';
@@ -19,6 +19,7 @@ export default function NormalDeckDetailPage() {
   const [queues, setQueues] = useState({ new: 0, learning: 0, toReview: 0 });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const fetchData = async () => {
     const [deckRes, queuesRes] = await Promise.all([
@@ -79,6 +80,35 @@ export default function NormalDeckDetailPage() {
     fetchData();
   };
 
+  const handleResetDeck = async () => {
+    try {
+      const response = await invoke<SuccessApiResponse<number>>('reset_normal_deck', { id: Number(deckId) });
+      if (response.success) {
+        notifications.show({
+          title: 'Deck reset',
+          message: 'All cards have been reset successfully.',
+          color: 'teal',
+        });
+        fetchData();
+      } else {
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to reset deck.',
+          color: 'red',
+        });
+      }
+    } catch (err) {
+      console.error('Error resetting deck:', err);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to reset deck.',
+        color: 'red',
+      });
+    } finally {
+      setResetConfirmOpen(false);
+    }
+  };
+
   const totalDue = queues.new + queues.learning + queues.toReview;
 
   return (
@@ -91,6 +121,14 @@ export default function NormalDeckDetailPage() {
         <Group justify="space-between">
           <Title order={2}>{deck?.name}</Title>
           <Group>
+            <Button
+              variant="outline"
+              color="red"
+              leftSection={<IconRefresh size={16} />}
+              onClick={() => setResetConfirmOpen(true)}
+            >
+              Reset Deck
+            </Button>
             <Button leftSection={<IconPlus size={16} />} onClick={() => setIsFormOpen(true)}>
               Add Card
             </Button>
@@ -158,6 +196,21 @@ export default function NormalDeckDetailPage() {
         existingFronts={cards.map((c) => c.front)}
         onImportComplete={handleImportComplete}
       />
+
+      {/* Reset Confirmation Modal */}
+      <Modal opened={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)} title="Reset Deck" centered>
+        <Stack>
+          <Text>Are you sure you want to reset all cards in this deck? This will reset all progress.</Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setResetConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="filled" color="red" onClick={handleResetDeck}>
+              Reset
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 }

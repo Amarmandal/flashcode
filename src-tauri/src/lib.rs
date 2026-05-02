@@ -5,7 +5,7 @@ mod queues;
 mod responses;
 mod sm2;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
 use commands::{
@@ -15,7 +15,7 @@ use commands::{
     create_snippet, get_snippet, get_all_snippets, update_snippet, delete_snippet, search_snippets,
     create_snippet_folder, get_snippet_folders, delete_snippet_folder,
     create_normal_deck, get_all_normal_decks, get_normal_deck, update_normal_deck, delete_normal_deck,
-    create_normal_card, get_normal_cards_by_deck, get_normal_queues_for_today,
+    reset_normal_deck, create_normal_card, get_normal_cards_by_deck, get_normal_queues_for_today,
     answer_normal_card, delete_normal_card,
 };
 use database::DatabaseConnection;
@@ -28,7 +28,7 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle();
             let db = DatabaseConnection::new(&app_handle).unwrap();
-            app.manage(AppState { db: Mutex::new(db) });
+            app.manage(AppState { db: Arc::new(Mutex::new(db)) });
             Ok(())
         })
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -64,6 +64,7 @@ pub fn run() {
             get_normal_deck,
             update_normal_deck,
             delete_normal_deck,
+            reset_normal_deck,
             create_normal_card,
             get_normal_cards_by_deck,
             get_normal_queues_for_today,
