@@ -8,6 +8,7 @@ import { SearchBar } from '../search/SearchBar';
 import { ThemeToggle } from './ThemeToggle';
 import { UpdateBanner } from './UpdateBanner';
 import { UpdateNotification } from './UpdateNotification';
+import { BackupRestore } from '../backup/BackupRestore';
 import { useUpdater } from '../../hooks/useUpdater';
 import { useState } from 'react';
 
@@ -71,6 +72,8 @@ const Layout = () => {
               {!isStudyMode && <SearchBar />}
               <ThemeToggle />
             </Flex>
+            {/* BackupRestore component handles menu events in the background */}
+            <BackupRestore />
           </Flex>
         </AppShell.Header>
 
