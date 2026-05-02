@@ -1,6 +1,9 @@
 use std::sync::{Arc, Mutex};
-use tauri::State;
+use std::fs;
+use std::path::Path;
+use tauri::{AppHandle, Manager, State};
 use v_htmlescape::escape;
+use chrono::Local;
 
 use crate::database::DatabaseConnection;
 use crate::models::{
@@ -699,4 +702,127 @@ pub async fn delete_normal_card(
             .map_err(|e| e.to_string())
     })
     .await
+}
+
+// Backup and Restore Commands
+
+fn get_db_path(app: &AppHandle) -> Result<String, String> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
+
+    let db_path = app_data_dir.join("flashcodes.db");
+    db_path
+        .to_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Invalid database path".to_string())
+}
+
+#[tauri::command]
+pub async fn export_database_backup(
+    app: AppHandle,
+    destination_path: String,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    tokio::task::spawn_blocking(move || {
+        let source_path = get_db_path(&app).map_err(|e| ErrorResponse::new(e))?;
+
+        // Validate source exists
+        if !Path::new(&source_path).exists() {
+            return Err(ErrorResponse::new("Database file not found".into()));
+        }
+
+        // Copy database file
+        fs::copy(&source_path, &destination_path).map_err(|e| {
+            eprintln!("Failed to copy database: {:?}", e);
+            ErrorResponse::new(format!("Failed to export backup: {}", e))
+        })?;
+
+        Ok(SuccessResponse::new(
+            "Database exported successfully".into(),
+            destination_path.clone(),
+        ))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Export operation failed".into())
+    })?
+}
+
+#[tauri::command]
+pub async fn import_database_backup(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    source_path: String,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+
+    tokio::task::spawn_blocking(move || {
+        let db_path = get_db_path(&app).map_err(|e| ErrorResponse::new(e))?;
+
+        // Validate source exists
+        if !Path::new(&source_path).exists() {
+            return Err(ErrorResponse::new("Backup file not found".into()));
+        }
+
+        // Validate source is a valid SQLite database
+        if let Err(e) = rusqlite::Connection::open(&source_path) {
+            return Err(ErrorResponse::new(format!(
+                "Invalid database file: {}",
+                e
+            )));
+        }
+
+        // Create automatic backup of current database before replacing
+        let timestamp = Local::now().format("%Y%m%d_%H%M%S");
+        let backup_path = format!("{}.backup_{}", db_path, timestamp);
+
+        if Path::new(&db_path).exists() {
+            fs::copy(&db_path, &backup_path).map_err(|e| {
+                eprintln!("Failed to create safety backup: {:?}", e);
+                ErrorResponse::new(format!("Failed to create safety backup: {}", e))
+            })?;
+        }
+
+        // Acquire lock to ensure no operations are in progress
+        let _db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+
+        // Copy backup file to database location
+        fs::copy(&source_path, &db_path).map_err(|e| {
+            eprintln!("Failed to import database: {:?}", e);
+            // Try to restore from safety backup
+            if Path::new(&backup_path).exists() {
+                let _ = fs::copy(&backup_path, &db_path);
+            }
+            ErrorResponse::new(format!("Failed to import backup: {}", e))
+        })?;
+
+        Ok(SuccessResponse::new(
+            "Database imported successfully. Please restart the application.".into(),
+            backup_path,
+        ))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Import operation failed".into())
+    })?
+}
+
+#[tauri::command]
+pub async fn get_database_path(app: AppHandle) -> Result<SuccessResponse<String>, ErrorResponse> {
+    tokio::task::spawn_blocking(move || {
+        get_db_path(&app)
+            .map(|path| SuccessResponse::new("Database path retrieved".into(), path))
+            .map_err(|e| ErrorResponse::new(e))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Failed to get database path".into())
+    })?
 }
