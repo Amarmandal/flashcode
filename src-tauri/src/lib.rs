@@ -6,7 +6,7 @@ mod responses;
 mod sm2;
 
 use std::sync::{Arc, Mutex};
-use tauri::{Manager, menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder}};
+use tauri::{Emitter, Manager, menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder}};
 
 use commands::{
     answer_flashcard, create_deck, create_flashcode, delete_deck, delete_flashcode, get_all_decks,
@@ -32,6 +32,21 @@ pub fn run() {
             app.manage(AppState { db: Arc::new(Mutex::new(db)) });
 
             // Build the native menu
+
+            // App Menu (Flash Code)
+            let app_menu = SubmenuBuilder::new(app, "Flash Code")
+                .about(None)
+                .separator()
+                .services()
+                .separator()
+                .hide()
+                .hide_others()
+                .show_all()
+                .separator()
+                .quit()
+                .build()?;
+
+            // File Menu
             let export_backup = MenuItemBuilder::with_id("export_backup", "Export Backup...")
                 .accelerator("CmdOrCtrl+Shift+E")
                 .build(app)?;
@@ -47,8 +62,42 @@ pub fn run() {
                 .quit()
                 .build()?;
 
+            // Edit Menu
+            let edit_menu = SubmenuBuilder::new(app, "Edit")
+                .undo()
+                .redo()
+                .separator()
+                .cut()
+                .copy()
+                .paste()
+                .separator()
+                .select_all()
+                .build()?;
+
+            // View Menu
+            let view_menu = SubmenuBuilder::new(app, "View")
+                .fullscreen()
+                .build()?;
+
+            // Window Menu
+            let window_menu = SubmenuBuilder::new(app, "Window")
+                .minimize()
+                .maximize()
+                .separator()
+                .close_window()
+                .build()?;
+
+            // Help Menu
+            let help_menu = SubmenuBuilder::new(app, "Help")
+                .build()?;
+
             let menu = MenuBuilder::new(app)
+                .item(&app_menu)
                 .item(&file_menu)
+                .item(&edit_menu)
+                .item(&view_menu)
+                .item(&window_menu)
+                .item(&help_menu)
                 .build()?;
 
             app.set_menu(menu)?;
