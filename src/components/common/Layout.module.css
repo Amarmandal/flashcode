@@ -1,3 +1,19 @@
 .navLabel {
-  font-weight: bold;
+  font-weight: 500;
+}
+
+.navLabel:hover {
+  background-color: var(--sidebar-active) !important;
+}
+
+.navLabel[data-active="true"] {
+  background-color: var(--sidebar-active) !important;
+}
+
+.navLabel[data-active="false"] {
+  opacity: 0.7;
+}
+
+.navLabel[data-active="false"]:hover {
+  opacity: 1;
 }

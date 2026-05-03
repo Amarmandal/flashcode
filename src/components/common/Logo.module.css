@@ -1,13 +1,14 @@
 .logoText {
   font-family: 'Inter', sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--mantine-color-text);
   text-align: center;
-  background: linear-gradient(90deg, #6366f1, #10b981);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #10b981 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
+  letter-spacing: -0.02em;
 }
 
 /* Size variations */

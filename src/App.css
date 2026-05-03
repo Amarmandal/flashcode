@@ -1,15 +1,113 @@
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
-  line-height: 24px;
+  line-height: 1.5;
   font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+/* Light Mode Variables */
+[data-mantine-color-scheme="light"] {
+  --page-bg: #eef2f7;
+  --surface-bg: rgba(255, 255, 255, 0.65);
+  --surface-border: rgba(255, 255, 255, 0.8);
+  --sidebar-bg: rgba(15, 23, 42, 0.9);
+  --sidebar-text: #f1f5f9;
+  --sidebar-text-dim: rgba(241, 245, 249, 0.5);
+  --sidebar-active: rgba(255, 255, 255, 0.12);
+  --sidebar-divider: rgba(255, 255, 255, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+  --border-color: #e2e8f0;
+  --input-bg: rgba(255, 255, 255, 0.7);
+  --input-border: rgba(226, 232, 240, 0.8);
+  --primary-btn-bg: #0f172a;
+  --primary-btn-text: #ffffff;
+  --secondary-btn-bg: #f1f5f9;
+  --secondary-btn-text: #0f172a;
+  --progress-fill: #0f172a;
+  --progress-track: #e2e8f0;
+  --icon-badge-bg: rgba(15, 23, 42, 0.08);
+  --icon-badge-color: #0f172a;
+  --icon-badge-brain-bg: rgba(139, 92, 246, 0.08);
+  --icon-badge-brain-color: #8b5cf6;
+}
+
+/* Dark Mode Variables */
+[data-mantine-color-scheme="dark"] {
+  --page-bg: #0c1222;
+  --surface-bg: rgba(30, 41, 59, 0.5);
+  --surface-border: rgba(255, 255, 255, 0.05);
+  --sidebar-bg: rgba(2, 6, 23, 0.85);
+  --sidebar-text: #f1f5f9;
+  --sidebar-text-dim: rgba(241, 245, 249, 0.5);
+  --sidebar-active: rgba(255, 255, 255, 0.12);
+  --sidebar-divider: rgba(255, 255, 255, 0.08);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --border-color: #334155;
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --primary-btn-bg: #e2e8f0;
+  --primary-btn-text: #0f172a;
+  --secondary-btn-bg: #334155;
+  --secondary-btn-text: #e2e8f0;
+  --progress-fill: #e2e8f0;
+  --progress-track: #334155;
+  --icon-badge-bg: rgba(241, 245, 249, 0.15);
+  --icon-badge-color: #e2e8f0;
+  --icon-badge-brain-bg: rgba(167, 139, 250, 0.2);
+  --icon-badge-brain-color: #a78bfa;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--page-bg);
+  color: var(--text-primary);
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: var(--surface-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+}
+
+/* Glass Input Effect */
+.glass-input {
+  background: var(--input-bg) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--input-border) !important;
+}
+
+/* Sidebar Glass Effect */
+.glass-sidebar {
+  background: var(--sidebar-bg) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid var(--sidebar-divider);
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Remove default Mantine shadows */
+.mantine-Paper-root,
+.mantine-Card-root,
+.mantine-Modal-content,
+.mantine-Popover-dropdown {
+  box-shadow: none !important;
 }

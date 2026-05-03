@@ -8,9 +8,19 @@ export function ThemeToggle() {
   return (
     <ActionIcon
       onClick={() => toggleColorScheme()}
-      variant="default"
+      variant="subtle"
       size="lg"
       aria-label="Toggle color scheme"
+      radius="sm"
+      styles={{
+        root: {
+          background: 'var(--surface-bg)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid var(--surface-border)',
+          color: 'var(--text-primary)',
+        },
+      }}
     >
       {colorScheme === 'dark' ? <IconSun stroke={1.5} /> : <IconMoon stroke={1.5} />}
     </ActionIcon>

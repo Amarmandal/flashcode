@@ -1,7 +1,8 @@
-import { Stack, Group, Text, ActionIcon, Tooltip, Paper } from '@mantine/core';
-import { IconTrash, IconEdit, IconHeart, IconHeartFilled } from '@tabler/icons-react';
+import { Stack, Group, Text, ActionIcon, Tooltip, Card, Box } from '@mantine/core';
+import { IconTrash, IconEdit, IconHeart, IconHeartFilled, IconBrain } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { NormalDeck } from '../../types/normalDeck';
+import { useState } from 'react';
 
 interface NormalDeckListProps {
   decks: NormalDeck[];
@@ -11,39 +12,123 @@ interface NormalDeckListProps {
 }
 
 export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: NormalDeckListProps) {
+  const [hoveredDeckId, setHoveredDeckId] = useState<number | null>(null);
+
   return (
-    <Stack>
-      {decks.map((deck) => (
-        <Paper key={deck.id} withBorder p="md" radius="md">
-          <Group justify="space-between">
-            <Text
-              fw={500}
-              component={Link}
-              to={`/normal-deck/${deck.id}`}
-              style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}
-            >
-              {deck.name}
-            </Text>
-            <Group gap="xs">
-              <Tooltip label={deck.isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
-                <ActionIcon variant="subtle" color="yellow" onClick={() => onToggleFavorite(deck)}>
-                  {deck.isFavorite ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Edit">
-                <ActionIcon variant="subtle" color="blue" onClick={() => onEdit(deck)}>
-                  <IconEdit size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Delete">
-                <ActionIcon variant="subtle" color="red" onClick={() => onDelete(deck.id)}>
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Tooltip>
+    <Stack gap="md">
+      {decks.map((deck) => {
+        const isHovered = hoveredDeckId === deck.id;
+        return (
+          <Card
+            key={deck.id}
+            radius="lg"
+            p="lg"
+            onMouseEnter={() => setHoveredDeckId(deck.id)}
+            onMouseLeave={() => setHoveredDeckId(null)}
+            style={{
+              background: 'var(--surface-bg)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid var(--surface-border)',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+              cursor: 'pointer',
+              transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+            }}
+          >
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap="md" style={{ flex: 1 }}>
+                <Box
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--icon-badge-brain-bg)',
+                    color: 'var(--icon-badge-brain-color)',
+                  }}
+                >
+                  <IconBrain size={16} strokeWidth={2} />
+                </Box>
+                <Text
+                  fw={500}
+                  size="md"
+                  component={Link}
+                  to={`/normal-deck/${deck.id}`}
+                  style={{
+                    flex: 1,
+                    textDecoration: 'none',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {deck.name}
+                </Text>
+              </Group>
+              <Group gap="xs">
+                <Tooltip label={deck.isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="yellow"
+                    size="md"
+                    radius="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onToggleFavorite(deck);
+                    }}
+                    style={{
+                      opacity: isHovered || deck.isFavorite ? 1 : 0,
+                      transition: 'opacity 0.2s ease',
+                    }}
+                  >
+                    {deck.isFavorite ? (
+                      <IconHeartFilled size={16} style={{ color: '#d97706' }} />
+                    ) : (
+                      <IconHeart size={16} />
+                    )}
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Edit">
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="md"
+                    radius="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onEdit(deck);
+                    }}
+                    style={{
+                      opacity: isHovered ? 1 : 0,
+                      transition: 'opacity 0.2s ease',
+                    }}
+                  >
+                    <IconEdit size={16} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Delete">
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    size="md"
+                    radius="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onDelete(deck.id);
+                    }}
+                    style={{
+                      opacity: isHovered ? 1 : 0,
+                      transition: 'opacity 0.2s ease',
+                    }}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
             </Group>
-          </Group>
-        </Paper>
-      ))}
+          </Card>
+        );
+      })}
     </Stack>
   );
 }

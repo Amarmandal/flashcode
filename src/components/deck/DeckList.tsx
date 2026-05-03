@@ -1,7 +1,7 @@
-import { Card, Group, Text, Stack, ActionIcon } from '@mantine/core';
+import { Card, Group, Text, Stack, ActionIcon, Box } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { Deck } from '../../types/deck';
-import { IconTrash, IconPencil, IconStar } from '@tabler/icons-react';
+import { IconTrash, IconPencil, IconStar, IconCards } from '@tabler/icons-react';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { useState } from 'react';
 
@@ -56,43 +56,90 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
         return (
           <Card
             key={deck.id}
-            withBorder
-            shadow="sm"
-            radius="md"
+            radius="lg"
+            p="lg"
             onMouseEnter={() => setHoveredDeckId(deck.id)}
             onMouseLeave={() => setHoveredDeckId(null)}
+            style={{
+              background: 'var(--surface-bg)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid var(--surface-border)',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+              cursor: 'pointer',
+              transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+            }}
           >
-            <Group justify="space-between">
-              <Text fw={500} component={Link} to={`/deck/${deck.id}`} style={{ flex: 1 }}>
-                {deck.name}
-              </Text>
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap="md" style={{ flex: 1 }}>
+                <Box
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--icon-badge-bg)',
+                    color: 'var(--icon-badge-color)',
+                  }}
+                >
+                  <IconCards size={16} strokeWidth={2} />
+                </Box>
+                <Text
+                  fw={500}
+                  size="md"
+                  component={Link}
+                  to={`/deck/${deck.id}`}
+                  style={{
+                    flex: 1,
+                    textDecoration: 'none',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {deck.name}
+                </Text>
+              </Group>
               <Group gap="xs">
                 <ActionIcon
-                  variant="outline"
-                  color="blue"
-                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  size="md"
+                  radius="sm"
                   style={hoverActionStyle(isHovered)}
-                  onClick={() => onEdit(deck)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onEdit(deck);
+                  }}
                 >
-                  <IconPencil size={15} />
+                  <IconPencil size={16} />
                 </ActionIcon>
                 <ActionIcon
-                  variant="outline"
+                  variant="subtle"
                   color="red"
-                  size="sm"
+                  size="md"
+                  radius="sm"
                   style={hoverActionStyle(isHovered)}
-                  onClick={(e) => { e.stopPropagation(); handleRemoveClick(deck.id); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleRemoveClick(deck.id);
+                  }}
                 >
-                  <IconTrash size={15} />
+                  <IconTrash size={16} />
                 </ActionIcon>
                 <ActionIcon
                   variant="subtle"
                   color={deck.isFavorite ? 'yellow' : 'gray'}
-                  size="sm"
+                  size="md"
+                  radius="sm"
                   style={hoverActionStyle(isHovered || !!deck.isFavorite)}
-                  onClick={() => onToggleFavorite(deck)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onToggleFavorite(deck);
+                  }}
                 >
-                  <IconStar size={15} fill={deck.isFavorite ? 'gold' : 'none'} style={{ transition: 'fill 150ms ease' }} />
+                  <IconStar size={16} fill={deck.isFavorite ? '#d97706' : 'none'} style={{ transition: 'fill 150ms ease' }} />
                 </ActionIcon>
               </Group>
             </Group>
