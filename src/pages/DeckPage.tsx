@@ -119,34 +119,86 @@ export default function Deck() {
   };
 
   return (
-    <Container>
+    <Container size="lg" py="xl">
       {error && (
         <Alert
           variant="light"
           color="red"
-          title="Alert title"
+          title="Error"
           icon={<IconAlertCircle size="1rem" color="red" />}
           onClose={() => setError(null)}
           withCloseButton
+          mb="lg"
+          radius="md"
+          styles={{
+            root: {
+              background: 'rgba(220, 38, 38, 0.1)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(220, 38, 38, 0.3)',
+            },
+          }}
         >
           {error}
         </Alert>
       )}
-      <Stack>
-        <Group justify="space-between">
-          <Title order={2}>Decks</Title>
-          <Button leftSection={<IconPlus size={16} />} onClick={() => openForm()}>Create New Deck</Button>
+      <Stack gap="xl">
+        <Group justify="space-between" align="center">
+          <Title order={2} c="var(--text-primary)">
+            Decks
+          </Title>
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={() => openForm()}
+            radius="sm"
+            styles={{
+              root: {
+                background: 'var(--primary-btn-bg)',
+                color: 'var(--primary-btn-text)',
+              },
+            }}
+          >
+            Create New Deck
+          </Button>
         </Group>
+
         <Box style={{ minHeight: '60vh' }}>
           {decks.length === 0 ? (
-            <Text>No decks available. Create one to get started!</Text>
+            <Box
+              style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                background: 'var(--surface-bg)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid var(--surface-border)',
+                borderRadius: '12px',
+              }}
+            >
+              <Text size="lg" c="var(--text-secondary)">
+                No decks available. Create one to get started!
+              </Text>
+            </Box>
           ) : (
             <DeckList decks={decks} onToggleFavorite={handleFavorite} onEdit={openForm} onDelete={handleDelete} />
           )}
         </Box>
 
         {totalCount > 5 && (
-          <Pagination onChange={setPage} value={activePage} total={Math.ceil(totalCount / 5)} mt="md" />
+          <Pagination
+            onChange={setPage}
+            value={activePage}
+            total={Math.ceil(totalCount / 5)}
+            mt="md"
+            styles={{
+              control: {
+                border: '1px solid var(--border-color)',
+                background: 'var(--surface-bg)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              },
+            }}
+          />
         )}
 
         <DeckForm

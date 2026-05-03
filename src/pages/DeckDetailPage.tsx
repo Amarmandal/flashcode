@@ -121,57 +121,116 @@ export default function DeckDetail() {
   };
 
   return (
-    <Container size="md" py="xl">
-      <Stack>
+    <Container size="lg" py="xl">
+      <Stack gap="xl">
         <Breadcrumbs mb="xs">
-          <Anchor component={Link} to="/" size="sm">Code Decks</Anchor>
-          <Text size="sm">{deckDetail?.name}</Text>
+          <Anchor component={Link} to="/" size="sm" c="var(--text-secondary)">
+            Code Decks
+          </Anchor>
+          <Text size="sm" c="var(--text-primary)" fw={500}>
+            {deckDetail?.name}
+          </Text>
         </Breadcrumbs>
-        <Group justify="space-between">
-          <Title order={2}>{deckDetail?.name}</Title>
-          <Group>
+
+        <Group justify="space-between" align="center">
+          <Title order={2} c="var(--text-primary)">
+            {deckDetail?.name}
+          </Title>
+          <Group gap="sm">
             <Button
-              variant="outline"
+              variant="subtle"
               color="red"
               leftSection={<IconRefresh size={16} />}
               onClick={() => setResetConfirmOpen(true)}
+              radius="sm"
             >
               Reset Deck
             </Button>
-            <Button variant="filled" color="teal" leftSection={<IconPlus size={16} />} onClick={handleAddFlashcard}>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={handleAddFlashcard}
+              radius="sm"
+              styles={{
+                root: {
+                  background: 'var(--primary-btn-bg)',
+                  color: 'var(--primary-btn-text)',
+                },
+              }}
+            >
               Add Flash
             </Button>
           </Group>
         </Group>
-        <Group justify="center" grow>
+
+        <Group grow gap="md">
           {statuses.map((status) => (
             <StatusCard key={status.label} label={status.label} count={status.count} color={status.color} />
           ))}
         </Group>
+
         <Button
           size="xl"
           radius="md"
-          color="teal"
           leftSection={<IconBook size={24} />}
           fullWidth
-          mt="lg"
+          mt="md"
           component={Link}
           to="study-now"
           state={{ flashcards }}
+          styles={{
+            root: {
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              color: '#ffffff',
+              height: '60px',
+              fontSize: '18px',
+              fontWeight: 600,
+            },
+          }}
         >
           Study Now
         </Button>
+
         <FlashcardForm opened={isFormOpen} onClose={handleFormClose} deckId={deckId!} />
 
-        {/* Reset Confirmation Modal */}
-        <Modal opened={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)} title="Reset Deck" centered>
-          <Stack>
-            <Text>Are you sure you want to reset all flashcards in this deck? This will reset all progress.</Text>
-            <Group justify="flex-end">
-              <Button variant="default" onClick={() => setResetConfirmOpen(false)}>
+        <Modal
+          opened={resetConfirmOpen}
+          onClose={() => setResetConfirmOpen(false)}
+          title="Reset Deck"
+          centered
+          radius="lg"
+          styles={{
+            content: {
+              background: 'var(--surface-bg)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid var(--surface-border)',
+            },
+          }}
+        >
+          <Stack gap="lg">
+            <Text c="var(--text-secondary)">
+              Are you sure you want to reset all flashcards in this deck? This will reset all progress.
+            </Text>
+            <Group justify="flex-end" gap="sm">
+              <Button
+                variant="subtle"
+                onClick={() => setResetConfirmOpen(false)}
+                radius="sm"
+                color="gray"
+              >
                 Cancel
               </Button>
-              <Button variant="filled" color="red" onClick={handleResetDeck}>
+              <Button
+                onClick={handleResetDeck}
+                radius="sm"
+                color="red"
+                styles={{
+                  root: {
+                    background: '#dc2626',
+                    color: '#ffffff',
+                  },
+                }}
+              >
                 Reset
               </Button>
             </Group>

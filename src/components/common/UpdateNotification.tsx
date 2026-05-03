@@ -54,7 +54,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ opened, 
       closeOnClickOutside={!isDownloading && !isInstalling}
       closeOnEscape={!isDownloading && !isInstalling}
     >
-      <Stack gap="md">
+      <Stack gap="md" mt={24}>
         {error && (
           <Alert icon={<IconAlertCircle size={16} />} color="red" title="Update Error">
             {error}

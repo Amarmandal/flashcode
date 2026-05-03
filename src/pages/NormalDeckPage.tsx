@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Alert, Box, Button, Container, Group, Stack, Title } from '@mantine/core';
+import { Alert, Box, Button, Container, Group, Stack, Title, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
 import { NormalDeck } from '../types/normalDeck';
@@ -79,7 +79,7 @@ export default function NormalDeckPage() {
   };
 
   return (
-    <Container>
+    <Container size="lg" py="xl">
       {error && (
         <Alert
           variant="light"
@@ -87,21 +87,55 @@ export default function NormalDeckPage() {
           icon={<IconAlertCircle size="1rem" />}
           onClose={() => setError(null)}
           withCloseButton
-          mb="md"
+          mb="lg"
+          radius="md"
+          styles={{
+            root: {
+              background: 'rgba(220, 38, 38, 0.1)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(220, 38, 38, 0.3)',
+            },
+          }}
         >
           {error}
         </Alert>
       )}
-      <Stack>
-        <Group justify="space-between">
-          <Title order={2}>Normal Decks</Title>
-          <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
+      <Stack gap="xl">
+        <Group justify="space-between" align="center">
+          <Title order={2} c="var(--text-primary)">Normal Decks</Title>
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={openCreate}
+            radius="sm"
+            styles={{
+              root: {
+                background: 'var(--primary-btn-bg)',
+                color: 'var(--primary-btn-text)',
+              },
+            }}
+          >
             Create Deck
           </Button>
         </Group>
+
         <Box style={{ minHeight: '60vh' }}>
           {decks.length === 0 ? (
-            <Title order={4} c="dimmed" fw={400}>No decks yet. Create one to get started!</Title>
+            <Box
+              style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                background: 'var(--surface-bg)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid var(--surface-border)',
+                borderRadius: '12px',
+              }}
+            >
+              <Text size="lg" c="var(--text-secondary)">
+                No decks yet. Create one to get started!
+              </Text>
+            </Box>
           ) : (
             <NormalDeckList
               decks={decks}

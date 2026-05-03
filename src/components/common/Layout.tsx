@@ -1,4 +1,4 @@
-import { AppShell, Burger, Divider, Flex, NavLink, Loader } from '@mantine/core';
+import { AppShell, Burger, Divider, Flex, NavLink, Loader, Text, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import classes from './Layout.module.css';
@@ -58,11 +58,26 @@ const Layout = () => {
       />      <AppShell
         header={{ height: 64 }}
         navbar={{
-          width: 200,
+          width: 220,
           breakpoint: 'sm',
           collapsed: { mobile: !opened, desktop: isStudyMode },
         }}
-        padding="md"
+        padding="lg"
+        styles={{
+          header: {
+            backgroundColor: 'transparent',
+            borderBottom: 'none',
+          },
+          navbar: {
+            backgroundColor: 'var(--sidebar-bg)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderRight: '1px solid var(--sidebar-divider)',
+          },
+          main: {
+            backgroundColor: 'var(--page-bg)',
+          },
+        }}
       >
         <AppShell.Header>
           <Flex align="center" justify="space-between" h="100%" px="xl" gap="md">
@@ -72,65 +87,182 @@ const Layout = () => {
               {!isStudyMode && <SearchBar />}
               <ThemeToggle />
             </Flex>
-            {/* BackupRestore component handles menu events in the background */}
             <BackupRestore />
           </Flex>
         </AppShell.Header>
 
         <AppShell.Navbar p="md" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1 }}>
+          <Box mb="lg" mt="xs">
+            <AppLogo size="small" />
+            <Text size="xs" c="var(--sidebar-text-dim)" mt="xs" style={{ letterSpacing: '0.5px', lineHeight: 1.4 }}>
+              Learn by repetition
+            </Text>
+          </Box>
+
+          <Box style={{ flex: 1 }}>
+            <Text
+              size="xs"
+              fw={600}
+              tt="uppercase"
+              c="var(--sidebar-text-dim)"
+              mb="sm"
+              style={{ letterSpacing: '1px' }}
+            >
+              Main
+            </Text>
             <NavLink
               className={classes.navLabel}
               label="Code Deck"
-              leftSection={<IconCards size={18} />}
+              leftSection={<IconCards size={18} strokeWidth={2} />}
               component={Link}
               to="/"
               active={location.pathname === '/' || location.pathname.startsWith('/deck')}
+              styles={{
+                root: {
+                  borderRadius: '8px',
+                  marginBottom: '4px',
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
             />
             <NavLink
               className={classes.navLabel}
               label="Normal Deck"
-              leftSection={<IconBrain size={18} />}
+              leftSection={<IconBrain size={18} strokeWidth={2} />}
               component={Link}
               to="/normal-deck"
               active={location.pathname.startsWith('/normal-deck')}
+              styles={{
+                root: {
+                  borderRadius: '8px',
+                  marginBottom: '4px',
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
             />
+
+            <Text
+              size="xs"
+              fw={600}
+              tt="uppercase"
+              c="var(--sidebar-text-dim)"
+              mt="xl"
+              mb="sm"
+              style={{ letterSpacing: '1px' }}
+            >
+              Explore
+            </Text>
             <NavLink
               className={classes.navLabel}
               label="Favorite"
-              leftSection={<IconHeart size={18} />}
+              leftSection={<IconHeart size={18} strokeWidth={2} />}
               component={Link}
               to="/favorite"
               active={location.pathname === '/favorite'}
+              styles={{
+                root: {
+                  borderRadius: '8px',
+                  marginBottom: '4px',
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
             />
             <NavLink
               className={classes.navLabel}
               label="Browse"
-              leftSection={<IconDatabaseSearch size={18} />}
+              leftSection={<IconDatabaseSearch size={18} strokeWidth={2} />}
               component={Link}
               to="/browse"
               active={location.pathname === '/browse'}
+              styles={{
+                root: {
+                  borderRadius: '8px',
+                  marginBottom: '4px',
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
             />
             <NavLink
               className={classes.navLabel}
               label="Library"
-              leftSection={<IconCode size={18} />}
+              leftSection={<IconCode size={18} strokeWidth={2} />}
               component={Link}
               to="/library"
               active={location.pathname === '/library'}
+              styles={{
+                root: {
+                  borderRadius: '8px',
+                  marginBottom: '4px',
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
             />
-          </div>
-          <div>
-            <Divider mb="xs" />
+          </Box>
+
+          <Box>
+            <Divider mb="xs" style={{ borderColor: 'var(--sidebar-divider)' }} />
             <NavLink
               className={classes.navLabel}
               label="Check for Updates"
-              leftSection={isChecking ? <Loader size={18} /> : <IconRefresh size={18} />}
+              leftSection={isChecking ? <Loader size={18} color="var(--sidebar-text)" /> : <IconRefresh size={18} strokeWidth={2} />}
               onClick={handleManualUpdateCheck}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', borderRadius: '8px' }}
               disabled={isChecking}
+              styles={{
+                root: {
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
             />
-          </div>
+          </Box>
         </AppShell.Navbar>
 
         <AppShell.Main>

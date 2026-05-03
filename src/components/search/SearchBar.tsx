@@ -86,7 +86,7 @@ export function SearchBar() {
       <Group>
         <Input
           placeholder="Search..."
-          radius="md"
+          radius="sm"
           size="md"
           w={{ base: '100%', sm: 400, md: 600 }}
           value={query}
@@ -95,6 +95,15 @@ export function SearchBar() {
           }}
           leftSection={<IconSearch size={16} />}
           disabled={isLoading}
+          styles={{
+            input: {
+              background: 'var(--input-bg)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+              border: '1px solid var(--input-border)',
+              color: 'var(--text-primary)',
+            },
+          }}
         />
         {query && (
           <ActionIcon
@@ -113,6 +122,7 @@ export function SearchBar() {
                 transform: 'translateY(-50%)',
                 zIndex: 2,
                 cursor: 'pointer',
+                color: 'var(--text-secondary)',
               },
             }}
           >
@@ -123,15 +133,19 @@ export function SearchBar() {
 
       {query && error && (
         <Paper
-          shadow="md"
           p="md"
+          radius="md"
           styles={{
             root: {
               position: 'absolute',
-              top: '100%',
+              top: 'calc(100% + 8px)',
               left: 0,
               right: 0,
               zIndex: 100,
+              background: 'var(--surface-bg)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid var(--surface-border)',
             },
           }}
         >
@@ -141,17 +155,21 @@ export function SearchBar() {
 
       {query && !error && results.length > 0 && (
         <Paper
-          shadow="md"
           p="md"
+          radius="md"
           styles={{
             root: {
               position: 'absolute',
-              top: '100%',
+              top: 'calc(100% + 8px)',
               left: 0,
               right: 0,
               zIndex: 100,
               maxHeight: '400px',
               overflowY: 'auto',
+              background: 'var(--surface-bg)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid var(--surface-border)',
             },
           }}
         >
@@ -160,22 +178,26 @@ export function SearchBar() {
               <Paper
                 key={`${result.entityType}-${result.id}`}
                 p="sm"
-                withBorder
-                style={{ cursor: 'pointer' }}
+                radius="sm"
+                style={{
+                  cursor: 'pointer',
+                  background: 'rgba(15, 23, 42, 0.03)',
+                  border: '1px solid var(--border-color)',
+                }}
                 onClick={() => handleResultClick(result)}
               >
                 <Group justify="space-between">
-                  <Text fw={500}>{result.title}</Text>
+                  <Text fw={500} c="var(--text-primary)">{result.title}</Text>
                   {result.entityType === 'Deck' && (
                     <Group gap={4}>
-                      <IconCards size={14} />
-                      <Text size="sm" c="dimmed">
+                      <IconCards size={14} color="var(--text-secondary)" />
+                      <Text size="sm" c="var(--text-secondary)">
                         {result.cardCount}
                       </Text>
                     </Group>
                   )}
                 </Group>
-                <Text size="xs" c="dimmed" mt={4}>
+                <Text size="xs" c="var(--text-tertiary)" mt={4}>
                   {result.entityType === 'Deck' ? 'Deck' : 'Flashcard'}
                 </Text>
               </Paper>
@@ -186,19 +208,23 @@ export function SearchBar() {
 
       {query && !error && results.length === 0 && (
         <Paper
-          shadow="md"
           p="md"
+          radius="md"
           styles={{
             root: {
               position: 'absolute',
-              top: '100%',
+              top: 'calc(100% + 8px)',
               left: 0,
               right: 0,
               zIndex: 100,
+              background: 'var(--surface-bg)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid var(--surface-border)',
             },
           }}
         >
-          <Text c="dimmed">No results found</Text>
+          <Text c="var(--text-secondary)">No results found</Text>
         </Paper>
       )}
     </Stack>

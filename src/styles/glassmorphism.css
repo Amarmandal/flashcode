@@ -1,0 +1,262 @@
+/* Glassmorphism UI Styles for Flashcode */
+
+/* Modal Overrides */
+.mantine-Modal-content {
+  background: var(--surface-bg) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border) !important;
+}
+
+.mantine-Modal-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mantine-Modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Button Styles */
+.mantine-Button-root[data-variant="filled"]:not([data-color]) {
+  background: var(--primary-btn-bg);
+  color: var(--primary-btn-text);
+}
+
+.mantine-Button-root[data-variant="outline"] {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.mantine-Button-root[data-variant="subtle"] {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-primary);
+}
+
+[data-mantine-color-scheme="dark"] .mantine-Button-root[data-variant="subtle"] {
+  background: rgba(241, 245, 249, 0.08);
+}
+
+/* Card Styles */
+.mantine-Card-root {
+  background: var(--surface-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border) !important;
+}
+
+/* Paper Styles */
+.mantine-Paper-root {
+  background: var(--surface-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border);
+}
+
+/* Input Styles */
+.mantine-Input-input,
+.mantine-TextInput-input,
+.mantine-Textarea-input,
+.mantine-Select-input {
+  background: var(--input-bg) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--input-border) !important;
+  color: var(--text-primary) !important;
+}
+
+.mantine-Input-input::placeholder,
+.mantine-TextInput-input::placeholder,
+.mantine-Textarea-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Badge Styles */
+.mantine-Badge-root {
+  background: rgba(15, 23, 42, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+[data-mantine-color-scheme="dark"] .mantine-Badge-root {
+  background: rgba(241, 245, 249, 0.1);
+  border: 1px solid rgba(241, 245, 249, 0.15);
+}
+
+/* Progress Bar */
+.mantine-Progress-root {
+  background: var(--progress-track);
+}
+
+.mantine-Progress-section {
+  background: var(--progress-fill);
+}
+
+/* Alert Styles */
+.mantine-Alert-root {
+  background: var(--surface-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border);
+}
+
+/* Pagination Styles */
+.mantine-Pagination-control {
+  border: 1px solid var(--border-color);
+  background: var(--surface-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-primary);
+}
+
+.mantine-Pagination-control[data-active="true"] {
+  background: var(--primary-btn-bg);
+  color: var(--primary-btn-text);
+  border-color: var(--primary-btn-bg);
+}
+
+/* Popover & Dropdown */
+.mantine-Popover-dropdown {
+  background: var(--surface-bg) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border) !important;
+}
+
+/* Menu Styles */
+.mantine-Menu-dropdown {
+  background: var(--surface-bg) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border) !important;
+}
+
+.mantine-Menu-item {
+  color: var(--text-primary);
+}
+
+.mantine-Menu-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+[data-mantine-color-scheme="dark"] .mantine-Menu-item:hover {
+  background: rgba(241, 245, 249, 0.08);
+}
+
+/* Divider */
+.mantine-Divider-root {
+  border-color: var(--border-color);
+}
+
+/* Breadcrumbs */
+.mantine-Breadcrumbs-root {
+  color: var(--text-secondary);
+}
+
+.mantine-Breadcrumbs-separator {
+  color: var(--text-tertiary);
+}
+
+/* Notification */
+.mantine-Notification-root {
+  background: var(--surface-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border);
+}
+
+/* Tabs */
+.mantine-Tabs-tab {
+  color: var(--text-secondary);
+}
+
+.mantine-Tabs-tab[data-active="true"] {
+  color: var(--text-primary);
+  border-bottom-color: var(--primary-btn-bg);
+}
+
+/* Select Dropdown */
+.mantine-Select-dropdown {
+  background: var(--surface-bg) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border) !important;
+}
+
+.mantine-Select-option {
+  color: var(--text-primary);
+}
+
+.mantine-Select-option[data-selected="true"] {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+[data-mantine-color-scheme="dark"] .mantine-Select-option[data-selected="true"] {
+  background: rgba(241, 245, 249, 0.1);
+}
+
+/* Checkbox and Radio */
+.mantine-Checkbox-input,
+.mantine-Radio-radio {
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+}
+
+.mantine-Checkbox-input:checked,
+.mantine-Radio-radio:checked {
+  background: var(--primary-btn-bg);
+  border-color: var(--primary-btn-bg);
+}
+
+/* Switch */
+.mantine-Switch-track {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+}
+
+/* Scrollbar Styling (Webkit browsers) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--page-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Smooth hover transitions */
+.mantine-Card-root,
+.mantine-Button-root,
+.mantine-ActionIcon-root,
+.mantine-NavLink-root {
+  transition: all 0.2s ease;
+}
+
+/* Focus styles */
+.mantine-Input-input:focus,
+.mantine-TextInput-input:focus,
+.mantine-Textarea-input:focus,
+.mantine-Select-input:focus {
+  border-color: var(--primary-btn-bg) !important;
+}
+
+/* Disabled states */
+.mantine-Input-input:disabled,
+.mantine-TextInput-input:disabled,
+.mantine-Textarea-input:disabled,
+.mantine-Button-root:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

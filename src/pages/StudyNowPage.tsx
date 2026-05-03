@@ -210,10 +210,10 @@ export default function StudyNow() {
 
   // Progress bar and header
   return (
-    <Container size="md" py="xl">
-      <Stack>
-        <Group justify="space-between" align="center" mb="xs">
-          <Title order={2}>
+    <Container size="lg" py="xl">
+      <Stack gap="lg">
+        <Group justify="space-between" align="center">
+          <Title order={2} c="var(--text-primary)">
             {deckName ? `${deckName} — ` : ''}Card {currentCardState.index + 1} of {flashcards.length}
           </Title>
           <Group gap="sm">
@@ -221,10 +221,21 @@ export default function StudyNow() {
               label={currentCardState.card?.is_reversed ? 'Answer shows the question (reversed)' : 'Answer shows the code solution'}
               withArrow
             >
-              <Card radius="xl" px="md" py={4} withBorder style={{ cursor: 'default' }}>
-                <Group gap={4}>
-                  {currentCardState.card?.is_reversed && <IconEye size={16} />}
-                  <Text size="sm" fw={500} c="dimmed">
+              <Card
+                radius="md"
+                px="md"
+                py={6}
+                style={{
+                  cursor: 'default',
+                  background: 'var(--surface-bg)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  border: '1px solid var(--surface-border)',
+                }}
+              >
+                <Group gap={6}>
+                  {currentCardState.card?.is_reversed && <IconEye size={14} color="var(--text-secondary)" />}
+                  <Text size="xs" fw={600} c="var(--text-secondary)" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
                     {currentCardState.card?.is_reversed ? 'Reversed' : 'Basic'}
                   </Text>
                 </Group>
@@ -234,23 +245,44 @@ export default function StudyNow() {
               variant="subtle"
               leftSection={<IconArrowLeft size={16} />}
               onClick={handleBackToDeck}
+              radius="sm"
             >
               Back to Deck
             </Button>
           </Group>
         </Group>
-        {/* Progress bar */}
+
         <Progress
           value={((currentCardState.index + 1) / (flashcards.length || 1)) * 100}
-          radius="md"
-          size="md"
-          color="blue"
-          mb={16}
+          radius="sm"
+          size="lg"
+          styles={{
+            root: {
+              background: 'var(--progress-track)',
+            },
+            section: {
+              background: 'var(--progress-fill)',
+            },
+          }}
         />
-        <Card withBorder shadow="sm" radius="md" p="lg">
-          <Stack align="center" gap="xs">
-            {/* FRONT label */}
-            <Text size="xs" fw={700} c="gray.6" style={{ alignSelf: 'flex-start' }}>
+        <Card
+          radius="lg"
+          p="xl"
+          style={{
+            background: 'var(--surface-bg)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            border: '1px solid var(--surface-border)',
+          }}
+        >
+          <Stack align="center" gap="lg">
+            <Text
+              size="xs"
+              fw={600}
+              c="var(--text-tertiary)"
+              tt="uppercase"
+              style={{ alignSelf: 'flex-start', letterSpacing: '1px' }}
+            >
               FRONT
             </Text>
             {currentCardState.card?.is_reversed ? (
@@ -259,16 +291,21 @@ export default function StudyNow() {
                 language={currentCardState.card.language}
               />
             ) : (
-              <Text size="xl" fw={700} lh={1.4} ta="center" mb="md">
+              <Text size="xl" fw={600} lh={1.6} ta="center" c="var(--text-primary)" mb="md">
                 {currentCardState.card?.front}
               </Text>
             )}
-            <Divider my="xs" style={{ width: '100%' }} />
-            {/* Show Answer Button or BACK section */}
+            <Divider style={{ width: '100%', borderColor: 'var(--border-color)' }} />
+
             {showAnswer ? (
               <>
-                {/* BACK label */}
-                <Text size="xs" fw={700} c="gray.6" style={{ alignSelf: 'flex-start' }}>
+                <Text
+                  size="xs"
+                  fw={600}
+                  c="var(--text-tertiary)"
+                  tt="uppercase"
+                  style={{ alignSelf: 'flex-start', letterSpacing: '1px' }}
+                >
                   BACK
                 </Text>
                 {!currentCardState.card?.is_reversed ? (
@@ -277,18 +314,25 @@ export default function StudyNow() {
                     language={currentCardState.card?.language}
                   />
                 ) : (
-                  <Text size="xl" fw={700} lh={1.4} ta="center" mb="md">
+                  <Text size="xl" fw={600} lh={1.6} ta="center" c="var(--text-primary)" mb="md">
                     {currentCardState.card?.back}
                   </Text>
                 )}
-                {/* Feedback buttons with icons */}
-                <Group justify="center" mt="md" gap="sm">
+
+                <Group justify="center" mt="lg" gap="sm" wrap="wrap">
                   <Tooltip label="Press 1" withArrow>
                     <Button
                       variant="outline"
                       color="red"
                       leftSection={<IconReload size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Again)}
+                      radius="sm"
+                      styles={{
+                        root: {
+                          borderColor: '#dc2626',
+                          color: '#dc2626',
+                        },
+                      }}
                     >
                       Again
                     </Button>
@@ -299,6 +343,13 @@ export default function StudyNow() {
                       color="orange"
                       leftSection={<IconEye size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Hard)}
+                      radius="sm"
+                      styles={{
+                        root: {
+                          borderColor: '#d97706',
+                          color: '#d97706',
+                        },
+                      }}
                     >
                       Hard
                     </Button>
@@ -309,6 +360,13 @@ export default function StudyNow() {
                       color="teal"
                       leftSection={<IconCircleCheckFilled size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Good)}
+                      radius="sm"
+                      styles={{
+                        root: {
+                          borderColor: '#059669',
+                          color: '#059669',
+                        },
+                      }}
                     >
                       Good
                     </Button>
@@ -319,6 +377,13 @@ export default function StudyNow() {
                       color="blue"
                       leftSection={<IconBoltFilled size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Easy)}
+                      radius="sm"
+                      styles={{
+                        root: {
+                          borderColor: '#3b82f6',
+                          color: '#3b82f6',
+                        },
+                      }}
                     >
                       Easy
                     </Button>
@@ -326,17 +391,27 @@ export default function StudyNow() {
                 </Group>
               </>
             ) : (
-              <Stack align="center" gap="xs" mt="md">
+              <Stack align="center" gap="sm" mt="lg">
                 <Button
-                  size="lg"
-                  variant="filled"
-                  color="teal"
+                  size="xl"
+                  radius="md"
                   leftSection={<IconEye size={20} />}
                   onClick={handleShowAnswer}
+                  styles={{
+                    root: {
+                      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                      color: '#ffffff',
+                      height: '56px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      paddingLeft: '32px',
+                      paddingRight: '32px',
+                    },
+                  }}
                 >
                   Show Answer
                 </Button>
-                <Text size="xs" c="dimmed">Press Space to reveal</Text>
+                <Text size="xs" c="var(--text-tertiary)">Press Space to reveal</Text>
               </Stack>
             )}
           </Stack>
