@@ -1,6 +1,6 @@
 import { Stack, Group, Text, ActionIcon, Tooltip, Card, Box } from '@mantine/core';
 import { IconTrash, IconEdit, IconHeart, IconHeartFilled, IconBrain } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { NormalDeck } from '../../types/normalDeck';
 import { useState } from 'react';
 
@@ -13,6 +13,7 @@ interface NormalDeckListProps {
 
 export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: NormalDeckListProps) {
   const [hoveredDeckId, setHoveredDeckId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   return (
     <Stack gap="md">
@@ -25,6 +26,7 @@ export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: No
             p="lg"
             onMouseEnter={() => setHoveredDeckId(deck.id)}
             onMouseLeave={() => setHoveredDeckId(null)}
+            onClick={() => navigate(`/normal-deck/${deck.id}`)}
             style={{
               background: 'var(--surface-bg)',
               backdropFilter: 'blur(8px)',
@@ -54,11 +56,8 @@ export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: No
                 <Text
                   fw={500}
                   size="md"
-                  component={Link}
-                  to={`/normal-deck/${deck.id}`}
                   style={{
                     flex: 1,
-                    textDecoration: 'none',
                     color: 'var(--text-primary)',
                   }}
                 >
@@ -73,7 +72,7 @@ export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: No
                     size="md"
                     radius="sm"
                     onClick={(e) => {
-                      e.preventDefault();
+                      e.stopPropagation();
                       onToggleFavorite(deck);
                     }}
                     style={{
@@ -95,7 +94,7 @@ export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: No
                     size="md"
                     radius="sm"
                     onClick={(e) => {
-                      e.preventDefault();
+                      e.stopPropagation();
                       onEdit(deck);
                     }}
                     style={{
@@ -113,7 +112,7 @@ export function NormalDeckList({ decks, onEdit, onDelete, onToggleFavorite }: No
                     size="md"
                     radius="sm"
                     onClick={(e) => {
-                      e.preventDefault();
+                      e.stopPropagation();
                       onDelete(deck.id);
                     }}
                     style={{
