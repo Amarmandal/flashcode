@@ -24,6 +24,7 @@ pub struct NormalCard {
     pub deck_id: i64,
     pub front: String,
     pub back: String,
+    pub image_data: Option<String>,
     pub ease_factor: f32,
     pub repetitions: u32,
     pub interval: u32,
@@ -120,6 +121,7 @@ impl NormalCard {
             deck_id: row.get("deck_id")?,
             front: row.get("front")?,
             back: row.get("back")?,
+            image_data: row.get("image_data")?,
             ease_factor: row.get("ease_factor")?,
             repetitions: row.get("repetitions")?,
             interval: row.get("interval")?,
@@ -133,6 +135,7 @@ impl NormalCard {
         deck_id: i64,
         front: &str,
         back: &str,
+        image_data: Option<&str>,
     ) -> Result<Self, String> {
         let conn = db.get_connection();
         let now = SystemTime::now()
@@ -141,15 +144,15 @@ impl NormalCard {
         let due_date = seconds_to_days(now.as_secs());
 
         conn.execute(
-            "INSERT INTO normal_cards (deck_id, front, back, due_date)
-             VALUES (?1, ?2, ?3, ?4)",
-            params![deck_id, front, back, due_date],
+            "INSERT INTO normal_cards (deck_id, front, back, image_data, due_date)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![deck_id, front, back, image_data, due_date],
         )
         .map_err(|e| e.to_string())?;
 
         let id = conn.last_insert_rowid();
         conn.query_row(
-            "SELECT id, deck_id, front, back, ease_factor, repetitions, interval, due_date, created_at
+            "SELECT id, deck_id, front, back, image_data, ease_factor, repetitions, interval, due_date, created_at
              FROM normal_cards WHERE id = ?1",
             params![id],
             |row| NormalCard::row_to_card(row),
@@ -160,7 +163,7 @@ impl NormalCard {
     pub fn get_by_deck_id(db: &DatabaseConnection, deck_id: i64) -> Result<Vec<Self>, Error> {
         let conn = db.get_connection();
         let mut stmt = conn.prepare(
-            "SELECT id, deck_id, front, back, ease_factor, repetitions, interval, due_date, created_at
+            "SELECT id, deck_id, front, back, image_data, ease_factor, repetitions, interval, due_date, created_at
              FROM normal_cards WHERE deck_id = ?1 ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![deck_id], |row| NormalCard::row_to_card(row))?;
@@ -232,7 +235,7 @@ impl NormalCard {
     ) -> Result<String, Error> {
         let conn = db.get_connection();
         let card = conn.query_row(
-            "SELECT id, deck_id, front, back, ease_factor, repetitions, interval, due_date, created_at
+            "SELECT id, deck_id, front, back, image_data, ease_factor, repetitions, interval, due_date, created_at
              FROM normal_cards WHERE id = ?1",
             params![id],
             |row| NormalCard::row_to_card(row),

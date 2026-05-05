@@ -44,6 +44,9 @@ importers:
       '@tauri-apps/plugin-updater':
         specifier: ^2.7.1
         version: 2.7.1
+      '@tiptap/extension-image':
+        specifier: ^2.27.2
+        version: 2.27.2(@tiptap/core@2.22.3(@tiptap/pm@2.22.3))
       '@tiptap/extension-link':
         specifier: ^2.22.3
         version: 2.22.3(@tiptap/core@2.22.3(@tiptap/pm@2.22.3))(@tiptap/pm@2.22.3)
@@ -751,6 +754,11 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.7.0
       '@tiptap/pm': ^2.7.0
+
+  '@tiptap/extension-image@2.27.2':
+    resolution: {integrity: sha512-5zL/BY41FIt72azVrCrv3n+2YJ/JyO8wxCcA4Dk1eXIobcgVyIdo4rG39gCqIOiqziAsqnqoj12QHTBtHsJ6mQ==}
+    peerDependencies:
+      '@tiptap/core': ^2.7.0
 
   '@tiptap/extension-italic@2.22.3':
     resolution: {integrity: sha512-W/rQDo7qFL7MfwfaYEcdtbk862fOmBv30qIEwVdqElBye7BFJYKtRuWBzNbG2BwKanjwMbVc/tBXF5W1sqfT7Q==}
@@ -2119,6 +2127,10 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.22.3(@tiptap/pm@2.22.3)
       '@tiptap/pm': 2.22.3
+
+  '@tiptap/extension-image@2.27.2(@tiptap/core@2.22.3(@tiptap/pm@2.22.3))':
+    dependencies:
+      '@tiptap/core': 2.22.3(@tiptap/pm@2.22.3)
 
   '@tiptap/extension-italic@2.22.3(@tiptap/core@2.22.3(@tiptap/pm@2.22.3))':
     dependencies:

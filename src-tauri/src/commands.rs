@@ -643,9 +643,10 @@ pub async fn create_normal_card(
     deck_id: i64,
     front: String,
     back: String,
+    image_data: Option<String>,
 ) -> Result<SuccessResponse<NormalCard>, ErrorResponse> {
     run_db_operation(&state.db, move |db| {
-        NormalCard::create(db, deck_id, &front, &back)
+        NormalCard::create(db, deck_id, &front, &back, image_data.as_deref())
             .map(|c| SuccessResponse::new("Card created successfully".into(), c))
     })
     .await

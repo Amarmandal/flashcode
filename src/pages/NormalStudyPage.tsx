@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Container, Stack, Title, Text, Button, Group, Card, Divider, Progress, Tooltip,
+  Container, Stack, Title, Text, Button, Group, Card, Divider, Progress, Tooltip, Box,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import {
 import { SuccessApiResponse } from '../types/successApiResponse';
 import { NormalCard, NormalQueuesResponse } from '../types/normalDeck';
 import { Congratulations } from '../components/common/Congratulations';
+import styles from './NormalStudyPage.module.css';
 
 enum CardAnswer {
   Again = 'Again',
@@ -173,9 +174,14 @@ export default function NormalStudyPage() {
                 <Text size="xs" fw={700} c="dimmed" style={{ alignSelf: 'flex-start' }}>
                   BACK
                 </Text>
-                <div
-                  style={{ fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}
+                <Box
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                  }}
                   dangerouslySetInnerHTML={{ __html: card.back }}
+                  className={styles.cardBackContent}
                 />
                 <Group justify="center" mt="md" gap="sm">
                   <Tooltip label="Press 1" withArrow>
