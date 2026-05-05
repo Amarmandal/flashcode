@@ -14,6 +14,7 @@
       {
         "label": "main",
         "title": "Flash Code",
+        "dragDropEnabled": false,
         "width": 800,
         "height": 600,
         "resizable": true,

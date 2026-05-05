@@ -4,8 +4,9 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
+import ImageExtension from '@tiptap/extension-image';
 import { useForm } from '@mantine/form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface NormalCardFormProps {
   opened: boolean;
@@ -24,7 +25,15 @@ export function NormalCardForm({ opened, onClose, onSubmit }: NormalCardFormProp
   });
 
   const editor = useEditor({
-    extensions: [StarterKit, UnderlineExtension, LinkExtension],
+    extensions: [
+      StarterKit,
+      UnderlineExtension,
+      LinkExtension,
+      ImageExtension.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+    ],
     content: '',
     onUpdate: ({ editor }) => setBackHtml(editor.getHTML()),
   });
@@ -45,6 +54,42 @@ export function NormalCardForm({ opened, onClose, onSubmit }: NormalCardFormProp
     onClose();
   };
 
+  useEffect(() => {
+    if (!editor) return;
+
+    const editorElement = editor.view.dom;
+
+    const handleDrop = (e: Event) => {
+      const dragEvent = e as DragEvent;
+      e.preventDefault();
+
+      const files = dragEvent.dataTransfer?.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            editor.chain().focus().setImage({ src: base64 }).run();
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    };
+
+    const handleDragOver = (e: Event) => {
+      e.preventDefault();
+    };
+
+    editorElement.addEventListener('dragover', handleDragOver);
+    editorElement.addEventListener('drop', handleDrop);
+
+    return () => {
+      editorElement.removeEventListener('dragover', handleDragOver);
+      editorElement.removeEventListener('drop', handleDrop);
+    };
+  }, [editor]);
+
   const backEmpty = !backHtml || backHtml === '<p></p>';
 
   return (
@@ -62,7 +107,7 @@ export function NormalCardForm({ opened, onClose, onSubmit }: NormalCardFormProp
           <div>
             <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Back</div>
             <div style={{ fontSize: 12, color: 'var(--mantine-color-dimmed)', marginBottom: 6 }}>
-              Full answer — paste MCQ options, plain text, or anything you'd write in Anki.
+              Full answer — paste MCQ options, plain text, or drag and drop images.
             </div>
             <RichTextEditor editor={editor} style={{ minHeight: 180 }}>
               <RichTextEditor.Toolbar sticky stickyOffset={0}>

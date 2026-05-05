@@ -1,5 +1,5 @@
 import { Card, Group, Text, Stack, ActionIcon, Box } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Deck } from '../../types/deck';
 import { IconTrash, IconPencil, IconStar, IconCards } from '@tabler/icons-react';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -22,6 +22,7 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
   const [deckToRemove, setDeckToRemove] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredDeckId, setHoveredDeckId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleRemoveClick = (id: string) => {
     setDeckToRemove(id);
@@ -60,6 +61,7 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
             p="lg"
             onMouseEnter={() => setHoveredDeckId(deck.id)}
             onMouseLeave={() => setHoveredDeckId(null)}
+            onClick={() => navigate(`/deck/${deck.id}`)}
             style={{
               background: 'var(--surface-bg)',
               backdropFilter: 'blur(8px)',
@@ -89,11 +91,8 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
                 <Text
                   fw={500}
                   size="md"
-                  component={Link}
-                  to={`/deck/${deck.id}`}
                   style={{
                     flex: 1,
-                    textDecoration: 'none',
                     color: 'var(--text-primary)',
                   }}
                 >
@@ -108,7 +107,7 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
                   radius="sm"
                   style={hoverActionStyle(isHovered)}
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     onEdit(deck);
                   }}
                 >
@@ -121,7 +120,6 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
                   radius="sm"
                   style={hoverActionStyle(isHovered)}
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     handleRemoveClick(deck.id);
                   }}
@@ -135,7 +133,7 @@ export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckList
                   radius="sm"
                   style={hoverActionStyle(isHovered || !!deck.isFavorite)}
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     onToggleFavorite(deck);
                   }}
                 >

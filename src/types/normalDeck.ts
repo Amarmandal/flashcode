@@ -10,6 +10,7 @@ export interface NormalCard {
   deckId: number;
   front: string;
   back: string;
+  imageData?: string;
   easeFactor: number;
   repetitions: number;
   interval: number;
