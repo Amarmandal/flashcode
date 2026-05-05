@@ -1,6 +1,6 @@
 import { Stack, Group, Text, ActionIcon, Tooltip, Card, Box } from '@mantine/core';
 import { IconTrash, IconEdit, IconHeart, IconHeartFilled, IconBrain } from '@tabler/icons-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { NormalDeck } from '../../types/normalDeck';
 import { useState } from 'react';
 
