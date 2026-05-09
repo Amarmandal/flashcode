@@ -148,32 +148,39 @@ export function EditSnippetModal({
         {/* Notes Tab */}
         <Tabs.Panel value="notes" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Box style={{ flex: 1, overflowY: 'auto' }}>
-            <RichTextEditor editor={editor} style={{ background: 'transparent' }}>
-              <RichTextEditor.Toolbar sticky stickyOffset={0}>
-                <RichTextEditor.ControlsGroup>
-                  <RichTextEditor.Bold />
-                  <RichTextEditor.Italic />
-                  <RichTextEditor.Underline />
-                </RichTextEditor.ControlsGroup>
-                <RichTextEditor.ControlsGroup>
-                  <RichTextEditor.BulletList />
-                  <RichTextEditor.OrderedList />
-                </RichTextEditor.ControlsGroup>
-                <RichTextEditor.ControlsGroup>
-                  <RichTextEditor.Code />
-                  <RichTextEditor.Link />
-                </RichTextEditor.ControlsGroup>
-              </RichTextEditor.Toolbar>
-              <RichTextEditor.Content
-                style={{
-                  minHeight: 300,
-                  background: 'var(--mantine-color-dark-7)',
-                  borderRadius: 8,
-                  color: 'var(--mantine-color-white)',
-                  fontSize: 14,
-                }}
-              />
-            </RichTextEditor>
+            <div>
+              <style>
+                {`
+                  .mantine-RichTextEditor-content .ProseMirror {
+                    min-height: 300px !important;
+                  }
+                `}
+              </style>
+              <RichTextEditor editor={editor} style={{ background: 'transparent' }}>
+                <RichTextEditor.Toolbar sticky stickyOffset={0}>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.Bold />
+                    <RichTextEditor.Italic />
+                    <RichTextEditor.Underline />
+                  </RichTextEditor.ControlsGroup>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.BulletList />
+                    <RichTextEditor.OrderedList />
+                  </RichTextEditor.ControlsGroup>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.Code />
+                    <RichTextEditor.Link />
+                  </RichTextEditor.ControlsGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content
+                  style={{
+                    minHeight: 300,
+                    borderRadius: 8,
+                    fontSize: 14,
+                  }}
+                />
+              </RichTextEditor>
+            </div>
           </Box>
           <Group justify="flex-end" mt="xs">
             <Button size="xs" onClick={handleSave} disabled={!hasUnsavedChanges}>
