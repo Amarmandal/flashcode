@@ -109,40 +109,55 @@ export function NormalCardForm({ opened, onClose, onSubmit }: NormalCardFormProp
             <div style={{ fontSize: 12, color: 'var(--mantine-color-dimmed)', marginBottom: 6 }}>
               Full answer — paste MCQ options, plain text, or drag and drop images.
             </div>
-            <RichTextEditor editor={editor} style={{ minHeight: 180 }}>
-              <RichTextEditor.Toolbar sticky stickyOffset={0}>
-                <RichTextEditor.ControlsGroup>
-                  <RichTextEditor.Bold />
-                  <RichTextEditor.Italic />
-                  <RichTextEditor.Underline />
-                </RichTextEditor.ControlsGroup>
-                <RichTextEditor.ControlsGroup>
-                  <RichTextEditor.BulletList />
-                  <RichTextEditor.OrderedList />
-                </RichTextEditor.ControlsGroup>
-                <RichTextEditor.ControlsGroup>
-                  <RichTextEditor.Code />
-                  <RichTextEditor.Link />
-                </RichTextEditor.ControlsGroup>
-              </RichTextEditor.Toolbar>
-              <RichTextEditor.Content
-                style={{
-                  minHeight: 140,
-                  background: 'var(--mantine-color-dark-7)',
-                  fontSize: 14,
-                }}
-              />
-            </RichTextEditor>
+            <div
+              style={{
+                // @ts-ignore - targeting nested ProseMirror editor
+                '--rte-content-min-height': '180px',
+              }}
+            >
+              <style>
+                {`
+                  .mantine-RichTextEditor-content .ProseMirror {
+                    min-height: 180px !important;
+                  }
+                `}
+              </style>
+              <RichTextEditor editor={editor}>
+                <RichTextEditor.Toolbar sticky stickyOffset={0}>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.Bold />
+                    <RichTextEditor.Italic />
+                    <RichTextEditor.Underline />
+                  </RichTextEditor.ControlsGroup>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.BulletList />
+                    <RichTextEditor.OrderedList />
+                  </RichTextEditor.ControlsGroup>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.Code />
+                    <RichTextEditor.Link />
+                  </RichTextEditor.ControlsGroup>
+                </RichTextEditor.Toolbar>
+                <RichTextEditor.Content
+                  style={{
+                    minHeight: 180,
+                    fontSize: 14,
+                  }}
+                />
+              </RichTextEditor>
+            </div>
             {backEmpty && form.isDirty() && (
-              <div style={{ color: 'var(--mantine-color-red-6)', fontSize: 12, marginTop: 4 }}>
-                Back is required
-              </div>
+              <div style={{ color: 'var(--mantine-color-red-6)', fontSize: 12, marginTop: 4 }}>Back is required</div>
             )}
           </div>
 
           <Group justify="flex-end" mt="xs">
-            <Button variant="default" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" disabled={backEmpty}>Add Card</Button>
+            <Button variant="default" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={backEmpty}>
+              Add Card
+            </Button>
           </Group>
         </Stack>
       </form>
