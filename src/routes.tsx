@@ -11,6 +11,10 @@ import SplashScreen from './pages/SplashScreen';
 import NormalDeckPage from './pages/NormalDeckPage';
 import NormalDeckDetailPage from './pages/NormalDeckDetailPage';
 import NormalStudyPage from './pages/NormalStudyPage';
+import { QuizPage } from './pages/QuizPage';
+import { CreateEditQuizPage } from './pages/CreateEditQuizPage';
+import { TakeQuizPage } from './pages/TakeQuizPage';
+import { QuizResultsPage } from './pages/QuizResultsPage';
 
 export const routes: RouteObject[] = [
   {
@@ -54,6 +58,26 @@ export const routes: RouteObject[] = [
       {
         path: 'normal-deck/:deckId/study',
         element: <NormalStudyPage />,
+      },
+      {
+        path: 'quiz',
+        element: <QuizPage />,
+      },
+      {
+        path: 'quiz/new',
+        element: <CreateEditQuizPage />,
+      },
+      {
+        path: 'quiz/edit/:id',
+        element: <CreateEditQuizPage />,
+      },
+      {
+        path: 'quiz/take/:id',
+        element: <TakeQuizPage />,
+      },
+      {
+        path: 'quiz/results/:id',
+        element: <QuizResultsPage />,
       },
       {
         path: '*',

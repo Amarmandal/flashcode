@@ -18,6 +18,7 @@ use commands::{
     reset_normal_deck, create_normal_card, get_normal_cards_by_deck, get_normal_queues_for_today,
     answer_normal_card, delete_normal_card,
     export_database_backup, import_database_backup, get_database_path,
+    create_quiz, get_all_quizzes, get_quiz, update_quiz, delete_quiz, import_quiz_from_json,
 };
 use database::DatabaseConnection;
 use models::{seconds_to_days, Flashcode};
@@ -160,6 +161,12 @@ pub fn run() {
             export_database_backup,
             import_database_backup,
             get_database_path,
+            create_quiz,
+            get_all_quizzes,
+            get_quiz,
+            update_quiz,
+            delete_quiz,
+            import_quiz_from_json,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
