@@ -4,11 +4,13 @@ use std::path::Path;
 use tauri::{AppHandle, Manager, State};
 use v_htmlescape::escape;
 use chrono::Local;
+use serde::{Deserialize, Serialize};
 
 use crate::database::DatabaseConnection;
 use crate::models::{
-    Deck, DeckQueryParams, Flashcode, NormalCard, NormalDeck, NormalQueuesResponse, SearchResult,
-    Snippet, SnippetFolder, SnippetQueryParams,
+    Deck, DeckQueryParams, Flashcode, NormalCard, NormalDeck, NormalQueuesResponse, Quiz,
+    QuizOption, QuizQuestion, QuizWithQuestions, SearchResult, Snippet, SnippetFolder,
+    SnippetQueryParams,
 };
 use crate::responses::{
     DeckWithCount, ErrorResponse, SuccessResponse, SuccessResponseWithCount, TodayQueuesResponse,
@@ -826,4 +828,195 @@ pub async fn get_database_path(app: AppHandle) -> Result<SuccessResponse<String>
         eprintln!("Task join error: {:?}", e);
         ErrorResponse::new("Failed to get database path".into())
     })?
+}
+
+// ===== Quiz Commands =====
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateQuizPayload {
+    pub title: String,
+    pub questions: Vec<CreateQuestionPayload>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateQuestionPayload {
+    pub question_type: String,
+    pub question_text: String,
+    pub options: Vec<CreateOptionPayload>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateOptionPayload {
+    pub option_id: String,
+    pub option_text: String,
+    pub is_correct: bool,
+}
+
+#[tauri::command]
+pub async fn create_quiz(
+    state: State<'_, AppState>,
+    payload: CreateQuizPayload,
+) -> Result<SuccessResponse<QuizWithQuestions>, ErrorResponse> {
+    run_db_operation(&state.db, move |db| {
+        let conn = db.get_connection();
+
+        let quiz = Quiz::create(conn, &payload.title)?;
+
+        let mut questions_with_options = Vec::new();
+
+        for (index, question_payload) in payload.questions.iter().enumerate() {
+            let question = QuizQuestion::create(
+                conn,
+                quiz.id,
+                &question_payload.question_type,
+                &question_payload.question_text,
+                index as i64,
+            )?;
+
+            let mut options = Vec::new();
+            for option_payload in &question_payload.options {
+                let option = QuizOption::create(
+                    conn,
+                    question.id,
+                    &option_payload.option_id,
+                    &option_payload.option_text,
+                    option_payload.is_correct,
+                )?;
+                options.push(option);
+            }
+
+            questions_with_options.push(QuizQuestion {
+                options,
+                ..question
+            });
+        }
+
+        Ok(SuccessResponse::new(
+            "Quiz created successfully".into(),
+            QuizWithQuestions {
+                quiz,
+                questions: questions_with_options,
+            },
+        ))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn get_all_quizzes(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<Vec<Quiz>>, ErrorResponse> {
+    run_db_operation(&state.db, move |db| {
+        let conn = db.get_connection();
+        Quiz::get_all(conn).map(|quizzes| SuccessResponse::new("Quizzes retrieved".into(), quizzes))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn get_quiz(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<QuizWithQuestions>, ErrorResponse> {
+    run_db_operation(&state.db, move |db| {
+        let conn = db.get_connection();
+        let quiz = Quiz::get(conn, id)?;
+        let questions = QuizQuestion::get_by_quiz_id(conn, id)?;
+
+        Ok(SuccessResponse::new(
+            "Quiz retrieved".into(),
+            QuizWithQuestions { quiz, questions },
+        ))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn update_quiz(
+    state: State<'_, AppState>,
+    id: i64,
+    payload: CreateQuizPayload,
+) -> Result<SuccessResponse<QuizWithQuestions>, ErrorResponse> {
+    run_db_operation(&state.db, move |db| {
+        let conn = db.get_connection();
+
+        let quiz = Quiz::get(conn, id)?;
+        let updated_quiz = Quiz {
+            title: payload.title,
+            ..quiz
+        };
+        updated_quiz.update(conn)?;
+
+        let existing_questions = QuizQuestion::get_by_quiz_id(conn, id)?;
+        for question in existing_questions {
+            QuizOption::delete_by_question_id(conn, question.id)?;
+            QuizQuestion::delete(conn, question.id)?;
+        }
+
+        let mut questions_with_options = Vec::new();
+        for (index, question_payload) in payload.questions.iter().enumerate() {
+            let question = QuizQuestion::create(
+                conn,
+                id,
+                &question_payload.question_type,
+                &question_payload.question_text,
+                index as i64,
+            )?;
+
+            let mut options = Vec::new();
+            for option_payload in &question_payload.options {
+                let option = QuizOption::create(
+                    conn,
+                    question.id,
+                    &option_payload.option_id,
+                    &option_payload.option_text,
+                    option_payload.is_correct,
+                )?;
+                options.push(option);
+            }
+
+            questions_with_options.push(QuizQuestion {
+                options,
+                ..question
+            });
+        }
+
+        let final_quiz = Quiz::get(conn, id)?;
+
+        Ok(SuccessResponse::new(
+            "Quiz updated successfully".into(),
+            QuizWithQuestions {
+                quiz: final_quiz,
+                questions: questions_with_options,
+            },
+        ))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn delete_quiz(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    run_db_operation(&state.db, move |db| {
+        let conn = db.get_connection();
+        Quiz::delete(conn, id)
+            .map(|msg| SuccessResponse::new(msg.clone(), format!("Quiz with id {} deleted", id)))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn import_quiz_from_json(
+    state: State<'_, AppState>,
+    json_data: String,
+) -> Result<SuccessResponse<QuizWithQuestions>, ErrorResponse> {
+    let payload: CreateQuizPayload = serde_json::from_str(&json_data)
+        .map_err(|e| ErrorResponse::new(format!("Invalid JSON format: {}", e)))?;
+
+    create_quiz(state, payload).await
 }

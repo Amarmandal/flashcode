@@ -3,7 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import classes from './Layout.module.css';
 import AppLogo from './Logo';
-import { IconCards, IconHeart, IconDatabaseSearch, IconRefresh, IconCode, IconBrain } from '@tabler/icons-react';
+import { IconCards, IconHeart, IconDatabaseSearch, IconRefresh, IconCode, IconBrain, IconQuestionMark } from '@tabler/icons-react';
 import { SearchBar } from '../search/SearchBar';
 import { ThemeToggle } from './ThemeToggle';
 import { UpdateBanner } from './UpdateBanner';
@@ -140,6 +140,29 @@ const Layout = () => {
               component={Link}
               to="/normal-deck"
               active={location.pathname.startsWith('/normal-deck')}
+              styles={{
+                root: {
+                  borderRadius: '8px',
+                  marginBottom: '4px',
+                  color: 'var(--sidebar-text)',
+                },
+                label: {
+                  color: 'var(--sidebar-text)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                },
+                section: {
+                  color: 'var(--sidebar-text)',
+                },
+              }}
+            />
+            <NavLink
+              className={classes.navLabel}
+              label="Quiz"
+              leftSection={<IconQuestionMark size={18} strokeWidth={2} />}
+              component={Link}
+              to="/quiz"
+              active={location.pathname.startsWith('/quiz')}
               styles={{
                 root: {
                   borderRadius: '8px',
