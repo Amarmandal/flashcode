@@ -66,6 +66,9 @@ export const TakeQuizPage: React.FC = () => {
     );
   }
 
+  if (quiz.questions.length === 0) {
+    return <Container py="xl"><Stack><Text>This quiz has no questions yet.</Text><Button onClick={() => navigate(`/quiz/edit/${id}`)}>Add questions</Button></Stack></Container>;
+  }
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const totalQuestions = quiz.questions.length;
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
@@ -126,6 +129,7 @@ export const TakeQuizPage: React.FC = () => {
               Question {currentQuestionIndex + 1} of {totalQuestions}
             </Text>
           </Group>
+          <Button variant="subtle" size="xs" mb="md" onClick={() => navigate('/quiz')}>Back to quizzes</Button>
           <Progress value={progress} size="sm" radius="xl" />
         </Box>
 
@@ -154,6 +158,11 @@ export const TakeQuizPage: React.FC = () => {
                     radius="md"
                     withBorder
                     onClick={() => handleOptionToggle(option.optionId)}
+                    tabIndex={showFeedback ? -1 : 0}
+                    role={currentQuestion.questionType === 'single-choice' ? 'radio' : 'checkbox'}
+                    aria-checked={isSelected}
+                    aria-label={option.optionText}
+                    onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleOptionToggle(option.optionId); } }}
                     style={{
                       cursor: showFeedback ? 'default' : 'pointer',
                       borderColor: showCorrectness
@@ -163,13 +172,13 @@ export const TakeQuizPage: React.FC = () => {
                           ? 'var(--mantine-color-red-6)'
                           : undefined
                         : isSelected
-                        ? 'var(--mantine-color-blue-6)'
+                        ? 'var(--mantine-color-brand-5)'
                         : undefined,
                       backgroundColor: showCorrectness
                         ? option.isCorrect
-                          ? 'var(--mantine-color-green-0)'
+                          ? 'var(--mantine-color-green-light)'
                           : isSelected
-                          ? 'var(--mantine-color-red-0)'
+                          ? 'var(--mantine-color-red-light)'
                           : undefined
                         : undefined,
                       borderWidth: showCorrectness || isSelected ? 2 : 1,
@@ -178,9 +187,9 @@ export const TakeQuizPage: React.FC = () => {
                     <Group justify="space-between" wrap="nowrap">
                       <Group gap="md">
                         {currentQuestion.questionType === 'single-choice' ? (
-                          <Radio checked={isSelected} readOnly />
+                          <Radio checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />
                         ) : (
-                          <Checkbox checked={isSelected} readOnly />
+                          <Checkbox checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />
                         )}
                         <Text size="md">{option.optionText}</Text>
                       </Group>

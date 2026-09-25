@@ -1,5 +1,7 @@
+import { PageHeader } from '../components/common/PageHeader';
+import { EmptyState } from '../components/common/EmptyState';
 import { invoke } from '@tauri-apps/api/core';
-import { Alert, Box, Button, Card, Container, Group, Stack, Title, Text, ActionIcon, Menu } from '@mantine/core';
+import { Alert, Box, Button, Card, Container, Group, Stack, Text, ActionIcon, Menu } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { IconAlertCircle, IconPlus, IconDots, IconEdit, IconTrash, IconPlayerPlay } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
@@ -74,11 +76,8 @@ export const QuizPage: React.FC = () => {
       )}
 
       <Stack gap="xl">
-        <Group justify="space-between" align="center">
-          <Title order={2} c="var(--text-primary)">
-            Quizzes
-          </Title>
-          <Button
+        <PageHeader title="Quizzes" description="Put your knowledge to the test with focused, self-paced quizzes." eyebrow="Test your understanding" actions={
+<Button
             leftSection={<IconPlus size={16} />}
             onClick={handleCreateQuiz}
             radius="sm"
@@ -91,41 +90,11 @@ export const QuizPage: React.FC = () => {
           >
             Create Quiz
           </Button>
-        </Group>
+} />
 
         <Box style={{ minHeight: '60vh' }}>
-          {loading ? (
-            <Box
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: 'var(--surface-bg)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid var(--surface-border)',
-                borderRadius: '12px',
-              }}
-            >
-              <Text size="lg" c="var(--text-secondary)">
-                Loading quizzes...
-              </Text>
-            </Box>
-          ) : quizzes.length === 0 ? (
-            <Box
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: 'var(--surface-bg)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid var(--surface-border)',
-                borderRadius: '12px',
-              }}
-            >
-              <Text size="lg" c="var(--text-secondary)">
-                No quizzes yet. Create one to get started!
-              </Text>
-            </Box>
+          {loading ? <Text c="dimmed" py="xl">Loading quizzes…</Text> : quizzes.length === 0 ? (
+            <EmptyState title="Create your first quiz" description="Use the button above to add your first collection and start a learning habit." />
           ) : (
             <Stack gap="md">
               {quizzes.map((quiz) => (

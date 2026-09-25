@@ -15,8 +15,10 @@
         "label": "main",
         "title": "Flash Code",
         "dragDropEnabled": false,
-        "width": 800,
-        "height": 600,
+        "width": 1120,
+        "height": 780,
+        "minWidth": 760,
+        "minHeight": 600,
         "resizable": true,
         "devtools": true,
         "visible": false
@@ -42,7 +44,7 @@
   },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "targets": [
       "deb",
       "appimage",
@@ -76,7 +78,7 @@
       "exceptionDomain": null,
       "frameworks": [],
       "minimumSystemVersion": "10.13",
-      "signingIdentity": "D3743110E374992E2FEF006F7AB662B4D494B875"
+      "signingIdentity": null
     },
     "windows": {
       "allowDowngrades": true,
@@ -108,6 +110,7 @@
   },
   "plugins": {
     "updater": {
+      "active": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYyNUI3MEMxNTM2Q0E3MTcKUldRWHAyeFR3WEJiOGtKa2w0OHhxaXhlRm1mdEo3QlhIWTdGb1lWQ2VMdmc3ZURtSXpjU1RVekwK",
       "endpoints": [
         "https://amarmandal.github.io/flashcode/releases.json"

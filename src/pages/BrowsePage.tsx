@@ -1,6 +1,7 @@
+import { PageHeader } from '../components/common/PageHeader';
 import { useState, useEffect } from 'react';
-import { Container, Grid, Card, Text, Stack, Title, Group, ActionIcon, Alert, Flex, Image, Chip } from '@mantine/core';
-import { IconCards, IconPencil, IconTrash, IconAlertCircle, IconSearch } from '@tabler/icons-react';
+import { Container, Grid, Card, Text, Stack, Group, ActionIcon, Alert, Flex, Image, Chip } from '@mantine/core';
+import { IconCards, IconPencil, IconTrash, IconAlertCircle } from '@tabler/icons-react';
 import { invoke } from '@tauri-apps/api/core';
 import { Deck as DeckType, DeckWithCount } from '../types/deck';
 import { SuccessApiResponse } from '../types/successApiResponse';
@@ -162,7 +163,7 @@ export default function BrowsePage() {
       return { text: 'Review', color: 'green' };
     }
   };  return (
-    <Container size="xl" py="md">
+    <Container size="xl" py="xl">
       {error && (
         <Alert
           variant="light"
@@ -178,20 +179,12 @@ export default function BrowsePage() {
       )}
 
       <Stack gap="md">
-        <Group justify="space-between">
-          <Title order={2}>Browse Flashcards</Title>
-          <Group gap="xs">
-            <IconSearch size={20} />
-            <Text size="sm" c="dimmed">
-              Select a deck to browse its flashcards
-            </Text>
-          </Group>
-        </Group>
+        <PageHeader title="Card browser" eyebrow="Explore your knowledge" description="Find, refine, and organize the cards in your collection." />
 
         <Grid gutter="md">
           {/* Left Panel - Deck Explorer */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Card withBorder shadow="sm" radius="md" h="70vh" style={{ overflow: 'hidden' }}>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Card withBorder shadow="sm" radius="md" mih={340} h="calc(100vh - 260px)" style={{ overflow: 'hidden' }}>
               <Card.Section p="md" withBorder>
                 <Group gap="xs">
                   <IconCards size={20} />
@@ -213,8 +206,8 @@ export default function BrowsePage() {
                         withBorder
                         style={{
                           cursor: 'pointer',
-                          backgroundColor: selectedDeck?.id === deck.id ? 'var(--mantine-color-blue-light)' : undefined,
-                          borderColor: selectedDeck?.id === deck.id ? 'var(--mantine-color-blue-6)' : undefined,
+                          backgroundColor: selectedDeck?.id === deck.id ? 'var(--sidebar-active)' : undefined,
+                          borderColor: selectedDeck?.id === deck.id ? 'var(--mantine-color-brand-5)' : undefined,
                         }}
                         onClick={() => handleDeckSelect(deck)}
                       >
@@ -228,8 +221,8 @@ export default function BrowsePage() {
           </Grid.Col>
 
           {/* Right Panel - Flashcard List */}
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            <Card withBorder shadow="sm" radius="md" h="70vh" style={{ overflow: 'hidden' }}>
+          <Grid.Col span={{ base: 12, sm: 8 }}>
+            <Card withBorder shadow="sm" radius="md" mih={340} h="calc(100vh - 260px)" style={{ overflow: 'hidden' }}>
               <Card.Section p="md" withBorder>
                 <Group justify="space-between">
                   <Text fw={600}>

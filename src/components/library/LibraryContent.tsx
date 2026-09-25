@@ -62,7 +62,7 @@ export function LibraryContent({
   return (
     <Grid gutter="md">
       {snippets.map((snippet) => (
-        <Grid.Col key={snippet.id} span={viewMode === 'grid' ? { base: 12, sm: 6, lg: 4 } : 12}>
+        <Grid.Col key={snippet.id} span={viewMode === 'grid' ? { base: 12, md: 6, xl: 4 } : 12}>
           <SnippetCard
             snippet={snippet}
             viewMode={viewMode}

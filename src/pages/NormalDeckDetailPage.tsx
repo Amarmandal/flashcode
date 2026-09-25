@@ -1,3 +1,4 @@
+import { PageHeader } from '../components/common/PageHeader';
 import { invoke } from '@tauri-apps/api/core';
 import {
   Container, Stack, Group, Title, Button, Text, ActionIcon, Tooltip, Paper, Box, Anchor, Breadcrumbs, Modal,
@@ -112,15 +113,13 @@ export default function NormalDeckDetailPage() {
   const totalDue = queues.new + queues.learning + queues.toReview;
 
   return (
-    <Container size="md" py="xl">
-      <Stack>
+    <Container size="lg" py="xl">
+      <Stack gap="xl">
         <Breadcrumbs mb="xs">
-          <Anchor component={Link} to="/normal-deck" size="sm">Normal Decks</Anchor>
+          <Anchor component={Link} to="/normal-deck" size="sm">Flashcards</Anchor>
           <Text size="sm">{deck?.name}</Text>
         </Breadcrumbs>
-        <Group justify="space-between">
-          <Title order={2}>{deck?.name}</Title>
-          <Group>
+        <PageHeader title={deck?.name || 'Flashcards'} description="Your ideas, organized for lasting recall." actions={<Group>
             <Button
               variant="outline"
               color="red"
@@ -149,8 +148,7 @@ export default function NormalDeckDetailPage() {
             >
               Study Now
             </Button>
-          </Group>
-        </Group>
+          </Group>} />
 
         <Group justify="center" grow>
           <StatusCard label="New" count={queues.new} color="blue" />

@@ -1,51 +1,36 @@
-.logoText {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  color: var(--mantine-color-text);
-  text-align: center;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #10b981 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-  letter-spacing: -0.02em;
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  flex: none;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
-/* Size variations */
-.large {
-  font-size: 3rem;
-  line-height: 3.5rem;
+.mark {
+  display: block;
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 0.32em;
+  object-fit: cover;
+  flex: none;
 }
 
-.medium {
-  font-size: 2rem;
-  line-height: 2.5rem;
+.wordmark {
+  color: var(--text-primary);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.055em;
 }
 
-.small {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-}
+.accent { color: #514bd3; }
 
-.favicon {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 700; /* Bolder for small sizes */
-}
+:global([data-mantine-color-scheme='dark']) .accent { color: #66d9ba; }
 
-/* Optional animation */
-.logoText:hover {
-  animation: pulse 1.5s infinite;
-}
 
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-  100% {
-    opacity: 1;
-  }
-}
+
+.large { font-size: 3rem; }
+.medium { font-size: 1.55rem; }
+.small { font-size: 1.18rem; }
+.favicon { font-size: 1rem; }

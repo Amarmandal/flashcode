@@ -85,16 +85,18 @@ export function SearchBar() {
     <Stack gap={0} style={{ position: 'relative' }}>
       <Group>
         <Input
-          placeholder="Search..."
+          placeholder="Search your cards…"
+          aria-label="Search your cards"
           radius="sm"
-          size="md"
-          w={{ base: '100%', sm: 400, md: 600 }}
+          size="sm"
+          w="100%"
           value={query}
           onChange={(e) => {
             handleSearch(e.currentTarget.value);
           }}
           leftSection={<IconSearch size={16} />}
-          disabled={isLoading}
+          aria-busy={isLoading}
+
           styles={{
             input: {
               background: 'var(--input-bg)',

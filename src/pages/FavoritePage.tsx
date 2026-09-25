@@ -1,5 +1,6 @@
+import { PageHeader } from '../components/common/PageHeader';
 import { invoke } from '@tauri-apps/api/core';
-import { Alert, Container, Stack, Title } from '@mantine/core';
+import { Alert, Container, Stack } from '@mantine/core';
 import { useEffect, useState, useRef } from 'react';
 import { Deck as DeckType, DeckWithCount } from '../types/deck';
 import { IconAlertCircle } from '@tabler/icons-react';
@@ -71,7 +72,7 @@ export default function FavoritePage() {
         </Alert>
       )}
       <Stack>
-        <Title order={2}>Favorite Decks</Title>
+        <PageHeader title="Favorites" eyebrow="Close at hand" description="The decks you come back to, all in one place." />
         <FavoriteDeckList
           onRemoveFavorite={handleRemoveFavorite}
           favoriteDecks={favoriteDecks}

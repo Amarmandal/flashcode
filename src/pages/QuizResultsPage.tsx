@@ -1,5 +1,5 @@
 import { Box, Button, Card, Container, Group, RingProgress, Stack, Text, Title } from '@mantine/core';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { IconRefresh, IconArrowLeft } from '@tabler/icons-react';
 
 interface ResultsState {
@@ -16,12 +16,11 @@ export const QuizResultsPage: React.FC = () => {
   const state = location.state as ResultsState;
 
   if (!state) {
-    navigate('/quiz');
-    return null;
+    return <Navigate to="/quiz" replace />;
   }
 
   const { quizTitle, totalQuestions, correctAnswers } = state;
-  const score = Math.round((correctAnswers / totalQuestions) * 100);
+  const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'green';
@@ -72,7 +71,7 @@ export const QuizResultsPage: React.FC = () => {
             />
 
             <Box style={{ width: '100%' }}>
-              <Card padding="lg" radius="md" withBorder bg="var(--mantine-color-gray-0)">
+              <Card padding="lg" radius="md" withBorder bg="var(--surface-muted)">
                 <Stack gap="md">
                   <Group justify="space-between">
                     <Text size="md" c="dimmed">

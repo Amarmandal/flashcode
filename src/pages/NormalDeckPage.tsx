@@ -1,5 +1,7 @@
+import { PageHeader } from '../components/common/PageHeader';
+import { EmptyState } from '../components/common/EmptyState';
 import { invoke } from '@tauri-apps/api/core';
-import { Alert, Box, Button, Container, Group, Stack, Title, Text } from '@mantine/core';
+import { Alert, Box, Button, Container, Stack } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
 import { NormalDeck } from '../types/normalDeck';
@@ -102,9 +104,8 @@ export default function NormalDeckPage() {
         </Alert>
       )}
       <Stack gap="xl">
-        <Group justify="space-between" align="center">
-          <Title order={2} c="var(--text-primary)">Normal Decks</Title>
-          <Button
+        <PageHeader title="Flashcards" description="Make room for what you want to remember. Organize questions and answers into decks." eyebrow="Learn anything" actions={
+<Button
             leftSection={<IconPlus size={16} />}
             onClick={openCreate}
             radius="sm"
@@ -117,25 +118,11 @@ export default function NormalDeckPage() {
           >
             Create Deck
           </Button>
-        </Group>
+} />
 
         <Box style={{ minHeight: '60vh' }}>
           {decks.length === 0 ? (
-            <Box
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: 'var(--surface-bg)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid var(--surface-border)',
-                borderRadius: '12px',
-              }}
-            >
-              <Text size="lg" c="var(--text-secondary)">
-                No decks yet. Create one to get started!
-              </Text>
-            </Box>
+            <EmptyState title="Your next idea starts here" description="Use the button above to add your first collection and start a learning habit." />
           ) : (
             <NormalDeckList
               decks={decks}

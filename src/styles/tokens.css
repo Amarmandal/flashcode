@@ -1,0 +1,29 @@
+/* Shared semantic tokens consumed by Mantine and CSS modules. */
+[data-mantine-color-scheme="light"] {
+  --page-bg: #f7f8fc; --surface-bg: #ffffff; --surface-muted: #f2f4f9;
+  --surface-border: #e7eaf2; --border-color: #dfe4ef;
+  --sidebar-bg: #ffffff; --sidebar-text: #526079; --sidebar-text-dim: #79859b;
+  --sidebar-active: #eeedff; --sidebar-divider: #e9ecf4;
+  --text-primary: #202a43; --text-secondary: #65728b; --text-tertiary: #7b879e;
+  --input-bg: #ffffff; --input-border: #dfe4ef;
+  --primary-btn-bg: #6259df; --primary-btn-text: #ffffff;
+  --secondary-btn-bg: #eeedff; --secondary-btn-text: #5147ca;
+  --progress-fill: #756bea; --progress-track: #e9eaf4;
+  --icon-badge-bg: #eeedff; --icon-badge-color: #6259df;
+  --icon-badge-brain-bg: #e7f7f1; --icon-badge-brain-color: #187e67;
+  --elevation: 0 3px 16px rgba(29, 39, 68, .035);
+}
+[data-mantine-color-scheme="dark"] {
+  --page-bg: #101521; --surface-bg: #191f2e; --surface-muted: #20283a;
+  --surface-border: #2a3347; --border-color: #354059;
+  --sidebar-bg: #141a27; --sidebar-text: #b0bbd0; --sidebar-text-dim: #8794ac;
+  --sidebar-active: #2a2949; --sidebar-divider: #283044;
+  --text-primary: #edf1fa; --text-secondary: #a2aec4; --text-tertiary: #8693ac;
+  --input-bg: #141b29; --input-border: #354059;
+  --primary-btn-bg: #6259df; --primary-btn-text: #ffffff;
+  --secondary-btn-bg: #2b2949; --secondary-btn-text: #bab2ff;
+  --progress-fill: #9a8df9; --progress-track: #2a3347;
+  --icon-badge-bg: #2d2a4c; --icon-badge-color: #b5aaff;
+  --icon-badge-brain-bg: #193c36; --icon-badge-brain-color: #77d9bc;
+  --elevation: 0 3px 16px rgba(0, 0, 0, .08);
+}

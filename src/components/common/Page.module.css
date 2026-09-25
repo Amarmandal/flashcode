@@ -1,0 +1,14 @@
+.header { margin-bottom: 8px; }
+.heading { min-width: 0; flex: 1 1 220px; }
+.title { font-size: clamp(24px, 2.5vw, 32px); letter-spacing: -.045em; }
+.eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--mantine-color-brand-5); margin-bottom: 9px; }
+.description { font-size: 13px; line-height: 1.65; color: var(--text-secondary); margin-top: 8px; max-width: 560px; }
+.actions { padding-top: 4px; }
+.empty { padding: 56px 24px; border-style: dashed; }
+.deck { transition: border-color 160ms ease, box-shadow 160ms ease; }
+.deck:hover { border-color: var(--mantine-color-brand-4); box-shadow: var(--elevation); }
+.deckLink { color: var(--text-primary); font-size: 16px; font-weight: 650; text-decoration: none; line-height: 1.45; }
+.deckLink:hover { color: var(--mantine-color-brand-5); }
+.deckIcon { background: var(--icon-badge-bg); color: var(--icon-badge-color); border-radius: 12px; width: 42px; height: 42px; display: grid; place-items: center; }
+.studyCard { padding: 28px; }
+@media (max-width: 48em) { .actions { width: 100%; } .studyCard { padding: 20px; } }

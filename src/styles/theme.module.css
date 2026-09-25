@@ -1,0 +1,12 @@
+.surface { background: var(--surface-bg); color: var(--text-primary); border: 1px solid var(--surface-border); box-shadow: var(--elevation); }
+.input { background: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); border-radius: var(--mantine-radius-md); }
+.input:focus-within { border-color: var(--mantine-color-brand-5); }
+.input::placeholder { color: var(--text-tertiary); }
+.label { color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; }
+.title { color: var(--text-primary); letter-spacing: -.035em; }
+.button { font-weight: 600; transition: background-color 150ms ease, box-shadow 150ms ease; }
+.button:disabled, .button[data-disabled] { opacity: .5; }
+.modalHeader { background: var(--surface-bg); padding: 20px 24px; border-bottom: 1px solid var(--surface-border); }
+.modalBody { padding: 24px; }
+.modalTitle { font-size: 18px; font-weight: 650; letter-spacing: -.02em; }
+.container { width: 100%; }

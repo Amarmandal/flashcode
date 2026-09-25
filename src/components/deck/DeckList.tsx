@@ -1,149 +1,18 @@
-import { Card, Group, Text, Stack, ActionIcon, Box } from '@mantine/core';
-import { useNavigate } from 'react-router-dom';
-import { Deck } from '../../types/deck';
-import { IconTrash, IconPencil, IconStar, IconCards } from '@tabler/icons-react';
-import ConfirmationModal from '../common/ConfirmationModal';
+import { Badge, Group, SimpleGrid } from '@mantine/core';
+import { IconCards } from '@tabler/icons-react';
 import { useState } from 'react';
-
-const hoverActionStyle = (visible: boolean): React.CSSProperties => ({
-  opacity: visible ? 1 : 0,
-  transition: 'opacity 150ms ease',
-  pointerEvents: visible ? 'auto' : 'none',
-});
-
-interface DeckListProps {
-  decks: Deck[];
-  onEdit: (deck: Deck) => void;
-  onDelete: (id: string) => void;
-  onToggleFavorite: (deck: Deck) => void;
-}
-
-export function DeckList({ decks, onEdit, onDelete, onToggleFavorite }: DeckListProps) {
-  const [deckToRemove, setDeckToRemove] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hoveredDeckId, setHoveredDeckId] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const handleRemoveClick = (id: string) => {
-    setDeckToRemove(id);
-    setIsModalOpen(true);
-  };
-
-  const confirmRemove = () => {
-    if (deckToRemove) {
-      onDelete(deckToRemove);
-      setIsModalOpen(false);
-      setDeckToRemove(null);
-    }
-  };
-
-  const cancelRemove = () => {
-    setIsModalOpen(false);
-    setDeckToRemove(null);
-  };
-
-  return (
-    <Stack>
-      <ConfirmationModal
-        opened={isModalOpen}
-        close={cancelRemove}
-        confirmRemove={confirmRemove}
-        title="Delete Deck?"
-        message="Are you sure you want to delete?"
-      />
-
-      {decks.map((deck) => {
-        const isHovered = hoveredDeckId === deck.id;
-        return (
-          <Card
-            key={deck.id}
-            radius="lg"
-            p="lg"
-            onMouseEnter={() => setHoveredDeckId(deck.id)}
-            onMouseLeave={() => setHoveredDeckId(null)}
-            onClick={() => navigate(`/deck/${deck.id}`)}
-            style={{
-              background: 'var(--surface-bg)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border: '1px solid var(--surface-border)',
-              transition: 'transform 0.2s ease, border-color 0.2s ease',
-              cursor: 'pointer',
-              transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-            }}
-          >
-            <Group justify="space-between" wrap="nowrap">
-              <Group gap="md" style={{ flex: 1 }}>
-                <Box
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'var(--icon-badge-bg)',
-                    color: 'var(--icon-badge-color)',
-                  }}
-                >
-                  <IconCards size={16} strokeWidth={2} />
-                </Box>
-                <Text
-                  fw={500}
-                  size="md"
-                  style={{
-                    flex: 1,
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  {deck.name}
-                </Text>
-              </Group>
-              <Group gap="xs">
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="md"
-                  radius="sm"
-                  style={hoverActionStyle(isHovered)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(deck);
-                  }}
-                >
-                  <IconPencil size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="md"
-                  radius="sm"
-                  style={hoverActionStyle(isHovered)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveClick(deck.id);
-                  }}
-                >
-                  <IconTrash size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  color={deck.isFavorite ? 'yellow' : 'gray'}
-                  size="md"
-                  radius="sm"
-                  style={hoverActionStyle(isHovered || !!deck.isFavorite)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(deck);
-                  }}
-                >
-                  <IconStar size={16} fill={deck.isFavorite ? '#d97706' : 'none'} style={{ transition: 'fill 150ms ease' }} />
-                </ActionIcon>
-              </Group>
-            </Group>
-          </Card>
-        );
-      })}
-    </Stack>
-  );
+import { Deck, DeckWithCount } from '../../types/deck';
+import ConfirmationModal from '../common/ConfirmationModal';
+import { DeckTile } from './DeckTile';
+interface DeckListProps { decks: Deck[]; counts: Record<string, DeckWithCount>; onEdit: (deck: Deck) => void; onDelete: (id: string) => void; onToggleFavorite: (deck: Deck) => void; }
+export function DeckList({ decks, counts, onEdit, onDelete, onToggleFavorite }: DeckListProps) {
+  const [removing, setRemoving] = useState<Deck | null>(null);
+  return <>
+    <ConfirmationModal opened={!!removing} close={() => setRemoving(null)} confirmRemove={() => { if (removing) onDelete(removing.id); setRemoving(null); }} title="Delete deck?" message={`Delete “${removing?.name}” and its cards? This cannot be undone.`} />
+    <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="md">
+      {decks.map(deck => { const count = counts[deck.id]; return <DeckTile key={deck.id} name={deck.name} href={`/deck/${deck.id}`} icon={<IconCards size={22} stroke={1.6} />} description="Code flashcards" favorite={deck.isFavorite} onFavorite={() => onToggleFavorite(deck)} onEdit={() => onEdit(deck)} onDelete={() => setRemoving(deck)}>
+        {count && <Group gap={6}><Badge color="brand">{count.newCount} new</Badge><Badge color="teal">{count.learningCount + count.reviewCount} to practice</Badge></Group>}
+      </DeckTile>; })}
+    </SimpleGrid>
+  </>;
 }

@@ -1,4 +1,5 @@
-import { Button, Container, Group, Stack, Title, Modal, Text, Anchor, Breadcrumbs } from '@mantine/core';
+import { PageHeader } from '../components/common/PageHeader';
+import { Button, Container, Group, Stack, Modal, Text, Anchor, Breadcrumbs } from '@mantine/core';
 import { IconBook, IconPlus, IconRefresh } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router-dom';
 import { StatusCard } from '../components/deck/StatusCard';
@@ -132,11 +133,7 @@ export default function DeckDetail() {
           </Text>
         </Breadcrumbs>
 
-        <Group justify="space-between" align="center">
-          <Title order={2} c="var(--text-primary)">
-            {deckDetail?.name}
-          </Title>
-          <Group gap="sm">
+        <PageHeader title={deckDetail?.name || 'Code deck'} description="Review your queue and keep your coding knowledge fresh." actions={<Group gap="sm">
             <Button
               variant="subtle"
               color="red"
@@ -157,10 +154,9 @@ export default function DeckDetail() {
                 },
               }}
             >
-              Add Flash
+              Add card
             </Button>
-          </Group>
-        </Group>
+          </Group>} />
 
         <Group grow gap="md">
           {statuses.map((status) => (
@@ -179,10 +175,10 @@ export default function DeckDetail() {
           state={{ flashcards }}
           styles={{
             root: {
-              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-              color: '#ffffff',
-              height: '60px',
-              fontSize: '18px',
+              background: 'var(--primary-btn-bg)',
+              color: 'var(--primary-btn-text)',
+              height: '48px',
+              fontSize: '15px',
               fontWeight: 600,
             },
           }}
@@ -227,7 +223,7 @@ export default function DeckDetail() {
                 styles={{
                   root: {
                     background: '#dc2626',
-                    color: '#ffffff',
+                    color: 'var(--primary-btn-text)',
                   },
                 }}
               >

@@ -113,7 +113,7 @@ export function SnippetCard({
           <Group justify="space-between" align="flex-start">
             <Stack gap="xs" style={{ flex: 1 }}>
               <Group gap="xs">
-                <Text fw={600} size="lg" lineClamp={1}>
+                <Text fw={600} size="lg" lineClamp={2}>
                   {snippet.title}
                 </Text>
                 {snippet.isFavorite && <IconHeartFilled size={16} style={{ color: 'var(--mantine-color-red-6)' }} />}
@@ -236,7 +236,7 @@ export function SnippetCard({
         <Stack gap="xs" h="100%">
           <Group justify="space-between" align="flex-start">
             <Group gap="xs" style={{ flex: 1 }}>
-              <Text fw={600} lineClamp={1} style={{ flex: 1 }}>
+              <Text fw={600} lineClamp={2} style={{ flex: 1 }}>
                 {snippet.title}
               </Text>
               {snippet.isFavorite && <IconHeartFilled size={16} style={{ color: 'var(--mantine-color-red-6)' }} />}
@@ -272,7 +272,7 @@ export function SnippetCard({
 
           {snippet.description && (
             <Text size="xs" c="dimmed" lineClamp={2}>
-              {snippet.description}
+              {stripHtml(snippet.description)}
             </Text>
           )}
 
@@ -283,7 +283,7 @@ export function SnippetCard({
               withCopyButton={false}
               styles={{
                 root: {
-                  fontSize: '11px',
+                  fontSize: '12px',
                   maxHeight: '140px',
                   overflow: 'hidden',
                 },

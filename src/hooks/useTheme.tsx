@@ -1,15 +1,15 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { MantineColorScheme } from '@mantine/core';
+type AppColorScheme = 'light' | 'dark';
 
 interface ThemeContextType {
-  colorScheme: MantineColorScheme;
-  toggleColorScheme: (value?: MantineColorScheme) => void;
+  colorScheme: AppColorScheme;
+  toggleColorScheme: (value?: AppColorScheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [colorScheme, setColorScheme] = useState<MantineColorScheme>(() => {
+  const [colorScheme, setColorScheme] = useState<AppColorScheme>(() => {
     // Check localStorage first
     const storedColorScheme = localStorage.getItem('mantine-color-scheme');
     if (storedColorScheme === 'light' || storedColorScheme === 'dark') {
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return 'light';
   });
 
-  const toggleColorScheme = (value?: MantineColorScheme) => {
+  const toggleColorScheme = (value?: AppColorScheme) => {
     const nextColorScheme = value || (colorScheme === 'dark' ? 'light' : 'dark');
     setColorScheme(nextColorScheme);
   };
@@ -34,6 +34,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mantine-color-scheme', colorScheme);
     // Also update document attributes for immediate visual feedback
     document.documentElement.setAttribute('data-mantine-color-scheme', colorScheme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      'content',
+      colorScheme === 'dark' ? '#101c34' : '#f1f5ff'
+    );
   }, [colorScheme]);
 
   // Listen for system preference changes
