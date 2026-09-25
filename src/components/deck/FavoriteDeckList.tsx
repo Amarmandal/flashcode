@@ -1,4 +1,4 @@
-import { Card, Text, Stack, Group, Center, SimpleGrid, Button, Progress, Title, ThemeIcon } from '@mantine/core';
+import { Card, Text, Stack, Group, Center, SimpleGrid, Button, Title, ThemeIcon } from '@mantine/core';
 import { Deck } from '../../types/deck';
 import { IconArrowRight, IconCards } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
@@ -79,7 +79,7 @@ export function FavoriteDeckList({ favoriteDecks, onRemoveFavorite, cardCounts }
                 Favorite ★
               </Button>
 
-              <Title order={3} ta="center" c="indigo.7">
+              <Title order={3} ta="center" c="var(--text-primary)">
                 {deck.name}
               </Title>
 
@@ -91,14 +91,6 @@ export function FavoriteDeckList({ favoriteDecks, onRemoveFavorite, cardCounts }
                   {cardCounts[deck.id]} Cards
                 </Text>
               </Group>
-
-              <Progress
-                value={Math.floor(Math.random() * 100)}
-                size="sm"
-                color="lime"
-                mt="md"
-                style={{ width: '100%' }}
-              />
 
               <Button
                 variant="light"

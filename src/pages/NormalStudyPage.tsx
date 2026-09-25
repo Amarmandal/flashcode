@@ -42,7 +42,7 @@ export default function NormalStudyPage() {
   useEffect(() => {
     if (deckId) {
       invoke<SuccessApiResponse<{ name: string }>>('get_normal_deck', { id: Number(deckId) })
-        .then((res) => { if (res.success) setDeckName((res.data as any).name || ''); })
+        .then((res) => { if (res.success) setDeckName(res.data.name || ''); })
         .catch(() => {});
     }
   }, [deckId]);
@@ -156,12 +156,12 @@ export default function NormalStudyPage() {
           </Button>
         </Group>
 
-        <Progress value={progress} radius="md" size="md" color="blue" mb={16} />
+        <Progress value={progress} radius="md" size="sm" color="brand" mb={16} />
 
         <Card withBorder shadow="sm" radius="md" p="lg">
           <Stack gap="xs">
             <Text size="xs" fw={700} c="dimmed" style={{ alignSelf: 'flex-start' }}>
-              FRONT
+              QUESTION
             </Text>
             <Text size="xl" fw={700} lh={1.5} style={{ whiteSpace: 'pre-wrap' }}>
               {card.front}
@@ -172,7 +172,7 @@ export default function NormalStudyPage() {
             {showAnswer ? (
               <>
                 <Text size="xs" fw={700} c="dimmed" style={{ alignSelf: 'flex-start' }}>
-                  BACK
+                  ANSWER
                 </Text>
                 <Box
                   style={{
@@ -211,7 +211,7 @@ export default function NormalStudyPage() {
                 <Button
                   size="lg"
                   variant="filled"
-                  color="teal"
+                  color="brand"
                   leftSection={<IconEye size={20} />}
                   onClick={() => setShowAnswer(true)}
                 >

@@ -1,3 +1,5 @@
+import { PageHeader } from '../components/common/PageHeader';
+import { EmptyState } from '../components/common/EmptyState';
 import { invoke } from '@tauri-apps/api/core';
 import {
   Alert,
@@ -12,7 +14,7 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
+  Textarea,
   ActionIcon,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
@@ -21,7 +23,6 @@ import {
   IconAlertCircle,
   IconPlus,
   IconTrash,
-  IconArrowLeft,
   IconDeviceFloppy,
 } from '@tabler/icons-react';
 import { CreateQuizPayload, QuizWithQuestions } from '../types/quiz';
@@ -242,37 +243,12 @@ export const CreateEditQuizPage: React.FC = () => {
       )}
 
       <Stack gap="xl">
-        <Group justify="space-between" align="center">
-          <Group gap="sm">
-            <ActionIcon variant="subtle" onClick={() => navigate('/quiz')} size="lg">
-              <IconArrowLeft size={20} />
-            </ActionIcon>
-            <Title order={2} c="var(--text-primary)">
-              {isEditMode ? 'Edit Quiz' : 'Create New Quiz'}
-            </Title>
-          </Group>
-
-          <Group gap="sm">
-            {!isEditMode && (
-              <Button variant="light" onClick={() => setShowBulkImport(true)}>
-                Bulk Import JSON
-              </Button>
-            )}
-            <Button
-              leftSection={<IconDeviceFloppy size={16} />}
-              onClick={handleSubmit}
-              loading={loading}
-              styles={{
-                root: {
-                  background: 'var(--primary-btn-bg)',
-                  color: 'var(--primary-btn-text)',
-                },
-              }}
-            >
-              {isEditMode ? 'Update Quiz' : 'Create Quiz'}
-            </Button>
-          </Group>
-        </Group>
+        <PageHeader title={isEditMode ? 'Edit quiz' : 'Create a quiz'} eyebrow="Quiz builder" description="Write a question, add answer options, and mark the correct answers."
+          actions={<>
+            <Button variant="default" onClick={() => navigate('/quiz')}>Cancel</Button>
+            {!isEditMode && <Button variant="light" onClick={() => setShowBulkImport(true)}>Import questions</Button>}
+            <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>{isEditMode ? 'Save changes' : 'Create quiz'}</Button>
+          </>} />
 
         <Card shadow="sm" padding="lg" radius="md" withBorder>
           <TextInput
@@ -302,7 +278,7 @@ export const CreateEditQuizPage: React.FC = () => {
                   <Text fw={600} size="md">
                     Question {qIndex + 1}
                   </Text>
-                  <ActionIcon color="red" variant="subtle" onClick={() => removeQuestion(qIndex)}>
+                  <ActionIcon aria-label={`Delete question ${qIndex + 1}`} color="red" variant="subtle" onClick={() => removeQuestion(qIndex)}>
                     <IconTrash size={18} />
                   </ActionIcon>
                 </Group>
@@ -321,8 +297,9 @@ export const CreateEditQuizPage: React.FC = () => {
                   ]}
                 />
 
-                <TextInput
-                  label="Question Text"
+                <Textarea
+                  autosize minRows={2}
+                  label="Question"
                   placeholder="Enter your question"
                   value={question.questionText}
                   onChange={(e) => updateQuestion(qIndex, { questionText: e.currentTarget.value })}
@@ -331,18 +308,20 @@ export const CreateEditQuizPage: React.FC = () => {
 
                 <Box>
                   <Text size="sm" fw={500} mb="xs">
-                    Options (2-6)
+                    Answer options · select the correct answer
                   </Text>
                   <Stack gap="xs">
                     {question.options.map((option, oIndex) => (
                       <Group key={oIndex} align="center" gap="xs">
                         {question.questionType === 'single-choice' ? (
                           <Radio
+                            aria-label={`Mark option ${option.optionId.toUpperCase()} as correct`}
                             checked={option.isCorrect}
                             onChange={() => toggleCorrectAnswer(qIndex, oIndex)}
                           />
                         ) : (
                           <Checkbox
+                            aria-label={`Mark option ${option.optionId.toUpperCase()} as correct`}
                             checked={option.isCorrect}
                             onChange={() => toggleCorrectAnswer(qIndex, oIndex)}
                           />
@@ -388,19 +367,7 @@ export const CreateEditQuizPage: React.FC = () => {
           ))}
 
           {questions.length === 0 && (
-            <Box
-              style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                background: 'var(--surface-bg)',
-                border: '1px dashed var(--surface-border)',
-                borderRadius: '12px',
-              }}
-            >
-              <Text size="md" c="var(--text-secondary)">
-                No questions added yet. Click "Add Question" to get started.
-              </Text>
-            </Box>
+            <EmptyState title="Start with a good question" description="Add a question above, or import a set of questions to build your quiz." />
           )}
         </Stack>
       </Stack>

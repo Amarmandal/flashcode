@@ -176,7 +176,7 @@ export default function LibraryPage() {
   };
 
   return (
-    <Container size="xl" py="md">
+    <Container size="xl" py="xl">
       {error && (
         <Alert
           variant="light"
@@ -191,7 +191,7 @@ export default function LibraryPage() {
         </Alert>
       )}
 
-      <Stack gap="md">
+      <Stack gap="xl">
         <LibraryHeader
           totalCount={totalCount}
           onAddSnippet={handleAddSnippet}

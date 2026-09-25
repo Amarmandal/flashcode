@@ -1,15 +1,15 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { MantineColorScheme } from '@mantine/core';
+type AppColorScheme = 'light' | 'dark';
 
 interface ThemeContextType {
-  colorScheme: MantineColorScheme;
-  toggleColorScheme: (value?: MantineColorScheme) => void;
+  colorScheme: AppColorScheme;
+  toggleColorScheme: (value?: AppColorScheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [colorScheme, setColorScheme] = useState<MantineColorScheme>(() => {
+  const [colorScheme, setColorScheme] = useState<AppColorScheme>(() => {
     // Check localStorage first
     const storedColorScheme = localStorage.getItem('mantine-color-scheme');
     if (storedColorScheme === 'light' || storedColorScheme === 'dark') {
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return 'light';
   });
 
-  const toggleColorScheme = (value?: MantineColorScheme) => {
+  const toggleColorScheme = (value?: AppColorScheme) => {
     const nextColorScheme = value || (colorScheme === 'dark' ? 'light' : 'dark');
     setColorScheme(nextColorScheme);
   };

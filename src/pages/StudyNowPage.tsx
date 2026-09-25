@@ -40,11 +40,13 @@ export function htmlDecode(input: string) {
   return doc.documentElement.textContent || '';
 }
 
+const EMPTY_FLASHCARDS: Flashcard[] = [];
+
 export default function StudyNow() {
   const { deckId } = useParams<{ deckId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const passedFlashcards = location.state?.flashcards || [];
+  const passedFlashcards = location.state?.flashcards || EMPTY_FLASHCARDS;
 
   const [flashcards, setFlashcards] = useState<Flashcard[]>(passedFlashcards);
   const [deckName, setDeckName] = useState<string>('');
@@ -59,7 +61,7 @@ export default function StudyNow() {
   useEffect(() => {
     if (deckId) {
       invoke<SuccessApiResponse<{ name: string }>>('get_deck', { id: Number(deckId) })
-        .then((res) => { if (res.success) setDeckName((res.data as any).name || ''); })
+        .then((res) => { if (res.success) setDeckName(res.data.name || ''); })
         .catch(() => {});
     }
   }, [deckId]);
@@ -210,7 +212,7 @@ export default function StudyNow() {
 
   // Progress bar and header
   return (
-    <Container size="lg" py="xl">
+    <Container size="md" py="xl">
       <Stack gap="lg">
         <Group justify="space-between" align="center">
           <Title order={2} c="var(--text-primary)">
@@ -255,7 +257,7 @@ export default function StudyNow() {
         <Progress
           value={((currentCardState.index + 1) / (flashcards.length || 1)) * 100}
           radius="sm"
-          size="lg"
+          size="sm"
           styles={{
             root: {
               background: 'var(--progress-track)',
@@ -283,7 +285,7 @@ export default function StudyNow() {
               tt="uppercase"
               style={{ alignSelf: 'flex-start', letterSpacing: '1px' }}
             >
-              FRONT
+              QUESTION
             </Text>
             {currentCardState.card?.is_reversed ? (
               <CodeBlockWithHeader
@@ -306,7 +308,7 @@ export default function StudyNow() {
                   tt="uppercase"
                   style={{ alignSelf: 'flex-start', letterSpacing: '1px' }}
                 >
-                  BACK
+                  ANSWER
                 </Text>
                 {!currentCardState.card?.is_reversed ? (
                   <CodeBlockWithHeader
@@ -327,12 +329,6 @@ export default function StudyNow() {
                       leftSection={<IconReload size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Again)}
                       radius="sm"
-                      styles={{
-                        root: {
-                          borderColor: '#dc2626',
-                          color: '#dc2626',
-                        },
-                      }}
                     >
                       Again
                     </Button>
@@ -344,12 +340,6 @@ export default function StudyNow() {
                       leftSection={<IconEye size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Hard)}
                       radius="sm"
-                      styles={{
-                        root: {
-                          borderColor: '#d97706',
-                          color: '#d97706',
-                        },
-                      }}
                     >
                       Hard
                     </Button>
@@ -361,12 +351,6 @@ export default function StudyNow() {
                       leftSection={<IconCircleCheckFilled size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Good)}
                       radius="sm"
-                      styles={{
-                        root: {
-                          borderColor: '#059669',
-                          color: '#059669',
-                        },
-                      }}
                     >
                       Good
                     </Button>
@@ -378,12 +362,6 @@ export default function StudyNow() {
                       leftSection={<IconBoltFilled size={18} />}
                       onClick={() => handleOptionClick(CardAnswer.Easy)}
                       radius="sm"
-                      styles={{
-                        root: {
-                          borderColor: '#3b82f6',
-                          color: '#3b82f6',
-                        },
-                      }}
                     >
                       Easy
                     </Button>
@@ -399,9 +377,9 @@ export default function StudyNow() {
                   onClick={handleShowAnswer}
                   styles={{
                     root: {
-                      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                      color: '#ffffff',
-                      height: '56px',
+                      background: 'var(--primary-btn-bg)',
+                      color: 'var(--primary-btn-text)',
+                      height: '46px',
                       fontSize: '16px',
                       fontWeight: 600,
                       paddingLeft: '32px',

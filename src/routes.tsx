@@ -1,7 +1,7 @@
 import { RouteObject } from 'react-router-dom';
 import Deck from './pages/DeckPage';
-import NotFoundPage from './pages/NotFoundPage';
-import Layout from './components/common/Layout';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { Layout } from './components/common/Layout';
 import DeckDetail from './pages/DeckDetailPage';
 import StudyNow from './pages/StudyNowPage';
 import FavoritePage from './pages/FavoritePage';

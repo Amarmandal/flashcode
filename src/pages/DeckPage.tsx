@@ -1,5 +1,7 @@
+import { PageHeader } from '../components/common/PageHeader';
+import { EmptyState } from '../components/common/EmptyState';
 import { invoke } from '@tauri-apps/api/core';
-import { Alert, Box, Button, Container, Group, Pagination, Stack, Text, Title } from '@mantine/core';
+import { Alert, Box, Button, Container, Pagination, Stack , } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useEffect, useState, useRef } from 'react';
 import { DeckList } from '../components/deck/DeckList';
@@ -9,6 +11,7 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { SuccessApiResponse } from '../types/successApiResponse';
 
 export default function Deck() {
+  const [counts, setCounts] = useState<Record<string, DeckWithCount>>({});
   const [decks, setDecks] = useState<DeckType[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -46,6 +49,7 @@ export default function Deck() {
         const deckList = res.data.map((deckWithCount) => deckWithCount.deck);
 
         setDecks(deckList);
+        setCounts(Object.fromEntries(res.data.map(item => [item.deck.id, item])));
 
         if (res.totalCount) {
           setTotalCount(res.totalCount);
@@ -72,10 +76,15 @@ export default function Deck() {
     }
   };
   // Handle deck update
-  const handleUpdate = (id: string, name: string) => {
-    console.log('Updating deck:', { id, name });
-    setEditingDeck(null);
-    setIsFormOpen(false);
+  const handleUpdate = async (id: string, name: string) => {
+    const deck = decks.find(item => item.id === id);
+    if (!deck) return;
+    try {
+      await invoke('update_deck', { deck: { ...deck, name } });
+      setDecks(previous => previous.map(item => item.id === id ? { ...item, name } : item));
+      setEditingDeck(null);
+      setIsFormOpen(false);
+    } catch (error) { setError(error instanceof Error ? error.message : 'Could not rename deck.'); }
   };
 
   // Handle deck deletion
@@ -89,7 +98,7 @@ export default function Deck() {
         const isLastItemOnPage = decks.length === 1 && activePage > 1;
         return isLastItemOnPage ? current - 1 : current;
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to delete deck:', error);
       setError((error as Error)?.message || `Failed to delete deck with ID ${id}.`);
     }
@@ -143,11 +152,8 @@ export default function Deck() {
         </Alert>
       )}
       <Stack gap="xl">
-        <Group justify="space-between" align="center">
-          <Title order={2} c="var(--text-primary)">
-            Decks
-          </Title>
-          <Button
+        <PageHeader title="Code decks" description="Build fluency, one concept at a time. Pick a deck and keep your practice moving." eyebrow="Your daily practice" actions={
+<Button
             leftSection={<IconPlus size={16} />}
             onClick={() => openForm()}
             radius="sm"
@@ -158,29 +164,15 @@ export default function Deck() {
               },
             }}
           >
-            Create New Deck
+            New deck
           </Button>
-        </Group>
+} />
 
         <Box style={{ minHeight: '60vh' }}>
           {decks.length === 0 ? (
-            <Box
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: 'var(--surface-bg)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid var(--surface-border)',
-                borderRadius: '12px',
-              }}
-            >
-              <Text size="lg" c="var(--text-secondary)">
-                No decks available. Create one to get started!
-              </Text>
-            </Box>
+            <EmptyState title="Create your first code deck" description="Use the button above to add your first collection and start a learning habit." />
           ) : (
-            <DeckList decks={decks} onToggleFavorite={handleFavorite} onEdit={openForm} onDelete={handleDelete} />
+            <DeckList counts={counts} decks={decks} onToggleFavorite={handleFavorite} onEdit={openForm} onDelete={handleDelete} />
           )}
         </Box>
 

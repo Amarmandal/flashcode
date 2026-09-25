@@ -1,19 +1,24 @@
-.navLabel {
-  font-weight: 500;
-}
+.header { background: var(--surface-bg); border-bottom: 1px solid var(--surface-border); }
+.brand { width: 208px; padding: 0 22px; flex-shrink: 0; }
+.homeLink { text-decoration: none; display: inline-flex; }
+.toolbar { flex: 1; min-width: 0; padding: 0 26px; }
+.context { color: var(--text-secondary); }
+.tools { margin-left: auto; }
+.search { width: clamp(180px, 23vw, 320px); }
+.sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-divider); padding: 26px 14px 14px; }
+.navBody { flex: 1; }
+.navHeading { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--sidebar-text-dim); margin: 0 12px 12px; }
+.navItem { color: var(--sidebar-text); border-radius: var(--mantine-radius-md); margin-bottom: 5px; min-height: 42px; padding: 10px 12px; transition: background-color 150ms ease; }
+.navItem:hover { background: var(--surface-muted); }
+.navItem[data-active] { background: var(--sidebar-active); color: var(--icon-badge-color); }
+.navLabel { font-size: 13px; font-weight: 550; }
+.sidebarFooter { border-top: 1px solid var(--sidebar-divider); padding-top: 16px; }
+.studyNote { padding: 0 12px 18px; }
+.main { background: var(--page-bg); }
+.content { max-width: 1240px; margin: 0 auto; padding: 16px 20px 40px; }
+.content[data-study] { max-width: 940px; padding-top: 16px; }
+@media (max-width: 64em) { .context { display: none; } .search { width: clamp(160px, 32vw, 320px); } .content { padding: 10px 8px 32px; } }
+@media (max-width: 48em) { .brand { width: auto; padding: 0 16px; } .toolbar { padding: 0 16px 0 0; } .search { width: min(30vw, 220px); } }
+@media (max-width: 34em) { .search { display: none; } }
 
-.navLabel:hover {
-  background-color: var(--sidebar-active) !important;
-}
-
-.navLabel[data-active="true"] {
-  background-color: var(--sidebar-active) !important;
-}
-
-.navLabel[data-active="false"] {
-  opacity: 0.7;
-}
-
-.navLabel[data-active="false"]:hover {
-  opacity: 1;
-}
+@media (max-height: 720px) { .studyNote { display: none; } .sidebar { padding-top: 18px; } }

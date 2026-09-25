@@ -15,8 +15,10 @@
         "label": "main",
         "title": "Flash Code",
         "dragDropEnabled": false,
-        "width": 800,
-        "height": 600,
+        "width": 1120,
+        "height": 780,
+        "minWidth": 760,
+        "minHeight": 600,
         "resizable": true,
         "devtools": true,
         "visible": false

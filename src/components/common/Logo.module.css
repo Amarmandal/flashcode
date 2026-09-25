@@ -27,8 +27,8 @@
 .accent { color: #514bd3; }
 
 :global([data-mantine-color-scheme='dark']) .accent { color: #66d9ba; }
-:global(.mantine-AppShell-navbar) .wordmark { color: #f5f7ff; }
-:global(.mantine-AppShell-navbar) .accent { color: #66d9ba; }
+
+
 
 .large { font-size: 3rem; }
 .medium { font-size: 1.55rem; }
