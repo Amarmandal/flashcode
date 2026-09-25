@@ -34,6 +34,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mantine-color-scheme', colorScheme);
     // Also update document attributes for immediate visual feedback
     document.documentElement.setAttribute('data-mantine-color-scheme', colorScheme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      'content',
+      colorScheme === 'dark' ? '#101c34' : '#f1f5ff'
+    );
   }, [colorScheme]);
 
   // Listen for system preference changes

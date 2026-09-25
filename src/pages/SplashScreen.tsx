@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import './SplashScreen.css';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import brandIcon from '../assets/brand/flashcode-app-icon.png';
 
 const SplashScreen: React.FC = () => {
   useEffect(() => {
@@ -33,26 +34,11 @@ const SplashScreen: React.FC = () => {
   return (
     <div className="splash-screen">
       <div className="splash-content">
-        <div className="logo-container">
-          <div className="logo">
-            <div className="logo-background">
-              <div className="logo-inner">
-                <div className="code-symbol">
-                  <span className="bracket">&lt;</span>
-                  <span className="slash">/</span>
-                  <span className="bracket">&gt;</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <img className="splash-mark" src={brandIcon} alt="" />
+        <span className="splash-name">Flash<span>code</span></span>
+        <div className="splash-loading" aria-label="Loading">
+          <i /><i /><i />
         </div>
-        
-        <div className="loading-dots">
-          <div className="dot"></div>
-          <div className="dot"></div>
-          <div className="dot"></div>
-        </div>
-        
       </div>
     </div>
   );
