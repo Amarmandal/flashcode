@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { notifications } from '@mantine/notifications';
-import { AuthSession, UserProfile } from '../types/auth';
+import { AuthSession, NativeSessionInfo, UserProfile } from '../types/auth';
 import { authService } from '../services/authService';
 import { backupScheduler } from '../services/backupScheduler';
 import { SuccessApiResponse } from '../types/successApiResponse';
@@ -12,6 +12,7 @@ interface GoogleOAuthResponse {
   name: string;
   picture?: string;
   expires_in: number;
+  session: NativeSessionInfo;
 }
 
 interface AuthContextType {
@@ -19,6 +20,8 @@ interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  restoreError: string | null;
+  retryRestore: () => Promise<void>;
   daysRemaining: number;
   isExpired: boolean;
   loginWithGoogle: (clientId: string, durationDays?: number) => Promise<void>;
@@ -32,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const sessionCheckIntervalRef = useRef<number | null>(null);
 
   const handleSessionExpired = useCallback(async () => {
@@ -46,32 +50,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSession(null);
   }, []);
 
-  // Check and initialize session on mount
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const existing = authService.getSession();
-      if (existing && authService.isSessionValid(existing)) {
-        // Enforce database isolation for returning user
-        try {
-          await invoke('switch_user_database', { userId: existing.user.id });
-        } catch (err) {
-          console.error('Failed to isolate user database on init:', err);
-        }
-        setSession(existing);
+  // Restore trusted session from native state on mount
+  const initializeAuth = useCallback(async () => {
+    setIsLoading(true);
+    setRestoreError(null);
+    try {
+      const nativeSession = await authService.restoreNativeSession();
+      if (nativeSession) {
+        // Valid session and database ready
+        const restoredSession = authService.buildSessionFromNative(nativeSession);
+        setSession(restoredSession);
         backupScheduler.start();
       } else {
-        if (existing) {
-          await authService.clearSession();
-        }
+        // Missing or expired session -> clear stale local state and show login
+        await authService.clearSession();
         setSession(null);
       }
+    } catch (err: unknown) {
+      console.error('Native session restoration failed:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to restore database or secure credentials';
+      setRestoreError(msg);
+      setSession(null);
+      // Do not fall back to cached localStorage authentication when restoration fails
+    } finally {
       setIsLoading(false);
-    };
-
-    initializeAuth();
+    }
   }, []);
 
-  // [P2 Fix] Actively enforce session expiry while the app stays open
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Actively enforce session expiry while the app stays open
   useEffect(() => {
     if (!session || !session.config || !session.config.expiresAt) return;
 
@@ -116,16 +126,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const daysRemaining = authService.getDaysRemaining(session);
   const user = session ? session.user : null;
 
-  // [P1 Fix] Real Google OAuth 2.0 PKCE login with token exchange and OS Keychain storage
   const loginWithGoogle = useCallback(
     async (clientId: string, durationDays: number = 90) => {
       if (!clientId.trim()) {
         throw new Error('Google OAuth Client ID is required');
       }
 
-      // Invoke native desktop OAuth PKCE flow in Rust
+      // Invoke native desktop OAuth PKCE flow in Rust (Rust switches DB and stores session atomically)
       const response = await invoke<SuccessApiResponse<GoogleOAuthResponse>>('start_google_login', {
         clientId: clientId.trim(),
+        durationDays,
       });
 
       if (!response.success || !response.data) {
@@ -141,9 +151,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         provider: 'google',
       };
 
-      // Creates session and isolates SQLite database to this user
-      const newSession = await authService.createSession(userProfile, durationDays);
+      // Creates session from trusted native session metadata
+      const newSession = authService.createSession(userProfile, googleUser.session);
       setSession(newSession);
+      setRestoreError(null);
       backupScheduler.start();
     },
     []
@@ -156,14 +167,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const updateSessionDuration = useCallback(async (days: number) => {
-    const updated = authService.updateSessionDuration(days);
+    const updated = await authService.updateSessionDuration(days);
     if (updated) {
       setSession({ ...updated });
     }
   }, []);
 
   const refreshSession = useCallback(async () => {
-    const updated = authService.refreshSession();
+    const updated = await authService.refreshSession();
     if (updated) {
       setSession({ ...updated });
     }
@@ -176,6 +187,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isAuthenticated,
         isLoading,
+        restoreError,
+        retryRestore: initializeAuth,
         daysRemaining,
         isExpired,
         loginWithGoogle,

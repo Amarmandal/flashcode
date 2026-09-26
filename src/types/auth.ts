@@ -10,6 +10,13 @@ export interface UserProfile {
 
 export type SessionDurationDays = 30 | 90 | 180 | 365;
 
+export interface NativeSessionInfo {
+  user_id: string;
+  authenticated_at: string;
+  expires_at: string;
+  duration_days: number;
+}
+
 export interface SessionConfig {
   durationDays: number;
   authenticatedAt: string;

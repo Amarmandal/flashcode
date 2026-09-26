@@ -52,6 +52,10 @@ impl DatabaseConnection {
         }
     }
 
+    pub fn current_user_id(&self) -> Option<&str> {
+        self.current_user_id.as_deref()
+    }
+
     pub fn switch_user(&mut self, user_id: &str) -> Result<(), Error> {
         let sanitized: String = user_id
             .chars()
@@ -59,19 +63,17 @@ impl DatabaseConnection {
             .collect();
         let target_path = self.app_data_dir.join(format!("flashcodes_user_{}.db", sanitized));
 
-        // Safely close existing connection
-        self.conn = Connection::open_in_memory()?;
-
-        // Open user database and run migrations
+        // Prepare the new connection fully before touching the existing one.
+        // If any step fails, the current connection remains untouched.
         let mut new_conn = Connection::open(&target_path)?;
         new_conn.execute("PRAGMA foreign_keys = ON;", [])?;
-        if let Err(e) = migrations::runner().run(&mut new_conn) {
-            eprintln!("Error migrating user database: {}", e);
-        }
+        migrations::runner().run(&mut new_conn).map_err(|e| {
+            Error::InvalidParameterName(format!("Migration error for user database: {}", e))
+        })?;
 
+        // Only after full success, replace the active connection.
         self.conn = new_conn;
         self.current_user_id = Some(user_id.to_string());
-        println!("Switched to user database at: {:?}", target_path);
         Ok(())
     }
 

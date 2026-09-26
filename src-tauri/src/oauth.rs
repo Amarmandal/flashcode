@@ -35,10 +35,31 @@ fn credential_mutex() -> &'static Mutex<()> {
 pub struct GoogleCredentials {
     pub access_token: String,
     pub refresh_token: String,
-    pub expires_at: i64, // Unix timestamp (seconds)
+    pub expires_at: i64, // access token expiry
     pub client_id: String,
     pub user_id: String,
+    // Session fields
+    #[serde(default)]
+    pub session_authenticated_at: i64, // Unix timestamp
+    #[serde(default)]
+    pub session_expires_at: i64, // Unix timestamp
+    #[serde(default = "default_session_duration")]
+    pub session_duration_days: u32,
 }
+
+fn default_session_duration() -> u32 {
+    90
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NativeSessionInfo {
+    pub user_id: String,
+    pub authenticated_at: String, // ISO 8601
+    pub expires_at: String, // ISO 8601
+    pub duration_days: u32,
+}
+
+pub const ALLOWED_DURATIONS: &[u32] = &[30, 90, 180, 365];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OAuthResult {
@@ -47,6 +68,7 @@ pub struct OAuthResult {
     pub name: String,
     pub picture: Option<String>,
     pub expires_in: u64,
+    pub session: NativeSessionInfo,
 }
 
 #[derive(Deserialize)]
@@ -91,7 +113,7 @@ fn save_credentials(creds: &GoogleCredentials) -> Result<(), String> {
 }
 
 /// Load the credentials record from the OS credential store.
-fn load_credentials() -> Result<Option<GoogleCredentials>, String> {
+pub fn load_credentials() -> Result<Option<GoogleCredentials>, String> {
     let entry = keyring::Entry::new(SERVICE_NAME, CREDENTIALS_KEY)
         .map_err(|e| format!("Keyring init error: {}", e))?;
     match entry.get_password() {
@@ -106,6 +128,98 @@ fn load_credentials() -> Result<Option<GoogleCredentials>, String> {
             e
         )),
     }
+}
+
+// ===== Session Management =====
+
+/// Check if the native session is valid (not expired).
+pub fn is_session_valid(creds: &GoogleCredentials) -> bool {
+    let now = chrono::Utc::now().timestamp();
+    creds.session_expires_at > now && creds.session_authenticated_at > 0
+}
+
+/// Convert credentials to a NativeSessionInfo for the frontend.
+pub fn session_info_from_creds(creds: &GoogleCredentials) -> NativeSessionInfo {
+    use chrono::TimeZone;
+    NativeSessionInfo {
+        user_id: creds.user_id.clone(),
+        authenticated_at: chrono::Utc
+            .timestamp_opt(creds.session_authenticated_at, 0)
+            .single()
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_default(),
+        expires_at: chrono::Utc
+            .timestamp_opt(creds.session_expires_at, 0)
+            .single()
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_default(),
+        duration_days: creds.session_duration_days,
+    }
+}
+
+/// Restore the native session. Returns session info if valid.
+/// Acquires the credential mutex.
+pub async fn restore_session() -> Result<Option<NativeSessionInfo>, String> {
+    let _guard = credential_mutex().lock().await;
+    let creds = match load_credentials()? {
+        Some(c) => c,
+        None => return Ok(None),
+    };
+    if !is_session_valid(&creds) {
+        return Ok(None);
+    }
+    Ok(Some(session_info_from_creds(&creds)))
+}
+
+/// Update session duration. Validates allowed values.
+/// Acquires the credential mutex.
+pub async fn update_session_duration(duration_days: u32) -> Result<NativeSessionInfo, String> {
+    if !ALLOWED_DURATIONS.contains(&duration_days) {
+        return Err(format!(
+            "Invalid session duration: {} days. Allowed: {:?}",
+            duration_days, ALLOWED_DURATIONS
+        ));
+    }
+    let _guard = credential_mutex().lock().await;
+    let mut creds = load_credentials()?
+        .ok_or_else(|| "No active session. Please sign in.".to_string())?;
+    if !is_session_valid(&creds) {
+        return Err("Session has expired. Please sign in again.".to_string());
+    }
+    // Recalculate expiry from authenticated_at
+    let new_expires_at = creds.session_authenticated_at + (duration_days as i64) * 86400;
+    let now = chrono::Utc::now().timestamp();
+    // If the recalculated expiry would already be in the past, compute from now
+    let final_expires_at = if new_expires_at <= now {
+        now + (duration_days as i64) * 86400
+    } else {
+        new_expires_at
+    };
+    creds.session_duration_days = duration_days;
+    creds.session_expires_at = final_expires_at;
+    save_credentials(&creds)?;
+    Ok(session_info_from_creds(&creds))
+}
+
+/// Refresh session for another full cycle. Rejects expired sessions.
+/// Acquires the credential mutex.
+pub async fn refresh_session() -> Result<NativeSessionInfo, String> {
+    let _guard = credential_mutex().lock().await;
+    let mut creds = load_credentials()?
+        .ok_or_else(|| "No active session. Please sign in.".to_string())?;
+    if !is_session_valid(&creds) {
+        return Err("Session has expired. Please sign in again.".to_string());
+    }
+    let now = chrono::Utc::now().timestamp();
+    let duration_days = if creds.session_duration_days > 0 {
+        creds.session_duration_days
+    } else {
+        90
+    };
+    creds.session_authenticated_at = now;
+    creds.session_expires_at = now + (duration_days as i64) * 86400;
+    save_credentials(&creds)?;
+    Ok(session_info_from_creds(&creds))
 }
 
 /// Delete all stored credentials.
@@ -157,6 +271,11 @@ pub async fn get_valid_access_token() -> Result<String, String> {
     let creds = load_credentials()?
         .ok_or_else(|| "Google sign-in required. No stored credentials found.".to_string())?;
 
+    // Validate that Flashcode native session is still valid
+    if !is_session_valid(&creds) {
+        return Err("Flashcode session has expired. Please sign in again.".to_string());
+    }
+
     let now = chrono::Utc::now().timestamp();
 
     // Check if the access token is still valid with margin
@@ -180,6 +299,11 @@ pub async fn force_refresh_access_token(stale_token: &str) -> Result<String, Str
 
     let creds = load_credentials()?
         .ok_or_else(|| "Google sign-in required. No stored credentials found.".to_string())?;
+
+    // Validate that Flashcode native session is still valid
+    if !is_session_valid(&creds) {
+        return Err("Flashcode session has expired. Please sign in again.".to_string());
+    }
 
     // Another caller may have already refreshed — check if the token changed
     if creds.access_token != stale_token {
@@ -291,7 +415,16 @@ async fn refresh_and_save(mut creds: GoogleCredentials) -> Result<String, String
 pub async fn perform_google_oauth(
     app: &AppHandle,
     client_id: &str,
+    duration_days: u32,
 ) -> Result<OAuthResult, String> {
+    // Validate session duration before starting OAuth
+    if !ALLOWED_DURATIONS.contains(&duration_days) {
+        return Err(format!(
+            "Invalid session duration: {} days. Allowed: {:?}",
+            duration_days, ALLOWED_DURATIONS
+        ));
+    }
+
     // 1. Generate PKCE code verifier and code challenge
     let mut random_bytes = [0u8; 48];
     rand::thread_rng().fill_bytes(&mut random_bytes);
@@ -431,13 +564,19 @@ pub async fn perform_google_oauth(
         );
     }
 
+    let session_now = chrono::Utc::now().timestamp();
     let credentials = GoogleCredentials {
         access_token: token_data.access_token,
         refresh_token,
         expires_at,
         client_id: client_id.to_string(),
         user_id: user_info.sub.clone(),
+        session_authenticated_at: session_now,
+        session_expires_at: session_now + (duration_days as i64) * 86400,
+        session_duration_days: duration_days,
     };
+    
+    let session = session_info_from_creds(&credentials);
 
     {
         let _guard = credential_mutex().lock().await;
@@ -452,6 +591,7 @@ pub async fn perform_google_oauth(
         name: user_info.name.unwrap_or_else(|| "Flashcode User".to_string()),
         picture: user_info.picture,
         expires_in: token_data.expires_in,
+        session,
     })
 }
 

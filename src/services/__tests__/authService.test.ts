@@ -4,7 +4,36 @@ import { authService } from '../authService';
 import { UserProfile } from '../../types/auth';
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn().mockResolvedValue({ success: true }),
+  invoke: vi.fn().mockImplementation((cmd, args) => {
+    if (cmd === 'update_session_duration') {
+      const now = new Date();
+      const days = args?.durationDays || 90;
+      const expires = new Date(now.getTime() + days * 86400000);
+      return Promise.resolve({
+        success: true,
+        data: {
+          user_id: 'user-123',
+          authenticated_at: now.toISOString(),
+          expires_at: expires.toISOString(),
+          duration_days: days,
+        },
+      });
+    }
+    if (cmd === 'refresh_auth_session') {
+      const now = new Date();
+      const expires = new Date(now.getTime() + 90 * 86400000);
+      return Promise.resolve({
+        success: true,
+        data: {
+          user_id: 'user-123',
+          authenticated_at: now.toISOString(),
+          expires_at: expires.toISOString(),
+          duration_days: 90,
+        },
+      });
+    }
+    return Promise.resolve({ success: true, data: null });
+  }),
 }));
 
 describe('authService', () => {
@@ -20,8 +49,8 @@ describe('authService', () => {
     vi.clearAllMocks();
   });
 
-  it('creates a session with default 90-day duration and isolates user database', async () => {
-    const session = await authService.createSession(mockUser);
+  it('creates a session with default 90-day duration and isolates user database', () => {
+    const session = authService.createSession(mockUser);
     expect(session.user.id).toBe('user-123');
     expect(session.config.durationDays).toBe(90);
 
@@ -37,14 +66,14 @@ describe('authService', () => {
     expect(storedRaw).not.toContain('refreshToken');
   });
 
-  it('validates active session within TTL', async () => {
-    const session = await authService.createSession(mockUser, 90);
+  it('validates active session within TTL', () => {
+    const session = authService.createSession(mockUser, 90);
     expect(authService.isSessionValid(session)).toBe(true);
     expect(authService.getDaysRemaining(session)).toBeGreaterThanOrEqual(89);
   });
 
-  it('detects expired session after duration expires', async () => {
-    const session = await authService.createSession(mockUser, 90);
+  it('detects expired session after duration expires', () => {
+    const session = authService.createSession(mockUser, 90);
     session.config.expiresAt = new Date(Date.now() - 1000 * 60 * 60).toISOString();
     authService.saveSession(session);
 
@@ -53,8 +82,8 @@ describe('authService', () => {
   });
 
   it('supports updating session duration dynamically (e.g. to 180 days / 6 months)', async () => {
-    await authService.createSession(mockUser, 90);
-    const updated = authService.updateSessionDuration(180);
+    authService.createSession(mockUser, 90);
+    const updated = await authService.updateSessionDuration(180);
 
     expect(updated).not.toBeNull();
     expect(updated?.config.durationDays).toBe(180);
@@ -62,8 +91,8 @@ describe('authService', () => {
   });
 
   it('refreshes an active session for another full cycle from today', async () => {
-    await authService.createSession(mockUser, 90);
-    const refreshed = authService.refreshSession();
+    authService.createSession(mockUser, 90);
+    const refreshed = await authService.refreshSession();
 
     expect(refreshed).not.toBeNull();
     expect(authService.isSessionValid(refreshed)).toBe(true);
@@ -71,7 +100,7 @@ describe('authService', () => {
   });
 
   it('clears session, resets active user DB, and removes keychain tokens on logout', async () => {
-    await authService.createSession(mockUser, 90);
+    authService.createSession(mockUser, 90);
     expect(authService.getSession()).not.toBeNull();
 
     await authService.clearSession();

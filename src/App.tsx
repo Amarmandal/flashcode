@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { routes } from './routes';
 import { useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
-import { Center, Stack, Loader, Text } from '@mantine/core';
+import { Center, Stack, Loader, Text, Button } from '@mantine/core';
 import AppLogo from './components/common/Logo';
 import '@mantine/code-highlight/styles.layer.css';
 import './App.css';
@@ -10,7 +10,7 @@ import './App.css';
 const router = createBrowserRouter(routes);
 
 function App() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, restoreError, retryRestore } = useAuth();
 
   if (isLoading) {
     return (
@@ -21,6 +21,23 @@ function App() {
           <Text size="xs" c="dimmed">
             Restoring session...
           </Text>
+        </Stack>
+      </Center>
+    );
+  }
+
+  // Credential-store or database failure: Keep application views blocked; allow retry
+  if (restoreError) {
+    return (
+      <Center style={{ minHeight: '100vh', width: '100vw' }}>
+        <Stack align="center" gap="md">
+          <AppLogo size="medium" />
+          <Text size="sm" c="red" ta="center">
+            Failed to restore database or secure credentials.
+          </Text>
+          <Button variant="light" color="blue" onClick={retryRestore}>
+            Retry
+          </Button>
         </Stack>
       </Center>
     );
