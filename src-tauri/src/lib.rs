@@ -21,7 +21,7 @@ use commands::{
     export_database_backup, import_database_backup, get_database_path,
     read_database_backup_bytes, import_database_backup_bytes,
     switch_user_database, close_user_database,
-    start_google_login, get_secure_access_token, clear_secure_tokens,
+    start_google_login, get_secure_access_token, clear_secure_tokens, force_refresh_access_token,
     create_quiz, get_all_quizzes, get_quiz, update_quiz, delete_quiz, import_quiz_from_json,
 };
 use database::DatabaseConnection;
@@ -172,6 +172,7 @@ pub fn run() {
             start_google_login,
             get_secure_access_token,
             clear_secure_tokens,
+            force_refresh_access_token,
             create_quiz,
             get_all_quizzes,
             get_quiz,

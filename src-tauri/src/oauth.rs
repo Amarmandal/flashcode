@@ -9,8 +9,36 @@ use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
+use tokio::sync::Mutex;
 
 const SERVICE_NAME: &str = "flashcode_desktop";
+const CREDENTIALS_KEY: &str = "google_credentials";
+
+/// Margin in seconds before expiry at which we consider the token expired.
+/// This reduces the chance of a token expiring mid-request.
+const EXPIRY_MARGIN_SECS: i64 = 60;
+
+/// Global mutex that serializes all credential mutations: login writes, logout
+/// deletions, and token refreshes. This prevents an in-flight refresh from
+/// saving stale credentials after a logout or account switch.
+static CREDENTIAL_MUTEX: std::sync::OnceLock<Mutex<()>> = std::sync::OnceLock::new();
+
+fn credential_mutex() -> &'static Mutex<()> {
+    CREDENTIAL_MUTEX.get_or_init(|| Mutex::new(()))
+}
+
+// ===== Credential Storage =====
+
+/// All Google OAuth credentials stored as a single atomic record.
+/// Serialized to JSON and stored in the OS credential store.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GoogleCredentials {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub expires_at: i64, // Unix timestamp (seconds)
+    pub client_id: String,
+    pub user_id: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OAuthResult {
@@ -29,6 +57,13 @@ struct TokenResponse {
 }
 
 #[derive(Deserialize)]
+struct RefreshTokenResponse {
+    access_token: String,
+    refresh_token: Option<String>,
+    expires_in: u64,
+}
+
+#[derive(Deserialize)]
 struct GoogleUserInfo {
     sub: String,
     email: String,
@@ -36,34 +71,222 @@ struct GoogleUserInfo {
     picture: Option<String>,
 }
 
-pub fn save_token(key: &str, value: &str) -> Result<(), String> {
-    let entry = keyring::Entry::new(SERVICE_NAME, key)
+#[derive(Deserialize)]
+struct GoogleErrorResponse {
+    error: Option<String>,
+    error_description: Option<String>,
+}
+
+/// Save the entire credentials record atomically.
+/// Caller MUST hold credential_mutex.
+fn save_credentials(creds: &GoogleCredentials) -> Result<(), String> {
+    let json = serde_json::to_string(creds)
+        .map_err(|e| format!("Failed to serialize credentials: {}", e))?;
+    let entry = keyring::Entry::new(SERVICE_NAME, CREDENTIALS_KEY)
         .map_err(|e| format!("Keyring init error: {}", e))?;
     entry
-        .set_password(value)
-        .map_err(|e| format!("Failed to set token in OS Keychain: {}", e))?;
+        .set_password(&json)
+        .map_err(|e| format!("Failed to save credentials to OS Keychain: {}", e))?;
     Ok(())
 }
 
-pub fn get_token(key: &str) -> Result<Option<String>, String> {
-    let entry = keyring::Entry::new(SERVICE_NAME, key)
+/// Load the credentials record from the OS credential store.
+fn load_credentials() -> Result<Option<GoogleCredentials>, String> {
+    let entry = keyring::Entry::new(SERVICE_NAME, CREDENTIALS_KEY)
         .map_err(|e| format!("Keyring init error: {}", e))?;
     match entry.get_password() {
-        Ok(pass) => Ok(Some(pass)),
+        Ok(json) => {
+            let creds: GoogleCredentials = serde_json::from_str(&json)
+                .map_err(|e| format!("Failed to parse stored credentials: {}", e))?;
+            Ok(Some(creds))
+        }
         Err(keyring::Error::NoEntry) => Ok(None),
-        Err(e) => Err(format!("Failed to retrieve token from OS Keychain: {}", e)),
+        Err(e) => Err(format!(
+            "Failed to retrieve credentials from OS Keychain: {}",
+            e
+        )),
     }
 }
 
-pub fn delete_token(key: &str) -> Result<(), String> {
-    let entry = keyring::Entry::new(SERVICE_NAME, key)
+/// Delete all stored credentials.
+/// Acquires the credential mutex to prevent a concurrent refresh from
+/// saving stale credentials after this deletion completes.
+pub async fn delete_credentials() -> Result<(), String> {
+    let _guard = credential_mutex().lock().await;
+    delete_credentials_inner()
+}
+
+/// Inner deletion without locking — caller must hold the mutex.
+fn delete_credentials_inner() -> Result<(), String> {
+    let entry = keyring::Entry::new(SERVICE_NAME, CREDENTIALS_KEY)
         .map_err(|e| format!("Keyring init error: {}", e))?;
     match entry.delete_credential() {
         Ok(_) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()),
-        Err(e) => Err(format!("Failed to delete token from OS Keychain: {}", e)),
+        Err(e) => Err(format!(
+            "Failed to delete credentials from OS Keychain: {}",
+            e
+        )),
     }
 }
+
+/// Clean up legacy per-key entries from before the unified credential record.
+/// Called once after a successful OAuth login to remove stale entries.
+fn cleanup_legacy_entries() {
+    for key in &["google_access_token", "google_refresh_token"] {
+        if let Ok(entry) = keyring::Entry::new(SERVICE_NAME, key) {
+            let _ = entry.delete_credential();
+        }
+    }
+}
+
+// ===== Token Retrieval with Auto-Refresh =====
+
+/// Get a valid access token, refreshing automatically if expired or near-expiry.
+///
+/// This function:
+/// 1. Acquires the credential mutex to prevent concurrent refreshes and
+///    coordinate with login/logout operations.
+/// 2. Re-reads credentials (another caller may have refreshed already).
+/// 3. If the access token is still valid for >60 seconds, returns it.
+/// 4. Otherwise, exchanges the refresh token for a new access token.
+/// 5. Validates the user_id hasn't changed before persisting.
+pub async fn get_valid_access_token() -> Result<String, String> {
+    let _guard = credential_mutex().lock().await;
+
+    let creds = load_credentials()?
+        .ok_or_else(|| "Google sign-in required. No stored credentials found.".to_string())?;
+
+    let now = chrono::Utc::now().timestamp();
+
+    // Check if the access token is still valid with margin
+    if creds.expires_at - now > EXPIRY_MARGIN_SECS {
+        return Ok(creds.access_token);
+    }
+
+    // Access token expired or near-expiry — refresh it
+    refresh_and_save(creds).await
+}
+
+/// Force-refresh the access token regardless of expiry. Used when a Drive API
+/// call returns 401, indicating the stored token was rejected despite the expiry
+/// check passing.
+///
+/// Acquires the credential mutex. After acquiring, re-checks the stored
+/// credentials: if another caller already refreshed (the access_token changed),
+/// returns the new token without a redundant refresh.
+pub async fn force_refresh_access_token(stale_token: &str) -> Result<String, String> {
+    let _guard = credential_mutex().lock().await;
+
+    let creds = load_credentials()?
+        .ok_or_else(|| "Google sign-in required. No stored credentials found.".to_string())?;
+
+    // Another caller may have already refreshed — check if the token changed
+    if creds.access_token != stale_token {
+        // Someone else refreshed while we were waiting for the lock.
+        // The new token may be valid; return it.
+        return Ok(creds.access_token);
+    }
+
+    refresh_and_save(creds).await
+}
+
+/// Exchange the refresh token for a new access token.
+/// Caller MUST hold credential_mutex.
+async fn refresh_and_save(mut creds: GoogleCredentials) -> Result<String, String> {
+    let expected_user_id = creds.user_id.clone();
+
+    let http_client = reqwest::Client::new();
+    let mut params = HashMap::new();
+    params.insert("client_id", creds.client_id.as_str());
+    params.insert("grant_type", "refresh_token");
+    params.insert("refresh_token", creds.refresh_token.as_str());
+
+    let res = http_client
+        .post("https://oauth2.googleapis.com/token")
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| format!("Token refresh request failed: {}. Please try again.", e))?;
+
+    let status = res.status();
+
+    if !status.is_success() {
+        let body = res.text().await.unwrap_or_default();
+
+        // Check for revoked/expired refresh token
+        if let Ok(err_resp) = serde_json::from_str::<GoogleErrorResponse>(&body) {
+            if err_resp.error.as_deref() == Some("invalid_grant") {
+                return Err(format!(
+                    "Google credentials have been revoked or expired. Please sign in with Google again. ({})",
+                    err_resp.error_description.unwrap_or_default()
+                ));
+            }
+        }
+
+        return Err(format!(
+            "Token refresh failed (HTTP {}). Please try again.",
+            status.as_u16()
+        ));
+    }
+
+    let refresh_data: RefreshTokenResponse = res
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse token refresh response: {}", e))?;
+
+    if refresh_data.access_token.is_empty() {
+        return Err("Token refresh returned an empty access token.".to_string());
+    }
+
+    if refresh_data.expires_in == 0 {
+        return Err("Token refresh returned an invalid expiry.".to_string());
+    }
+
+    // Before saving, verify the stored credentials still belong to the same user.
+    // A login or logout may have occurred during the (unlocked) network request...
+    // but we hold the mutex, so this can't happen with our current design.
+    // Still, defensive check for safety.
+    let current = load_credentials()?;
+    match current {
+        None => {
+            // Credentials were deleted (logout) while we were refreshing.
+            // Do not save — the user logged out.
+            return Err(
+                "Credentials were cleared during token refresh. Please sign in again.".to_string(),
+            );
+        }
+        Some(ref stored) if stored.user_id != expected_user_id => {
+            // A different user signed in while we were refreshing.
+            // Do not overwrite their credentials.
+            return Err(
+                "Account changed during token refresh. Please try again.".to_string(),
+            );
+        }
+        Some(_) => {
+            // Same user, safe to update.
+        }
+    }
+
+    // Update credentials
+    let now = chrono::Utc::now().timestamp();
+    creds.access_token = refresh_data.access_token.clone();
+    creds.expires_at = now + refresh_data.expires_in as i64;
+
+    // Preserve existing refresh token if response omits one; update if provided
+    if let Some(new_refresh) = refresh_data.refresh_token {
+        if !new_refresh.is_empty() {
+            creds.refresh_token = new_refresh;
+        }
+    }
+
+    // Persist before returning
+    save_credentials(&creds)?;
+
+    Ok(refresh_data.access_token)
+}
+
+// ===== OAuth Login Flow =====
 
 pub async fn perform_google_oauth(
     app: &AppHandle,
@@ -194,10 +417,33 @@ pub async fn perform_google_oauth(
         .await
         .map_err(|e| format!("Failed to parse user info: {}", e))?;
 
-    // 8. Securely store tokens in OS Keychain
-    save_token("google_access_token", &token_data.access_token)?;
-    if let Some(ref refresh) = token_data.refresh_token {
-        save_token("google_refresh_token", refresh)?;
+    // 8. Calculate expiry and store credentials as a single atomic record.
+    //    Acquire the credential mutex to prevent a concurrent refresh from
+    //    overwriting these new credentials with stale ones.
+    let now = chrono::Utc::now().timestamp();
+    let expires_at = now + token_data.expires_in as i64;
+
+    let refresh_token = token_data.refresh_token.unwrap_or_default();
+    if refresh_token.is_empty() {
+        return Err(
+            "Google did not provide a refresh token. Please try signing in again with consent."
+                .to_string(),
+        );
+    }
+
+    let credentials = GoogleCredentials {
+        access_token: token_data.access_token,
+        refresh_token,
+        expires_at,
+        client_id: client_id.to_string(),
+        user_id: user_info.sub.clone(),
+    };
+
+    {
+        let _guard = credential_mutex().lock().await;
+        save_credentials(&credentials)?;
+        // Clean up any legacy per-key entries from previous versions
+        cleanup_legacy_entries();
     }
 
     Ok(OAuthResult {

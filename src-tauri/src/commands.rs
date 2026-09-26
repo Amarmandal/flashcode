@@ -935,16 +935,31 @@ pub async fn start_google_login(
 
 #[tauri::command]
 pub async fn get_secure_access_token() -> Result<SuccessResponse<Option<String>>, ErrorResponse> {
-    crate::oauth::get_token("google_access_token")
-        .map(|tok| SuccessResponse::new("Retrieved access token from keychain".into(), tok))
-        .map_err(|e| ErrorResponse::new(e))
+    match crate::oauth::get_valid_access_token().await {
+        Ok(token) => Ok(SuccessResponse::new(
+            "Retrieved access token".into(),
+            Some(token),
+        )),
+        Err(e) => Err(ErrorResponse::new(e)),
+    }
 }
 
 #[tauri::command]
 pub async fn clear_secure_tokens() -> Result<SuccessResponse<()>, ErrorResponse> {
-    let _ = crate::oauth::delete_token("google_access_token");
-    let _ = crate::oauth::delete_token("google_refresh_token");
-    Ok(SuccessResponse::new("Cleared secure tokens from keychain".into(), ()))
+    crate::oauth::delete_credentials()
+        .await
+        .map(|_| SuccessResponse::new("Cleared secure tokens from keychain".into(), ()))
+        .map_err(|e| ErrorResponse::new(e))
+}
+
+#[tauri::command]
+pub async fn force_refresh_access_token(
+    stale_token: String,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    crate::oauth::force_refresh_access_token(&stale_token)
+        .await
+        .map(|token| SuccessResponse::new("Access token refreshed".into(), token))
+        .map_err(|e| ErrorResponse::new(e))
 }
 
 

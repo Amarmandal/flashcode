@@ -66,15 +66,29 @@ export const authService = {
   },
 
   /**
-   * Retrieves the access token from the OS Keychain via Tauri native IPC
+   * Retrieves a valid access token from the OS Keychain via Tauri native IPC.
+   * The native side automatically refreshes the token if it's expired.
+   * Returns null only when no credentials are stored (user not signed in).
+   * Throws on refresh failures, revoked credentials, or Keychain errors
+   * so callers can distinguish retryable vs. reauthentication-required errors.
    */
   async getSecureAccessToken(): Promise<string | null> {
     try {
       const res = await invoke<SuccessApiResponse<string | null>>('get_secure_access_token');
       return res.data || null;
-    } catch (err) {
-      console.warn('Could not read access token from keychain:', err);
-      return null;
+    } catch (err: unknown) {
+      // Extract the error message from Tauri's error response
+      const message = typeof err === 'object' && err !== null && 'message' in err
+        ? (err as { message: string }).message
+        : String(err);
+
+      // "No stored credentials" means the user isn't signed in — return null
+      if (message.includes('No stored credentials')) {
+        return null;
+      }
+
+      // All other errors (revoked creds, network, keychain) should propagate
+      throw new Error(message);
     }
   },
 

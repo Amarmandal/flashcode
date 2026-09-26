@@ -1,4 +1,51 @@
+import { invoke } from '@tauri-apps/api/core';
 import { CloudBackupItem } from '../types/storage';
+import { SuccessApiResponse } from '../types/successApiResponse';
+
+/**
+ * Performs a Drive API request with one automatic retry on 401.
+ *
+ * If the response is 401 (token rejected by Google despite expiry check),
+ * calls force_refresh_access_token with the stale token, then retries once.
+ * A second 401 or any 403 (permission error) is not retried.
+ */
+async function driveRequest(
+  url: string,
+  init: RequestInit,
+  accessToken: string
+): Promise<Response> {
+  const headers = { ...init.headers as Record<string, string>, Authorization: `Bearer ${accessToken}` };
+  const response = await fetch(url, { ...init, headers });
+
+  if (response.status === 401) {
+    // Token was rejected — attempt one coordinated forced refresh
+    let newToken: string;
+    try {
+      const res = await invoke<SuccessApiResponse<string>>('force_refresh_access_token', {
+        staleToken: accessToken,
+      });
+      newToken = res.data;
+    } catch (err: unknown) {
+      const message = typeof err === 'object' && err !== null && 'message' in err
+        ? (err as { message: string }).message
+        : String(err);
+      throw new Error(`Token refresh failed: ${message}`);
+    }
+
+    // Retry once with the new token
+    const retryHeaders = { ...init.headers as Record<string, string>, Authorization: `Bearer ${newToken}` };
+    const retryResponse = await fetch(url, { ...init, headers: retryHeaders });
+
+    if (!retryResponse.ok) {
+      const errText = await retryResponse.text();
+      throw new Error(`Google Drive API error after token refresh (${retryResponse.status}): ${errText}`);
+    }
+
+    return retryResponse;
+  }
+
+  return response;
+}
 
 export const googleDriveService = {
   /**
@@ -9,13 +56,10 @@ export const googleDriveService = {
       throw new Error('Not authenticated with Google Drive. Please sign in with Google.');
     }
 
-    const response = await fetch(
+    const response = await driveRequest(
       'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name,size,createdTime)&orderBy=createdTime desc',
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
+      {},
+      accessToken
     );
 
     if (!response.ok) {
@@ -53,22 +97,41 @@ export const googleDriveService = {
       mimeType: 'application/x-sqlite3',
     };
 
-    const formData = new FormData();
-    formData.append(
-      'metadata',
-      new Blob([JSON.stringify(metadata)], { type: 'application/json' })
-    );
-    formData.append('file', new Blob([bytes], { type: 'application/x-sqlite3' }));
+    const boundary = `flashcode_${crypto.randomUUID()}`;
 
-    const response = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    const metadataPart =
+      `--${boundary}\r\n` +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(metadata) +
+      '\r\n';
+
+    const mediaHeader =
+      `--${boundary}\r\n` +
+      'Content-Type: application/x-sqlite3\r\n\r\n';
+
+    const closingBoundary = `\r\n--${boundary}--\r\n`;
+
+    // Copy into an ArrayBuffer-backed array suitable for Blob construction.
+    const fileBytes = new Uint8Array(bytes.byteLength);
+    fileBytes.set(bytes);
+
+    const body = new Blob([
+      metadataPart,
+      mediaHeader,
+      fileBytes,
+      closingBoundary,
+    ]);
+
+    const response = await driveRequest(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
       {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`,
         },
-        body: formData,
-      }
+        body,
+      },
+      accessToken
     );
 
     if (!response.ok) {
@@ -98,13 +161,10 @@ export const googleDriveService = {
       throw new Error('Not authenticated with Google. Please log in to download backups.');
     }
 
-    const response = await fetch(
+    const response = await driveRequest(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
+      {},
+      accessToken
     );
 
     if (!response.ok) {
@@ -128,12 +188,9 @@ export const googleDriveService = {
       throw new Error('Not authenticated with Google.');
     }
 
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    const response = await driveRequest(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    }, accessToken);
 
     if (!response.ok) {
       const errText = await response.text();
