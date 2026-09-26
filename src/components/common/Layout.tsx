@@ -103,10 +103,13 @@ export const Layout = () => {
             <Text size="xs" c="dimmed" mt={8} lh={1.6}>A little practice.<br />A lasting understanding.</Text>
           </Box>
           <NavLink
-            label="Account & Cloud Backup"
+            component={Link}
+            to="/settings"
+            active={pathname === '/settings'}
+            label="Profile & Settings"
             leftSection={<IconUser size={16} />}
             rightSection={<Badge size="xs" variant="light" color="blue">{daysRemaining}d</Badge>}
-            onClick={() => setShowAccountModal(true)}
+            onClick={close}
             classNames={{ root: classes.navItem, label: classes.navLabel }}
           />
           <NavLink label="Check for updates" leftSection={isChecking ? <Loader size={16} /> : <IconRefresh size={16} />}

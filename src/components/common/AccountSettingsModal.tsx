@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Tabs,
@@ -62,17 +62,29 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [isRefreshingSession, setIsRefreshingSession] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
+  useEffect(() => {
+    setSelectedDuration(String(session?.config?.durationDays || 90));
+  }, [session?.config?.durationDays, opened]);
+
   const handleDurationChange = async (val: string | null) => {
     if (!val) return;
     const days = parseInt(val, 10);
+    const previousDuration = String(session?.config?.durationDays || 90);
     setSelectedDuration(val);
     setIsUpdatingDuration(true);
     try {
       await updateSessionDuration(days);
       notifications.show({
         title: 'Session Duration Updated',
-        message: `Your session will now remain valid for ${days} days.`,
+        message: `Your session validity is now set to ${days} days.`,
         color: 'teal',
+      });
+    } catch (err: unknown) {
+      setSelectedDuration(previousDuration);
+      notifications.show({
+        title: 'Update Failed',
+        message: err instanceof Error ? err.message : 'Could not update session duration.',
+        color: 'red',
       });
     } finally {
       setIsUpdatingDuration(false);
@@ -87,6 +99,12 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
         title: 'Session Extended',
         message: `Session refreshed! You now have a full ${session?.config?.durationDays || 90} days remaining.`,
         color: 'teal',
+      });
+    } catch (err: unknown) {
+      notifications.show({
+        title: 'Refresh Failed',
+        message: err instanceof Error ? err.message : 'Could not refresh session.',
+        color: 'red',
       });
     } finally {
       setIsRefreshingSession(false);
@@ -150,7 +168,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
         <Group gap="xs">
           <IconUser size={20} color="var(--mantine-color-blue-4)" />
           <Text fw={600} size="md">
-            Account & Backup Storage
+            Profile &amp; Settings
           </Text>
         </Group>
       }
@@ -223,7 +241,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
         <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List grow>
             <Tabs.Tab value="session" leftSection={<IconClock size={16} />}>
-              Session Management
+              Profile &amp; Session Duration
             </Tabs.Tab>
             <Tabs.Tab value="backup" leftSection={<IconCloud size={16} />}>
               Google Drive Backup
@@ -267,23 +285,24 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ flex: 1 }}>
                       <Text size="sm" fw={500}>
-                        Session Validity Duration
+                        Session Duration
                       </Text>
                       <Text size="xs" c="dimmed">
-                        Configures how long Flashcode remains unlocked before requesting re-authentication.
+                        Defaults to 3 months (90 days) on sign-in. Choose how long Flashcode stays unlocked before requesting re-authentication.
                       </Text>
                     </Box>
                     <Select
+                      aria-label="Session Duration"
                       size="xs"
-                      w={180}
+                      w={210}
                       value={selectedDuration}
                       onChange={handleDurationChange}
                       disabled={isUpdatingDuration}
                       data={[
-                        { value: '30', label: '30 Days (1 Month)' },
-                        { value: '90', label: '90 Days (Recommended)' },
-                        { value: '180', label: '180 Days (6 Months)' },
-                        { value: '365', label: '365 Days (1 Year)' },
+                        { value: '30', label: '1 Month (30 Days)' },
+                        { value: '90', label: '3 Months (90 Days — Default)' },
+                        { value: '180', label: '6 Months (180 Days)' },
+                        { value: '365', label: '1 Year (365 Days)' },
                       ]}
                     />
                   </Group>
