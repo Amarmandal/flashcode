@@ -1,9 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::fs;
 use std::path::Path;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 use v_htmlescape::escape;
-use chrono::Local;
 use serde::{Deserialize, Serialize};
 
 use crate::database::DatabaseConnection;
@@ -25,6 +24,13 @@ pub struct AppState {
 /// Validates that a native session is active and not expired.
 /// Enforces the account boundary in native commands.
 fn require_active_session(db: &DatabaseConnection) -> Result<(), String> {
+    if db.is_recovery_failed() {
+        return Err(
+            "Database operations are blocked due to an unrecovered restore failure. Safety backup has been preserved."
+                .to_string(),
+        );
+    }
+
     let current_uid = db.current_user_id()
         .ok_or_else(|| "No active user session. Please sign in.".to_string())?;
 
@@ -730,19 +736,6 @@ pub async fn delete_normal_card(
 
 // Backup and Restore Commands
 
-fn get_db_path(app: &AppHandle) -> Result<String, String> {
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-
-    let db_path = app_data_dir.join("flashcodes.db");
-    db_path
-        .to_str()
-        .map(|s| s.to_string())
-        .ok_or_else(|| "Invalid database path".to_string())
-}
-
 #[tauri::command]
 pub async fn export_database_backup(
     state: State<'_, AppState>,
@@ -757,16 +750,14 @@ pub async fn export_database_backup(
         })?;
         require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
 
-        let source_path = db_guard.get_active_db_path();
+        // Snapshot active connection via SQLite Online Backup API
+        let bytes = db_guard.backup_to_bytes().map_err(|e| {
+            eprintln!("Failed to snapshot database: {:?}", e);
+            ErrorResponse::new(format!("Failed to export backup: {}", e))
+        })?;
 
-        // Validate source exists
-        if !source_path.exists() {
-            return Err(ErrorResponse::new("Database file not found".into()));
-        }
-
-        // Copy database file
-        fs::copy(&source_path, &destination_path).map_err(|e| {
-            eprintln!("Failed to copy database: {:?}", e);
+        fs::write(&destination_path, &bytes).map_err(|e| {
+            eprintln!("Failed to write exported backup file: {:?}", e);
             ErrorResponse::new(format!("Failed to export backup: {}", e))
         })?;
 
@@ -790,19 +781,6 @@ pub async fn import_database_backup(
     let state_clone = state.inner().clone();
 
     tokio::task::spawn_blocking(move || {
-        // Validate source exists
-        if !Path::new(&source_path).exists() {
-            return Err(ErrorResponse::new("Backup file not found".into()));
-        }
-
-        // Validate source is a valid SQLite database
-        if let Err(e) = rusqlite::Connection::open(&source_path) {
-            return Err(ErrorResponse::new(format!(
-                "Invalid database file: {}",
-                e
-            )));
-        }
-
         // Acquire lock and enforce native session authorization before any file operation
         let mut db_guard = state_clone.db.lock().map_err(|e| {
             eprintln!("Error locking database: {:?}", e);
@@ -810,37 +788,25 @@ pub async fn import_database_backup(
         })?;
         require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
 
-        let db_path = db_guard.get_active_db_path();
-
-        // Create automatic backup of current database before replacing
-        let timestamp = Local::now().format("%Y%m%d_%H%M%S");
-        let backup_path = format!("{}.backup_{}", db_path.to_string_lossy(), timestamp);
-
-        if db_path.exists() {
-            fs::copy(&db_path, &backup_path).map_err(|e| {
-                eprintln!("Failed to create safety backup: {:?}", e);
-                ErrorResponse::new(format!("Failed to create safety backup: {}", e))
-            })?;
+        // Validate source exists and read bytes
+        if !Path::new(&source_path).exists() {
+            return Err(ErrorResponse::new("Backup file not found".into()));
         }
 
-        // Copy backup file to database location
-        fs::copy(&source_path, &db_path).map_err(|e| {
-            eprintln!("Failed to import database: {:?}", e);
-            // Try to restore from safety backup
-            if Path::new(&backup_path).exists() {
-                let _ = fs::copy(&backup_path, &db_path);
-            }
+        let bytes = fs::read(&source_path).map_err(|e| {
+            eprintln!("Failed to read backup file: {:?}", e);
+            ErrorResponse::new(format!("Failed to read backup file: {}", e))
+        })?;
+
+        // Route through the same protected restore implementation
+        let safety_path = db_guard.restore_from_bytes(&bytes).map_err(|e| {
+            eprintln!("Failed to import database backup: {:?}", e);
             ErrorResponse::new(format!("Failed to import backup: {}", e))
         })?;
 
-        // Reconnect and migrate the active user database
-        if let Some(uid) = db_guard.current_user_id().map(|s| s.to_string()) {
-            let _ = db_guard.switch_user(&uid);
-        }
-
         Ok(SuccessResponse::new(
             "Database imported successfully. Please restart the application.".into(),
-            backup_path,
+            safety_path,
         ))
     })
     .await
@@ -851,11 +817,18 @@ pub async fn import_database_backup(
 }
 
 #[tauri::command]
-pub async fn get_database_path(app: AppHandle) -> Result<SuccessResponse<String>, ErrorResponse> {
+pub async fn get_database_path(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
     tokio::task::spawn_blocking(move || {
-        get_db_path(&app)
-            .map(|path| SuccessResponse::new("Database path retrieved".into(), path))
-            .map_err(|e| ErrorResponse::new(e))
+        let db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
+        let path = db_guard.get_active_db_path().to_string_lossy().to_string();
+        Ok(SuccessResponse::new("Database path retrieved".into(), path))
     })
     .await
     .map_err(|e| {
