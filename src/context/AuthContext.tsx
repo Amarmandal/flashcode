@@ -24,7 +24,7 @@ interface AuthContextType {
   retryRestore: () => Promise<void>;
   daysRemaining: number;
   isExpired: boolean;
-  loginWithGoogle: (clientId: string, durationDays?: number) => Promise<void>;
+  loginWithGoogle: (durationDays?: number) => Promise<void>;
   logout: () => Promise<void>;
   updateSessionDuration: (days: number) => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -127,9 +127,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const user = session ? session.user : null;
 
   const loginWithGoogle = useCallback(
-    async (clientId: string, durationDays: number = 90) => {
-      if (!clientId.trim()) {
-        throw new Error('Google OAuth Client ID is required');
+    async (durationDays: number = 90) => {
+      const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim();
+      if (!clientId) {
+        throw new Error('This build is missing VITE_GOOGLE_OAUTH_CLIENT_ID');
       }
 
       // Invoke native desktop OAuth PKCE flow in Rust (Rust switches DB and stores session atomically)

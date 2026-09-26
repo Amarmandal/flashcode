@@ -6,7 +6,6 @@ import {
   Button,
   Group,
   Stack,
-  TextInput,
   Select,
   Box,
   Badge,
@@ -15,7 +14,6 @@ import {
   ThemeIcon,
   Tooltip,
   Alert,
-  Modal,
 } from '@mantine/core';
 import {
   IconBrandGoogle,
@@ -24,54 +22,33 @@ import {
   IconCloudCheck,
   IconArrowRight,
   IconDatabase,
-  IconSettings,
   IconAlertCircle,
-  IconKey,
 } from '@tabler/icons-react';
 import AppLogo from '../components/common/Logo';
 import { useAuth } from '../context/AuthContext';
 import { notifications } from '@mantine/notifications';
 
-const CLIENT_ID_STORAGE_KEY = 'flashcode_google_client_id';
-
 export const LoginPage: React.FC = () => {
   const { loginWithGoogle } = useAuth();
   const [selectedDuration, setSelectedDuration] = useState<string>('90');
-  const [clientId, setClientId] = useState<string>(() => {
-    return (
-      localStorage.getItem(CLIENT_ID_STORAGE_KEY) ||
-      // Standard demo/default client ID if configured
-      ''
-    );
-  });
-  const [configModalOpened, setConfigModalOpened] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const durationDays = parseInt(selectedDuration, 10) || 90;
 
-  const handleSaveClientId = (val: string) => {
-    setClientId(val);
-    localStorage.setItem(CLIENT_ID_STORAGE_KEY, val);
-  };
-
   const handleGoogleLogin = async () => {
-    if (!clientId.trim()) {
-      setConfigModalOpened(true);
-      return;
-    }
-
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
-      await loginWithGoogle(clientId.trim(), durationDays);
+      await loginWithGoogle(durationDays);
       notifications.show({
         title: 'Authentication Successful',
         message: `Signed in with Google. Session active for ${durationDays} days.`,
         color: 'teal',
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google OAuth failed';
+      console.error('Google sign-in failed:', err);
+      const msg = 'Google sign-in could not be completed. Please try again.';
       setErrorMsg(msg);
       notifications.show({
         title: 'Authentication Failed',
@@ -196,18 +173,11 @@ export const LoginPage: React.FC = () => {
             Sign in with Google
           </Button>
 
-          {/* Client ID Configuration Prompt */}
-          <Group justify="center">
-            <Button
-              variant="subtle"
-              color="gray"
-              size="xs"
-              leftSection={<IconSettings size={14} />}
-              onClick={() => setConfigModalOpened(true)}
-            >
-              {clientId ? 'Google OAuth configured' : 'Configure Google Client ID'}
-            </Button>
-          </Group>
+          <Text size="xs" c="dimmed" ta="center" role="status" aria-live="polite">
+            {isSubmitting
+              ? 'Complete sign-in in your browser, then return to Flashcode.'
+              : 'Google sign-in opens securely in your browser.'}
+          </Text>
 
           {/* Features Highlights Footer */}
           <Paper
@@ -241,7 +211,7 @@ export const LoginPage: React.FC = () => {
                 <Group gap={6}>
                   <IconDatabase size={14} color="#ffd43b" />
                   <Text size="xs" c="dimmed">
-                    Isolated DB
+                    Private local data
                   </Text>
                 </Group>
               </Tooltip>
@@ -250,57 +220,6 @@ export const LoginPage: React.FC = () => {
         </Stack>
       </Card>
 
-      {/* Google OAuth Client ID Configuration Modal */}
-      <Modal
-        opened={configModalOpened}
-        onClose={() => setConfigModalOpened(false)}
-        title={
-          <Group gap="xs">
-            <IconKey size={18} color="var(--mantine-color-blue-4)" />
-            <Text fw={600} size="sm">
-              Google OAuth Configuration
-            </Text>
-          </Group>
-        }
-        size="md"
-        radius="md"
-      >
-        <Stack gap="sm">
-          <Text size="xs" c="dimmed">
-            To authenticate with Google and enable Google Drive backups, enter your Google Cloud
-            OAuth 2.0 Client ID (Application type: <b>Desktop app</b>).
-          </Text>
-
-          <TextInput
-            label="OAuth 2.0 Client ID"
-            placeholder="e.g. 123456789-xxxx.apps.googleusercontent.com"
-            size="sm"
-            value={clientId}
-            onChange={(e) => handleSaveClientId(e.currentTarget.value)}
-          />
-
-          <Alert color="blue" variant="light" p="xs">
-            <Text size="10px">
-              Flashcode uses the PKCE flow directly with a local loopback server (RFC 8252). No
-              client secret is required. Tokens are stored securely in your OS Keychain.
-            </Text>
-          </Alert>
-
-          <Button
-            size="xs"
-            color="blue"
-            fullWidth
-            onClick={() => {
-              setConfigModalOpened(false);
-              if (clientId.trim()) {
-                handleGoogleLogin();
-              }
-            }}
-          >
-            Save & Continue to Google
-          </Button>
-        </Stack>
-      </Modal>
     </Box>
   );
 };
