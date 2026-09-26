@@ -1,9 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::fs;
 use std::path::Path;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 use v_htmlescape::escape;
-use chrono::Local;
 use serde::{Deserialize, Serialize};
 
 use crate::database::DatabaseConnection;
@@ -22,6 +21,33 @@ pub struct AppState {
     pub db: Arc<Mutex<DatabaseConnection>>,
 }
 
+/// Validates that a native session is active and not expired.
+/// Enforces the account boundary in native commands.
+fn require_active_session(db: &DatabaseConnection) -> Result<(), String> {
+    if db.is_recovery_failed() {
+        return Err(
+            "Database operations are blocked due to an unrecovered restore failure. Safety backup has been preserved."
+                .to_string(),
+        );
+    }
+
+    let current_uid = db.current_user_id()
+        .ok_or_else(|| "No active user session. Please sign in.".to_string())?;
+
+    let creds = crate::oauth::load_credentials()?
+        .ok_or_else(|| "No active native session found. Please sign in.".to_string())?;
+
+    if !crate::oauth::is_session_valid(&creds) {
+        return Err("Session has expired. Please sign in again.".to_string());
+    }
+
+    if creds.user_id != current_uid {
+        return Err("User session mismatch. Please sign in again.".to_string());
+    }
+
+    Ok(())
+}
+
 // Helper function to run blocking database operations in a thread pool
 async fn run_db_operation<F, T>(state: &Arc<Mutex<DatabaseConnection>>, operation: F) -> Result<T, ErrorResponse>
 where
@@ -37,6 +63,7 @@ where
         })?;
 
         let db = &*db_guard;
+        require_active_session(db).map_err(|e| ErrorResponse::new(e))?;
         operation(db).map_err(|e| ErrorResponse::new(e))
     })
     .await
@@ -709,35 +736,28 @@ pub async fn delete_normal_card(
 
 // Backup and Restore Commands
 
-fn get_db_path(app: &AppHandle) -> Result<String, String> {
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-
-    let db_path = app_data_dir.join("flashcodes.db");
-    db_path
-        .to_str()
-        .map(|s| s.to_string())
-        .ok_or_else(|| "Invalid database path".to_string())
-}
-
 #[tauri::command]
 pub async fn export_database_backup(
-    app: AppHandle,
+    state: State<'_, AppState>,
     destination_path: String,
 ) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
     tokio::task::spawn_blocking(move || {
-        let source_path = get_db_path(&app).map_err(|e| ErrorResponse::new(e))?;
+        // Acquire lock and enforce native session authorization
+        let db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
 
-        // Validate source exists
-        if !Path::new(&source_path).exists() {
-            return Err(ErrorResponse::new("Database file not found".into()));
-        }
+        // Snapshot active connection via SQLite Online Backup API
+        let bytes = db_guard.backup_to_bytes().map_err(|e| {
+            eprintln!("Failed to snapshot database: {:?}", e);
+            ErrorResponse::new(format!("Failed to export backup: {}", e))
+        })?;
 
-        // Copy database file
-        fs::copy(&source_path, &destination_path).map_err(|e| {
-            eprintln!("Failed to copy database: {:?}", e);
+        fs::write(&destination_path, &bytes).map_err(|e| {
+            eprintln!("Failed to write exported backup file: {:?}", e);
             ErrorResponse::new(format!("Failed to export backup: {}", e))
         })?;
 
@@ -755,58 +775,38 @@ pub async fn export_database_backup(
 
 #[tauri::command]
 pub async fn import_database_backup(
-    app: AppHandle,
     state: State<'_, AppState>,
     source_path: String,
 ) -> Result<SuccessResponse<String>, ErrorResponse> {
     let state_clone = state.inner().clone();
 
     tokio::task::spawn_blocking(move || {
-        let db_path = get_db_path(&app).map_err(|e| ErrorResponse::new(e))?;
+        // Acquire lock and enforce native session authorization before any file operation
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
 
-        // Validate source exists
+        // Validate source exists and read bytes
         if !Path::new(&source_path).exists() {
             return Err(ErrorResponse::new("Backup file not found".into()));
         }
 
-        // Validate source is a valid SQLite database
-        if let Err(e) = rusqlite::Connection::open(&source_path) {
-            return Err(ErrorResponse::new(format!(
-                "Invalid database file: {}",
-                e
-            )));
-        }
-
-        // Create automatic backup of current database before replacing
-        let timestamp = Local::now().format("%Y%m%d_%H%M%S");
-        let backup_path = format!("{}.backup_{}", db_path, timestamp);
-
-        if Path::new(&db_path).exists() {
-            fs::copy(&db_path, &backup_path).map_err(|e| {
-                eprintln!("Failed to create safety backup: {:?}", e);
-                ErrorResponse::new(format!("Failed to create safety backup: {}", e))
-            })?;
-        }
-
-        // Acquire lock to ensure no operations are in progress
-        let _db_guard = state_clone.db.lock().map_err(|e| {
-            eprintln!("Error locking database: {:?}", e);
-            ErrorResponse::new("Failed to acquire database lock".into())
+        let bytes = fs::read(&source_path).map_err(|e| {
+            eprintln!("Failed to read backup file: {:?}", e);
+            ErrorResponse::new(format!("Failed to read backup file: {}", e))
         })?;
 
-        // Copy backup file to database location
-        fs::copy(&source_path, &db_path).map_err(|e| {
-            eprintln!("Failed to import database: {:?}", e);
-            // Try to restore from safety backup
-            if Path::new(&backup_path).exists() {
-                let _ = fs::copy(&backup_path, &db_path);
-            }
+        // Route through the same protected restore implementation
+        let safety_path = db_guard.restore_from_bytes(&bytes).map_err(|e| {
+            eprintln!("Failed to import database backup: {:?}", e);
             ErrorResponse::new(format!("Failed to import backup: {}", e))
         })?;
 
         Ok(SuccessResponse::new(
             "Database imported successfully. Please restart the application.".into(),
-            backup_path,
+            safety_path,
         ))
     })
     .await
@@ -817,11 +817,18 @@ pub async fn import_database_backup(
 }
 
 #[tauri::command]
-pub async fn get_database_path(app: AppHandle) -> Result<SuccessResponse<String>, ErrorResponse> {
+pub async fn get_database_path(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
     tokio::task::spawn_blocking(move || {
-        get_db_path(&app)
-            .map(|path| SuccessResponse::new("Database path retrieved".into(), path))
-            .map_err(|e| ErrorResponse::new(e))
+        let db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
+        let path = db_guard.get_active_db_path().to_string_lossy().to_string();
+        Ok(SuccessResponse::new("Database path retrieved".into(), path))
     })
     .await
     .map_err(|e| {
@@ -829,6 +836,300 @@ pub async fn get_database_path(app: AppHandle) -> Result<SuccessResponse<String>
         ErrorResponse::new("Failed to get database path".into())
     })?
 }
+
+#[tauri::command]
+pub async fn read_database_backup_bytes(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<Vec<u8>>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
+        let bytes = db_guard.backup_to_bytes().map_err(|e| {
+            eprintln!("Online backup error: {:?}", e);
+            ErrorResponse::new(format!("Failed to take SQLite backup: {}", e))
+        })?;
+        Ok(SuccessResponse::new("Database backup bytes read successfully".into(), bytes))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Failed to read database backup".into())
+    })?
+}
+
+#[tauri::command]
+pub async fn import_database_backup_bytes(
+    state: State<'_, AppState>,
+    bytes: Vec<u8>,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        require_active_session(&db_guard).map_err(|e| ErrorResponse::new(e))?;
+        let safety_path = db_guard.restore_from_bytes(&bytes).map_err(|e| {
+            eprintln!("Restore error: {:?}", e);
+            ErrorResponse::new(format!("Failed to restore SQLite database: {}", e))
+        })?;
+        Ok(SuccessResponse::new(
+            "Database restored successfully".into(),
+            safety_path,
+        ))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Import operation failed".into())
+    })?
+}
+
+#[tauri::command]
+pub async fn switch_user_database(
+    state: State<'_, AppState>,
+    user_id: String,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    // Validate against trusted native session: do not allow opening an arbitrary user's database
+    let creds = crate::oauth::load_credentials()
+        .map_err(|e| ErrorResponse::new(e))?
+        .ok_or_else(|| ErrorResponse::new("No active session. Please sign in.".into()))?;
+
+    if !crate::oauth::is_session_valid(&creds) {
+        return Err(ErrorResponse::new("Session expired. Please sign in again.".into()));
+    }
+
+    if creds.user_id != user_id {
+        return Err(ErrorResponse::new("Unauthorized: user ID does not match active session.".into()));
+    }
+
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        db_guard.switch_user(&user_id).map_err(|e| {
+            eprintln!("Failed to switch user database: {:?}", e);
+            ErrorResponse::new(format!("Failed to switch user database: {}", e))
+        })?;
+        let path = db_guard.get_active_db_path().to_string_lossy().to_string();
+        Ok(SuccessResponse::new("Switched user database successfully".into(), path))
+    })
+    .await
+    .map_err(|e| ErrorResponse::new(format!("Task join error: {}", e)))?
+}
+
+#[tauri::command]
+pub async fn close_user_database(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        db_guard.close_user().map_err(|e| {
+            eprintln!("Failed to close user database: {:?}", e);
+            ErrorResponse::new(format!("Failed to close user database: {}", e))
+        })?;
+        Ok(SuccessResponse::new("Closed user database successfully".into(), "default".into()))
+    })
+    .await
+    .map_err(|e| ErrorResponse::new(format!("Task join error: {}", e)))?
+}
+
+#[tauri::command]
+pub async fn start_google_login(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    client_id: String,
+    duration_days: u32,
+) -> Result<SuccessResponse<crate::oauth::OAuthResult>, ErrorResponse> {
+    if !crate::oauth::ALLOWED_DURATIONS.contains(&duration_days) {
+        return Err(ErrorResponse::new(format!(
+            "Invalid session duration: {} days. Allowed: {:?}",
+            duration_days, crate::oauth::ALLOWED_DURATIONS
+        )));
+    }
+
+    let result = crate::oauth::perform_google_oauth(&app, &client_id, duration_days)
+        .await
+        .map_err(|e| ErrorResponse::new(e))?;
+
+    // Switch database to the authenticated user. Must succeed or login fails.
+    let user_id = result.id.clone();
+    let state_clone = state.inner().clone();
+    let switch_res = tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            ErrorResponse::new(format!("Failed to acquire database lock: {}", e))
+        })?;
+        db_guard.switch_user(&user_id).map_err(|e| {
+            ErrorResponse::new(format!("Failed to prepare user database: {}", e))
+        })?;
+        Ok::<(), ErrorResponse>(())
+    })
+    .await
+    .map_err(|e| ErrorResponse::new(format!("Database switch failed: {}", e)))?;
+
+    if let Err(err) = switch_res {
+        let _ = crate::oauth::mark_logout_pending();
+        let _ = crate::oauth::delete_credentials().await;
+        return Err(err);
+    }
+
+    crate::oauth::activate_session().map_err(|e| ErrorResponse::new(e))?;
+
+    Ok(SuccessResponse::new("Authenticated successfully with Google".into(), result))
+}
+
+#[tauri::command]
+pub async fn restore_auth_session(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<crate::oauth::NativeSessionInfo>, ErrorResponse> {
+    let session_opt = match crate::oauth::restore_session().await {
+        Ok(opt) => opt,
+        Err(e) => {
+            // Ensure database remains closed when restoration or pending logout cleanup fails
+            let state_clone = state.inner().clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut db_guard) = state_clone.db.lock() {
+                    let _ = db_guard.close_user();
+                }
+            })
+            .await;
+            return Err(ErrorResponse::new(e));
+        }
+    };
+
+    let session_info = match session_opt {
+        Some(info) => info,
+        None => {
+            let state_clone = state.inner().clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut db_guard) = state_clone.db.lock() {
+                    let _ = db_guard.close_user();
+                }
+            })
+            .await;
+            return Err(ErrorResponse::new("No active session found.".into()));
+        }
+    };
+
+    // Switch the database to the restored user.
+    let user_id = session_info.user_id.clone();
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            ErrorResponse::new(format!("Failed to acquire database lock: {}", e))
+        })?;
+        db_guard.switch_user(&user_id).map_err(|e| {
+            ErrorResponse::new(format!("Failed to prepare user database: {}", e))
+        })?;
+        Ok::<(), ErrorResponse>(())
+    })
+    .await
+    .map_err(|e| ErrorResponse::new(format!("Database restoration failed: {}", e)))??;
+
+    crate::oauth::activate_session().map_err(|e| ErrorResponse::new(e))?;
+
+    Ok(SuccessResponse::new("Session restored successfully".into(), session_info))
+}
+
+#[tauri::command]
+pub async fn update_session_duration(
+    duration_days: u32,
+) -> Result<SuccessResponse<crate::oauth::NativeSessionInfo>, ErrorResponse> {
+    crate::oauth::update_session_duration(duration_days)
+        .await
+        .map(|info| SuccessResponse::new("Session duration updated".into(), info))
+        .map_err(|e| ErrorResponse::new(e))
+}
+
+#[tauri::command]
+pub async fn refresh_auth_session() -> Result<SuccessResponse<crate::oauth::NativeSessionInfo>, ErrorResponse> {
+    crate::oauth::refresh_session()
+        .await
+        .map(|info| SuccessResponse::new("Session refreshed".into(), info))
+        .map_err(|e| ErrorResponse::new(e))
+}
+
+#[tauri::command]
+pub async fn get_secure_access_token() -> Result<SuccessResponse<Option<String>>, ErrorResponse> {
+    match crate::oauth::get_valid_access_token().await {
+        Ok(token) => Ok(SuccessResponse::new(
+            "Retrieved access token".into(),
+            Some(token),
+        )),
+        Err(e) => Err(ErrorResponse::new(e)),
+    }
+}
+
+#[tauri::command]
+pub async fn clear_secure_tokens(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<()>, ErrorResponse> {
+    // 1. Immediately invalidate active session in memory and persist logout-pending marker
+    let marker_res = crate::oauth::mark_logout_pending();
+
+    // 2. Attempt deleting credentials from OS Keychain (coordinates via CREDENTIAL_MUTEX)
+    let cred_res = crate::oauth::delete_credentials().await;
+
+    // 3. Always attempt closing the active user database regardless of credential deletion result
+    let state_clone = state.inner().clone();
+    let db_res: Result<(), String> = match tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            format!("Failed to acquire database lock: {}", e)
+        })?;
+        db_guard.close_user().map_err(|e| {
+            format!("Failed to close user database: {}", e)
+        })
+    })
+    .await
+    {
+        Ok(inner) => inner,
+        Err(join_err) => Err(format!("Database close task failed: {}", join_err)),
+    };
+
+    // 4. Only clear logout-pending marker and report success if all operations succeeded
+    if marker_res.is_ok() && cred_res.is_ok() && db_res.is_ok() {
+        if let Err(e) = crate::oauth::clear_logout_pending() {
+            return Err(ErrorResponse::new(e));
+        }
+        Ok(SuccessResponse::new(
+            "Cleared secure tokens and closed user database".into(),
+            (),
+        ))
+    } else {
+        let mut errors = Vec::new();
+        if let Err(e) = marker_res {
+            errors.push(e);
+        }
+        if let Err(e) = cred_res {
+            errors.push(e);
+        }
+        if let Err(e) = db_res {
+            errors.push(e);
+        }
+        Err(ErrorResponse::new(errors.join("; ")))
+    }
+}
+
+#[tauri::command]
+pub async fn force_refresh_access_token(
+    stale_token: String,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    crate::oauth::force_refresh_access_token(&stale_token)
+        .await
+        .map(|token| SuccessResponse::new("Access token refreshed".into(), token))
+        .map_err(|e| ErrorResponse::new(e))
+}
+
 
 // ===== Quiz Commands =====
 

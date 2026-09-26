@@ -15,6 +15,7 @@ import { QuizPage } from './pages/QuizPage';
 import { CreateEditQuizPage } from './pages/CreateEditQuizPage';
 import { TakeQuizPage } from './pages/TakeQuizPage';
 import { QuizResultsPage } from './pages/QuizResultsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 export const routes: RouteObject[] = [
   {
@@ -78,6 +79,10 @@ export const routes: RouteObject[] = [
       {
         path: 'quiz/results/:id',
         element: <QuizResultsPage />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage />,
       },
       {
         path: '*',

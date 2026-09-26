@@ -59,6 +59,19 @@ The application is organized into several main sections, accessible from the sid
 
 ## Development
 
+### Google sign-in configuration
+
+Configure Flashcode's Google Desktop OAuth client ID once as the app developer.
+Copy `.env.example` to `.env.local` and set `VITE_GOOGLE_OAUTH_CLIENT_ID` to that
+client ID. Set the same variable in the release build environment before building
+the frontend. Vite embeds this public identifier at build time; restart the dev
+process or rebuild after changing it. Do not put tokens or client secrets in
+`VITE_*` variables.
+
+The Google sign-in button uses this app configuration to open the native browser
+OAuth flow. End users do not need a Google Cloud project or an OAuth client ID.
+An unconfigured build cannot complete Google sign-in.
+
 ### Recommended IDE Setup
 *   [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 

@@ -4,8 +4,8 @@
   --surface-border: #e7eaf2; --border-color: #dfe4ef;
   --sidebar-bg: #ffffff; --sidebar-text: #526079; --sidebar-text-dim: #79859b;
   --sidebar-active: #eeedff; --sidebar-divider: #e9ecf4;
-  --text-primary: #202a43; --text-secondary: #65728b; --text-tertiary: #7b879e;
-  --input-bg: #ffffff; --input-border: #dfe4ef;
+  --text-primary: #202a43; --text-secondary: #55627a; --text-tertiary: #68758f;
+  --input-bg: #ffffff; --input-border: #c8d1e2;
   --primary-btn-bg: #6259df; --primary-btn-text: #ffffff;
   --secondary-btn-bg: #eeedff; --secondary-btn-text: #5147ca;
   --progress-fill: #756bea; --progress-track: #e9eaf4;
@@ -13,17 +13,75 @@
   --icon-badge-brain-bg: #e7f7f1; --icon-badge-brain-color: #187e67;
   --elevation: 0 3px 16px rgba(29, 39, 68, .035);
 }
+
 [data-mantine-color-scheme="dark"] {
   --page-bg: #101521; --surface-bg: #191f2e; --surface-muted: #20283a;
   --surface-border: #2a3347; --border-color: #354059;
-  --sidebar-bg: #141a27; --sidebar-text: #b0bbd0; --sidebar-text-dim: #8794ac;
+  --sidebar-bg: #141a27; --sidebar-text: #b8c4d9; --sidebar-text-dim: #9aa8c2;
   --sidebar-active: #2a2949; --sidebar-divider: #283044;
-  --text-primary: #edf1fa; --text-secondary: #a2aec4; --text-tertiary: #8693ac;
-  --input-bg: #141b29; --input-border: #354059;
+  --text-primary: #f1f5f9; --text-secondary: #cbd5e1; --text-tertiary: #9fb0ca;
+  --input-bg: #1c2536; --input-border: #5c6f91;
   --primary-btn-bg: #6259df; --primary-btn-text: #ffffff;
   --secondary-btn-bg: #2b2949; --secondary-btn-text: #bab2ff;
   --progress-fill: #9a8df9; --progress-track: #2a3347;
   --icon-badge-bg: #2d2a4c; --icon-badge-color: #b5aaff;
   --icon-badge-brain-bg: #193c36; --icon-badge-brain-color: #77d9bc;
-  --elevation: 0 3px 16px rgba(0, 0, 0, .08);
+  --elevation: 0 3px 16px rgba(0, 0, 0, .25);
+
+  /* Ensure Mantine CSS variables resolve to dark-scheme values even inside a scoped [data-mantine-color-scheme="dark"] subtree */
+  --mantine-color-text: #f1f5f9;
+  --mantine-color-dimmed: #cbd5e1;
+  --mantine-color-body: #101521;
+  --mantine-color-default: #1c2536;
+  --mantine-color-default-hover: #26334d;
+  --mantine-color-default-color: #f1f5f9;
+  --mantine-color-default-border: #5c6f91;
+  --mantine-color-placeholder: #9fb0ca;
 }
+
+/* Reusable dark-hero / authentication screen tokens (coherent across light and dark preferences) */
+:root,
+[data-mantine-color-scheme="light"],
+[data-mantine-color-scheme="dark"] {
+  --auth-page-bg: radial-gradient(ellipse at top, #172554 0%, #0f172a 55%, #090d16 100%);
+  --auth-card-bg: rgba(21, 28, 42, 0.94);
+  --auth-card-border: rgba(148, 163, 184, 0.24);
+  --auth-card-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  --auth-panel-bg: #0f1522;
+  --auth-panel-border: #2e3b54;
+  --auth-footer-bg: #101624;
+  --auth-footer-border: #2a364f;
+  --auth-text-primary: #f1f5f9;
+  --auth-text-secondary: #cbd5e1;
+  --auth-text-muted: #b8c4d9;
+  --auth-input-bg: #1c2536;
+  --auth-input-border: #5c6f91;
+  --auth-input-hover-border: #7c93ba;
+  --auth-input-focus-border: #60a5fa;
+  --auth-input-focus-ring: rgba(96, 165, 250, 0.35);
+  --auth-dropdown-bg: #182030;
+  --auth-dropdown-border: #526488;
+  --auth-option-text: #e2e8f0;
+  --auth-option-hover-bg: #26334d;
+  --auth-option-hover-text: #ffffff;
+  --auth-option-selected-bg: #1e3a6e;
+  --auth-option-selected-border: rgba(96, 165, 250, 0.45);
+  --auth-option-selected-text: #eff6ff;
+  --auth-badge-bg: rgba(59, 130, 246, 0.22);
+  --auth-badge-border: rgba(96, 165, 250, 0.42);
+  --auth-badge-text: #93c5fd;
+  --auth-google-btn-bg: #ffffff;
+  --auth-google-btn-hover-bg: #f1f5f9;
+  --auth-google-btn-active-bg: #e2e8f0;
+  --auth-google-btn-text: #0f172a;
+  --auth-google-btn-border: #cbd5e1;
+  --auth-error-bg: rgba(127, 29, 29, 0.42);
+  --auth-error-border: rgba(248, 113, 113, 0.58);
+  --auth-error-title: #fecaca;
+  --auth-error-text: #fee2e2;
+  --auth-warn-bg: rgba(124, 45, 18, 0.42);
+  --auth-warn-border: rgba(251, 146, 60, 0.58);
+  --auth-warn-title: #fed7aa;
+  --auth-warn-text: #ffedd5;
+}
+

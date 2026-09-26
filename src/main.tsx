@@ -4,6 +4,8 @@ import App from './App';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
+import { AuthProvider } from './context/AuthContext';
+import { StorageProvider } from './context/StorageContext';
 import { theme } from './theme';
 import '@mantine/core/styles.layer.css';
 import '@mantine/notifications/styles.layer.css';
@@ -16,7 +18,11 @@ function AppWrapper() {
   return (
     <MantineProvider theme={theme} forceColorScheme={colorScheme}>
       <Notifications />
-      <App />
+      <AuthProvider>
+        <StorageProvider>
+          <App />
+        </StorageProvider>
+      </AuthProvider>
     </MantineProvider>
   );
 }

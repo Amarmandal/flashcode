@@ -1,6 +1,7 @@
 mod commands;
 mod database;
 mod models;
+mod oauth;
 mod queues;
 mod responses;
 mod sm2;
@@ -18,6 +19,10 @@ use commands::{
     reset_normal_deck, create_normal_card, get_normal_cards_by_deck, get_normal_queues_for_today,
     answer_normal_card, delete_normal_card,
     export_database_backup, import_database_backup, get_database_path,
+    read_database_backup_bytes, import_database_backup_bytes,
+    switch_user_database, close_user_database,
+    start_google_login, get_secure_access_token, clear_secure_tokens, force_refresh_access_token,
+    restore_auth_session, update_session_duration, refresh_auth_session,
     create_quiz, get_all_quizzes, get_quiz, update_quiz, delete_quiz, import_quiz_from_json,
 };
 use database::DatabaseConnection;
@@ -161,6 +166,17 @@ pub fn run() {
             export_database_backup,
             import_database_backup,
             get_database_path,
+            read_database_backup_bytes,
+            import_database_backup_bytes,
+            switch_user_database,
+            close_user_database,
+            start_google_login,
+            get_secure_access_token,
+            clear_secure_tokens,
+            force_refresh_access_token,
+            restore_auth_session,
+            update_session_duration,
+            refresh_auth_session,
             create_quiz,
             get_all_quizzes,
             get_quiz,
