@@ -27,6 +27,7 @@ import {
 import AppLogo from '../components/common/Logo';
 import { useAuth } from '../context/AuthContext';
 import { notifications } from '@mantine/notifications';
+import classes from './LoginPage.module.css';
 
 export const LoginPage: React.FC = () => {
   const { loginWithGoogle, logoutError, retryLogout } = useAuth();
@@ -72,40 +73,23 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background:
-          'radial-gradient(ellipse at top, var(--mantine-color-blue-9), var(--mantine-color-dark-9), #0a0b0e)',
-        padding: '2rem 1rem',
-      }}
-    >
+    <Box data-mantine-color-scheme="dark" className={classes.page}>
       <Card
         shadow="xl"
         radius="lg"
         padding="xl"
         withBorder
-        style={{
-          width: '100%',
-          maxWidth: 480,
-          backdropFilter: 'blur(16px)',
-          backgroundColor: 'rgba(26, 27, 30, 0.85)',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-        }}
+        className={classes.card}
       >
         <Stack gap="lg">
           {/* Header & Logo */}
           <Center>
             <Stack align="center" gap="xs">
               <AppLogo size="medium" />
-              <Title order={2} ta="center" mt="xs">
+              <Title order={2} ta="center" mt="xs" className={classes.title}>
                 Welcome to Flashcode
               </Title>
-              <Text size="sm" c="dimmed" ta="center">
+              <Text size="sm" ta="center" className={classes.subtitle}>
                 Sign in with Google to associate your data and enable automated cloud backups to Google Drive.
               </Text>
             </Stack>
@@ -117,14 +101,23 @@ export const LoginPage: React.FC = () => {
               title="Sign-Out Incomplete"
               color="orange"
               variant="light"
+              classNames={{
+                root: classes.warnAlert,
+                title: classes.warnAlertTitle,
+                message: classes.warnAlertBody,
+                icon: classes.warnAlertIcon,
+              }}
             >
               <Stack gap="xs">
-                <Text size="xs">{logoutError}</Text>
+                <Text size="xs" className={classes.warnAlertBody}>
+                  {logoutError}
+                </Text>
                 <Group justify="flex-start">
                   <Button
                     size="xs"
                     color="orange"
                     variant="light"
+                    className={classes.warnRetryButton}
                     loading={isRetryingLogout}
                     onClick={handleRetryLogout}
                   >
@@ -143,8 +136,17 @@ export const LoginPage: React.FC = () => {
               variant="light"
               withCloseButton
               onClose={() => setErrorMsg(null)}
+              classNames={{
+                root: classes.errorAlert,
+                title: classes.errorAlertTitle,
+                message: classes.errorAlertBody,
+                icon: classes.errorAlertIcon,
+                closeButton: classes.errorAlertClose,
+              }}
             >
-              <Text size="xs">{errorMsg}</Text>
+              <Text size="xs" className={classes.errorAlertBody}>
+                {errorMsg}
+              </Text>
             </Alert>
           )}
 
@@ -153,27 +155,35 @@ export const LoginPage: React.FC = () => {
             p="md"
             radius="md"
             withBorder
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.25)',
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-            }}
+            className={classes.durationPanel}
           >
             <Stack gap="xs">
               <Group justify="space-between">
                 <Group gap={6}>
-                  <ThemeIcon size="sm" variant="light" color="blue">
+                  <ThemeIcon
+                    size="sm"
+                    variant="light"
+                    color="blue"
+                    className={classes.clockIcon}
+                  >
                     <IconClock size={14} />
                   </ThemeIcon>
-                  <Text size="xs" fw={600}>
+                  <Text size="xs" fw={600} className={classes.sectionTitle}>
                     Session Duration
                   </Text>
                 </Group>
-                <Badge size="xs" color="blue" variant="light">
+                <Badge
+                  size="xs"
+                  color="blue"
+                  variant="light"
+                  className={classes.badge}
+                >
                   Configurable
                 </Badge>
               </Group>
 
               <Select
+                aria-label="Session Duration"
                 value={selectedDuration}
                 onChange={(val) => setSelectedDuration(val || '90')}
                 data={[
@@ -184,6 +194,17 @@ export const LoginPage: React.FC = () => {
                 ]}
                 description="After this duration expires, you will be prompted to re-authenticate."
                 size="sm"
+                comboboxProps={{
+                  withinPortal: false,
+                  transitionProps: { transition: 'pop', duration: 140 },
+                }}
+                classNames={{
+                  input: classes.selectInput,
+                  section: classes.selectSection,
+                  description: classes.selectDescription,
+                  dropdown: classes.selectDropdown,
+                  option: classes.selectOption,
+                }}
               />
             </Stack>
           </Paper>
@@ -193,40 +214,36 @@ export const LoginPage: React.FC = () => {
             size="md"
             radius="md"
             fullWidth
-            color="dark"
             variant="default"
+            className={classes.googleButton}
             leftSection={<IconBrandGoogle size={20} color="#4285F4" />}
-            rightSection={<IconArrowRight size={16} />}
+            rightSection={<IconArrowRight size={16} color="#0f172a" />}
+            loaderProps={{ color: '#0f172a' }}
             onClick={handleGoogleLogin}
             loading={isSubmitting}
-            style={{
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            }}
           >
             Sign in with Google
           </Button>
 
-          <Text size="xs" c="dimmed" ta="center" role="status" aria-live="polite">
+          <Text
+            size="xs"
+            ta="center"
+            role="status"
+            aria-live="polite"
+            className={classes.statusText}
+          >
             {isSubmitting
               ? 'Complete sign-in in your browser, then return to Flashcode.'
               : 'Google sign-in opens securely in your browser.'}
           </Text>
 
           {/* Features Highlights Footer */}
-          <Paper
-            p="xs"
-            radius="md"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-            }}
-          >
+          <Paper p="xs" radius="md" className={classes.footerPanel}>
             <Group justify="space-around">
               <Tooltip label="Secure session refreshed on your schedule" withArrow>
                 <Group gap={6}>
                   <IconShieldLock size={14} color="#69db7c" />
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" className={classes.footerText}>
                     {durationDays}-day session
                   </Text>
                 </Group>
@@ -235,7 +252,7 @@ export const LoginPage: React.FC = () => {
               <Tooltip label="Automated background sync to Google Drive" withArrow>
                 <Group gap={6}>
                   <IconCloudCheck size={14} color="#4dabf7" />
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" className={classes.footerText}>
                     Google Drive sync
                   </Text>
                 </Group>
@@ -244,7 +261,7 @@ export const LoginPage: React.FC = () => {
               <Tooltip label="Isolated per-user SQLite database" withArrow>
                 <Group gap={6}>
                   <IconDatabase size={14} color="#ffd43b" />
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" className={classes.footerText}>
                     Private local data
                   </Text>
                 </Group>
@@ -253,7 +270,7 @@ export const LoginPage: React.FC = () => {
           </Paper>
         </Stack>
       </Card>
-
     </Box>
   );
 };
+

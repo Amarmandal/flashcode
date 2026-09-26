@@ -1,0 +1,208 @@
+.page {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--auth-page-bg);
+  color: var(--auth-text-primary);
+  padding: 2rem 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  backdrop-filter: blur(16px);
+  background-color: var(--auth-card-bg);
+  border: 1px solid var(--auth-card-border);
+  box-shadow: var(--auth-card-shadow);
+  color: var(--auth-text-primary);
+}
+
+.title {
+  color: var(--auth-text-primary);
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  color: var(--auth-text-secondary);
+  line-height: 1.5;
+}
+
+.durationPanel {
+  background-color: var(--auth-panel-bg);
+  border: 1px solid var(--auth-panel-border);
+  color: var(--auth-text-primary);
+}
+
+.sectionTitle {
+  color: var(--auth-text-primary);
+}
+
+.clockIcon {
+  background-color: var(--auth-badge-bg);
+  border: 1px solid var(--auth-badge-border);
+  color: var(--auth-badge-text);
+}
+
+.badge {
+  background-color: var(--auth-badge-bg);
+  border: 1px solid var(--auth-badge-border);
+  color: var(--auth-badge-text);
+}
+
+.selectInput {
+  background-color: var(--auth-input-bg);
+  border: 1px solid var(--auth-input-border);
+  color: var(--auth-text-primary);
+  font-weight: 500;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.selectInput:hover {
+  border-color: var(--auth-input-hover-border);
+}
+
+.selectInput:focus,
+.selectInput:focus-within,
+.selectInput[data-expanded='true'] {
+  border-color: var(--auth-input-focus-border);
+  box-shadow: 0 0 0 2px var(--auth-input-focus-ring);
+  outline: none;
+}
+
+.selectSection {
+  color: var(--auth-text-secondary);
+}
+
+.selectDescription {
+  color: var(--auth-text-secondary);
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.selectDropdown {
+  background-color: var(--auth-dropdown-bg);
+  border: 1px solid var(--auth-dropdown-border);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
+  padding: 6px;
+}
+
+.selectOption {
+  color: var(--auth-option-text);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.8125rem;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.selectOption:hover,
+.selectOption[data-combobox-active] {
+  background-color: var(--auth-option-hover-bg);
+  color: var(--auth-option-hover-text);
+}
+
+.selectOption[data-checked='true'],
+.selectOption[data-combobox-selected],
+.selectOption[aria-selected='true'] {
+  background-color: var(--auth-option-selected-bg);
+  border-color: var(--auth-option-selected-border);
+  color: var(--auth-option-selected-text);
+  font-weight: 600;
+}
+
+.googleButton {
+  --button-bg: var(--auth-google-btn-bg);
+  --button-hover: var(--auth-google-btn-hover-bg);
+  --button-color: var(--auth-google-btn-text);
+  --button-bd: 1px solid var(--auth-google-btn-border);
+  background-color: var(--auth-google-btn-bg);
+  color: var(--auth-google-btn-text);
+  border: 1px solid var(--auth-google-btn-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
+  font-weight: 600;
+}
+
+.googleButton:hover:not(:disabled) {
+  background-color: var(--auth-google-btn-hover-bg);
+  color: var(--auth-google-btn-text);
+}
+
+.googleButton:active:not(:disabled) {
+  background-color: var(--auth-google-btn-active-bg);
+}
+
+.googleButton:focus-visible {
+  outline: 3px solid var(--auth-input-focus-border);
+  outline-offset: 2px;
+}
+
+.statusText {
+  color: var(--auth-text-secondary);
+}
+
+.errorAlert {
+  background-color: var(--auth-error-bg);
+  border: 1px solid var(--auth-error-border);
+  color: var(--auth-error-text);
+}
+
+.errorAlertTitle {
+  color: var(--auth-error-title);
+  font-weight: 650;
+}
+
+.errorAlertBody {
+  color: var(--auth-error-text);
+}
+
+.errorAlertIcon {
+  color: var(--auth-error-title);
+}
+
+.errorAlertClose {
+  color: var(--auth-error-title);
+}
+
+.errorAlertClose:hover {
+  background-color: rgba(248, 113, 113, 0.2);
+}
+
+.warnAlert {
+  background-color: var(--auth-warn-bg);
+  border: 1px solid var(--auth-warn-border);
+  color: var(--auth-warn-text);
+}
+
+.warnAlertTitle {
+  color: var(--auth-warn-title);
+  font-weight: 650;
+}
+
+.warnAlertBody {
+  color: var(--auth-warn-text);
+}
+
+.warnAlertIcon {
+  color: var(--auth-warn-title);
+}
+
+.warnRetryButton {
+  --button-bg: rgba(251, 146, 60, 0.22);
+  --button-hover: rgba(251, 146, 60, 0.34);
+  --button-color: var(--auth-warn-text);
+  background-color: rgba(251, 146, 60, 0.22);
+  border: 1px solid var(--auth-warn-border);
+  color: var(--auth-warn-text);
+}
+
+.footerPanel {
+  background-color: var(--auth-footer-bg);
+  border: 1px solid var(--auth-footer-border);
+}
+
+.footerText {
+  color: var(--auth-text-secondary);
+  font-weight: 500;
+}

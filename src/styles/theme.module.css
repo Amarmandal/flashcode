@@ -3,6 +3,11 @@
 .input:focus-within { border-color: var(--mantine-color-brand-5); }
 .input::placeholder { color: var(--text-tertiary); }
 .label { color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; }
+.description { color: var(--text-secondary); }
+.selectDropdown { background: var(--surface-bg); border: 1px solid var(--border-color); color: var(--text-primary); box-shadow: var(--elevation); }
+.selectOption { color: var(--text-primary); border-radius: var(--mantine-radius-sm); transition: background-color 120ms ease, color 120ms ease; }
+.selectOption:hover, .selectOption[data-combobox-active] { background: var(--surface-muted); color: var(--text-primary); }
+.selectOption[data-checked="true"], .selectOption[data-combobox-selected] { background: var(--secondary-btn-bg); color: var(--secondary-btn-text); font-weight: 600; }
 .title { color: var(--text-primary); letter-spacing: -.035em; }
 .button { font-weight: 600; transition: background-color 150ms ease, box-shadow 150ms ease; }
 .button:disabled, .button[data-disabled] { opacity: .5; }
