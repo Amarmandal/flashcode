@@ -15,11 +15,89 @@ use tokio::sync::Mutex;
 
 const SERVICE_NAME: &str = "flashcode_desktop";
 const CREDENTIALS_KEY: &str = "google_credentials";
+const CLIENT_SECRET_KEY: &str = "google_oauth_client_secret";
 const LOGOUT_PENDING_FILE: &str = "logout_pending.marker";
 
 /// Margin in seconds before expiry at which we consider the token expired.
 /// This reduces the chance of a token expiring mid-request.
 const EXPIRY_MARGIN_SECS: i64 = 60;
+
+fn is_valid_client_secret(val: &str) -> bool {
+    let trimmed = val.trim().trim_matches('"').trim_matches('\'').trim();
+    !trimmed.is_empty()
+        && trimmed != "YOUR_CLIENT_SECRET"
+        && !trimmed.starts_with("YOUR_")
+}
+
+fn parse_env_file_for_secret(path: &std::path::Path) -> Option<String> {
+    let content = std::fs::read_to_string(path).ok()?;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if let Some((key, value)) = trimmed.split_once('=') {
+            if key.trim() == "GOOGLE_OAUTH_CLIENT_SECRET" {
+                let cleaned = value.trim().trim_matches('"').trim_matches('\'').trim();
+                if is_valid_client_secret(cleaned) {
+                    return Some(cleaned.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Resolves the Google Desktop OAuth client_secret purely within the native Rust layer.
+/// Never exposed to the frontend webview or IPC.
+///
+/// Lookup priority:
+/// 1. Runtime process environment variable `GOOGLE_OAUTH_CLIENT_SECRET`
+/// 2. Local `.env.local` file (`../.env.local` or `.env.local` for dev convenience)
+///    When found via (1) or (2), the secret is also persisted into the OS Keychain
+///    (`flashcode_desktop` / `google_oauth_client_secret`).
+/// 3. OS Keychain entry (`flashcode_desktop` / `google_oauth_client_secret`)
+/// 4. Compile-time `GOOGLE_OAUTH_CLIENT_SECRET` embedded by `build.rs` during `pnpm tauri build`
+fn resolve_google_client_secret() -> Result<String, String> {
+    let from_env_or_file = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET")
+        .ok()
+        .map(|v| v.trim().trim_matches('"').trim_matches('\'').trim().to_string())
+        .filter(|v| is_valid_client_secret(v))
+        .or_else(|| parse_env_file_for_secret(std::path::Path::new("../.env.local")))
+        .or_else(|| parse_env_file_for_secret(std::path::Path::new(".env.local")))
+        .or_else(|| parse_env_file_for_secret(std::path::Path::new("src-tauri/.env.local")));
+
+    if let Some(secret) = from_env_or_file {
+        if let Ok(entry) = keyring::Entry::new(SERVICE_NAME, CLIENT_SECRET_KEY) {
+            let _ = entry.set_password(&secret);
+        }
+        return Ok(secret);
+    }
+
+    if let Ok(entry) = keyring::Entry::new(SERVICE_NAME, CLIENT_SECRET_KEY) {
+        if let Ok(stored) = entry.get_password() {
+            let cleaned = stored.trim().to_string();
+            if is_valid_client_secret(&cleaned) {
+                return Ok(cleaned);
+            }
+        }
+    }
+
+    if let Some(compiled) = option_env!("GOOGLE_OAUTH_CLIENT_SECRET") {
+        let cleaned = compiled.trim().to_string();
+        if is_valid_client_secret(&cleaned) {
+            if let Ok(entry) = keyring::Entry::new(SERVICE_NAME, CLIENT_SECRET_KEY) {
+                let _ = entry.set_password(&cleaned);
+            }
+            return Ok(cleaned);
+        }
+    }
+
+    eprintln!(
+        "[OAuth] Missing GOOGLE_OAUTH_CLIENT_SECRET. Set GOOGLE_OAUTH_CLIENT_SECRET in .env.local (never with a VITE_ prefix) or in the build environment."
+    );
+    Err("Google OAuth client secret is not configured in the native backend.".to_string())
+}
 
 /// Global mutex that serializes all credential mutations: login writes, logout
 /// deletions, and token refreshes. This prevents an in-flight refresh from
@@ -408,10 +486,12 @@ pub async fn force_refresh_access_token(stale_token: &str) -> Result<String, Str
 /// Caller MUST hold credential_mutex.
 async fn refresh_and_save(mut creds: GoogleCredentials) -> Result<String, String> {
     let expected_user_id = creds.user_id.clone();
+    let client_secret = resolve_google_client_secret()?;
 
     let http_client = reqwest::Client::new();
     let mut params = HashMap::new();
     params.insert("client_id", creds.client_id.as_str());
+    params.insert("client_secret", client_secret.as_str());
     params.insert("grant_type", "refresh_token");
     params.insert("refresh_token", creds.refresh_token.as_str());
 
@@ -427,14 +507,29 @@ async fn refresh_and_save(mut creds: GoogleCredentials) -> Result<String, String
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
 
-        // Check for revoked/expired refresh token
         if let Ok(err_resp) = serde_json::from_str::<GoogleErrorResponse>(&body) {
-            if err_resp.error.as_deref() == Some("invalid_grant") {
+            let code = err_resp.error.as_deref().unwrap_or("unknown_error");
+            let desc = err_resp
+                .error_description
+                .as_deref()
+                .unwrap_or("no description");
+            eprintln!(
+                "[OAuth] Token refresh failed (HTTP {}): error={}, description={}",
+                status.as_u16(),
+                code,
+                desc
+            );
+            if code == "invalid_grant" {
                 return Err(format!(
                     "Google credentials have been revoked or expired. Please sign in with Google again. ({})",
-                    err_resp.error_description.unwrap_or_default()
+                    desc
                 ));
             }
+        } else {
+            eprintln!(
+                "[OAuth] Token refresh failed (HTTP {}) with non-JSON error body.",
+                status.as_u16()
+            );
         }
 
         return Err(format!(
@@ -526,6 +621,9 @@ pub async fn perform_google_oauth(
         ));
     }
 
+    // Resolve client_secret in the native layer before opening browser
+    let client_secret = resolve_google_client_secret()?;
+
     // 1. Generate PKCE code verifier and code challenge
     let mut random_bytes = [0u8; 48];
     rand::thread_rng().fill_bytes(&mut random_bytes);
@@ -583,14 +681,22 @@ pub async fn perform_google_oauth(
         let request_str = String::from_utf8_lossy(&buffer[..bytes_read]);
 
         // Parse query parameter `code`
-        let code = extract_query_param(&request_str, "code");
+        let code = extract_query_param(&request_str, "code").filter(|value| !value.is_empty());
 
-        // Send friendly HTML response to browser
-        let html_body = "<!DOCTYPE html><html><head><title>Flashcode Auth</title></head>\
-        <body style='font-family: sans-serif; text-align: center; padding: 40px;'>\
-        <h2 style='color: #2b8a3e;'>Authentication successful!</h2>\
-        <p>You may now close this browser window and return to Flashcode.</p>\
-        </body></html>";
+        // Send accurate HTML response to browser (token exchange happens next in Flashcode)
+        let html_body = if code.is_some() {
+            "<!DOCTYPE html><html><head><title>Flashcode Auth</title></head>\
+            <body style='font-family: sans-serif; text-align: center; padding: 40px;'>\
+            <h2 style='color: #1971c2;'>Authorization received</h2>\
+            <p>Return to Flashcode to finish signing in. You may now close this browser window.</p>\
+            </body></html>"
+        } else {
+            "<!DOCTYPE html><html><head><title>Flashcode Auth</title></head>\
+            <body style='font-family: sans-serif; text-align: center; padding: 40px;'>\
+            <h2 style='color: #c92a2a;'>Authorization was not completed</h2>\
+            <p>No authorization code was received. Please return to Flashcode and try again.</p>\
+            </body></html>"
+        };
 
         let response = format!(
             "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -601,16 +707,16 @@ pub async fn perform_google_oauth(
         let _ = socket.write_all(response.as_bytes()).await;
         let _ = socket.flush().await;
 
-        code.filter(|value| !value.is_empty())
-            .ok_or_else(|| "No authorization code found in redirect request".to_string())
+        code.ok_or_else(|| "No authorization code found in redirect request".to_string())
     })
     .await
     .map_err(|_| "Authentication timed out. Please try again.".to_string())??;
 
-    // 6. Exchange authorization code for tokens
+    // 6. Exchange authorization code for tokens (including client_secret and PKCE code_verifier)
     let http_client = reqwest::Client::new();
     let mut token_params = HashMap::new();
     token_params.insert("client_id", client_id);
+    token_params.insert("client_secret", client_secret.as_str());
     token_params.insert("code", &auth_code);
     token_params.insert("code_verifier", &code_verifier);
     token_params.insert("grant_type", "authorization_code");
@@ -623,9 +729,31 @@ pub async fn perform_google_oauth(
         .await
         .map_err(|e| format!("Token exchange request failed: {}", e))?;
 
-    if !token_res.status().is_success() {
+    let token_status = token_res.status();
+    if !token_status.is_success() {
         let err_body = token_res.text().await.unwrap_or_default();
-        return Err(format!("Token exchange failed: {}", err_body));
+        if let Ok(err_resp) = serde_json::from_str::<GoogleErrorResponse>(&err_body) {
+            let code = err_resp.error.as_deref().unwrap_or("unknown_error");
+            let desc = err_resp
+                .error_description
+                .as_deref()
+                .unwrap_or("no description");
+            eprintln!(
+                "[OAuth] Token exchange failed (HTTP {}): error={}, description={}",
+                token_status.as_u16(),
+                code,
+                desc
+            );
+            return Err(format!("Token exchange failed ({}): {}", code, desc));
+        }
+        eprintln!(
+            "[OAuth] Token exchange failed (HTTP {}) with non-JSON error body.",
+            token_status.as_u16()
+        );
+        return Err(format!(
+            "Token exchange failed (HTTP {}).",
+            token_status.as_u16()
+        ));
     }
 
     let token_data: TokenResponse = token_res
