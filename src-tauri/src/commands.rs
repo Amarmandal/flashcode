@@ -965,7 +965,7 @@ pub async fn start_google_login(
     // Switch database to the authenticated user. Must succeed or login fails.
     let user_id = result.id.clone();
     let state_clone = state.inner().clone();
-    tokio::task::spawn_blocking(move || {
+    let switch_res = tokio::task::spawn_blocking(move || {
         let mut db_guard = state_clone.db.lock().map_err(|e| {
             ErrorResponse::new(format!("Failed to acquire database lock: {}", e))
         })?;
@@ -975,8 +975,15 @@ pub async fn start_google_login(
         Ok::<(), ErrorResponse>(())
     })
     .await
-    .map_err(|e| ErrorResponse::new(format!("Database switch failed: {}", e)))??
-    ;
+    .map_err(|e| ErrorResponse::new(format!("Database switch failed: {}", e)))?;
+
+    if let Err(err) = switch_res {
+        let _ = crate::oauth::mark_logout_pending();
+        let _ = crate::oauth::delete_credentials().await;
+        return Err(err);
+    }
+
+    crate::oauth::activate_session().map_err(|e| ErrorResponse::new(e))?;
 
     Ok(SuccessResponse::new("Authenticated successfully with Google".into(), result))
 }
@@ -985,14 +992,36 @@ pub async fn start_google_login(
 pub async fn restore_auth_session(
     state: State<'_, AppState>,
 ) -> Result<SuccessResponse<crate::oauth::NativeSessionInfo>, ErrorResponse> {
-    let session_info = crate::oauth::restore_session()
-        .await
-        .map_err(|e| ErrorResponse::new(e))?
-        .ok_or_else(|| ErrorResponse::new("No active session found.".into()))?;
+    let session_opt = match crate::oauth::restore_session().await {
+        Ok(opt) => opt,
+        Err(e) => {
+            // Ensure database remains closed when restoration or pending logout cleanup fails
+            let state_clone = state.inner().clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut db_guard) = state_clone.db.lock() {
+                    let _ = db_guard.close_user();
+                }
+            })
+            .await;
+            return Err(ErrorResponse::new(e));
+        }
+    };
 
-    // Verify user_id matches credential record (restore_session already does this
-    // since it reads from the same credential record).
-    // Now switch the database to this user.
+    let session_info = match session_opt {
+        Some(info) => info,
+        None => {
+            let state_clone = state.inner().clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut db_guard) = state_clone.db.lock() {
+                    let _ = db_guard.close_user();
+                }
+            })
+            .await;
+            return Err(ErrorResponse::new("No active session found.".into()));
+        }
+    };
+
+    // Switch the database to the restored user.
     let user_id = session_info.user_id.clone();
     let state_clone = state.inner().clone();
     tokio::task::spawn_blocking(move || {
@@ -1005,8 +1034,9 @@ pub async fn restore_auth_session(
         Ok::<(), ErrorResponse>(())
     })
     .await
-    .map_err(|e| ErrorResponse::new(format!("Database restoration failed: {}", e)))??
-    ;
+    .map_err(|e| ErrorResponse::new(format!("Database restoration failed: {}", e)))??;
+
+    crate::oauth::activate_session().map_err(|e| ErrorResponse::new(e))?;
 
     Ok(SuccessResponse::new("Session restored successfully".into(), session_info))
 }
@@ -1044,26 +1074,50 @@ pub async fn get_secure_access_token() -> Result<SuccessResponse<Option<String>>
 pub async fn clear_secure_tokens(
     state: State<'_, AppState>,
 ) -> Result<SuccessResponse<()>, ErrorResponse> {
-    crate::oauth::delete_credentials()
-        .await
-        .map_err(|e| ErrorResponse::new(e))?;
+    // 1. Immediately invalidate active session in memory and persist logout-pending marker
+    let marker_res = crate::oauth::mark_logout_pending();
 
-    // Close the user database and revert to default
+    // 2. Attempt deleting credentials from OS Keychain (coordinates via CREDENTIAL_MUTEX)
+    let cred_res = crate::oauth::delete_credentials().await;
+
+    // 3. Always attempt closing the active user database regardless of credential deletion result
     let state_clone = state.inner().clone();
-    tokio::task::spawn_blocking(move || {
+    let db_res: Result<(), String> = match tokio::task::spawn_blocking(move || {
         let mut db_guard = state_clone.db.lock().map_err(|e| {
-            ErrorResponse::new(format!("Failed to acquire database lock: {}", e))
+            format!("Failed to acquire database lock: {}", e)
         })?;
         db_guard.close_user().map_err(|e| {
-            ErrorResponse::new(format!("Failed to close user database: {}", e))
-        })?;
-        Ok::<(), ErrorResponse>(())
+            format!("Failed to close user database: {}", e)
+        })
     })
     .await
-    .map_err(|e| ErrorResponse::new(format!("Database close failed: {}", e)))??
-    ;
+    {
+        Ok(inner) => inner,
+        Err(join_err) => Err(format!("Database close task failed: {}", join_err)),
+    };
 
-    Ok(SuccessResponse::new("Cleared secure tokens and closed user database".into(), ()))
+    // 4. Only clear logout-pending marker and report success if all operations succeeded
+    if marker_res.is_ok() && cred_res.is_ok() && db_res.is_ok() {
+        if let Err(e) = crate::oauth::clear_logout_pending() {
+            return Err(ErrorResponse::new(e));
+        }
+        Ok(SuccessResponse::new(
+            "Cleared secure tokens and closed user database".into(),
+            (),
+        ))
+    } else {
+        let mut errors = Vec::new();
+        if let Err(e) = marker_res {
+            errors.push(e);
+        }
+        if let Err(e) = cred_res {
+            errors.push(e);
+        }
+        if let Err(e) = db_res {
+            errors.push(e);
+        }
+        Err(ErrorResponse::new(errors.join("; ")))
+    }
 }
 
 #[tauri::command]

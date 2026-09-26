@@ -220,14 +220,28 @@ export const authService = {
   },
 
   /**
-   * Clears session, resets active user database, and wipes keychain credentials
+   * Clears cached profile metadata from localStorage without invoking native logout.
    */
-  async clearSession(): Promise<void> {
+  clearCachedSession(): void {
     try {
       localStorage.removeItem(STORAGE_SESSION_KEY);
+    } catch (err) {
+      console.error('Failed to clear cached session metadata:', err);
+    }
+  },
+
+  /**
+   * Clears session, closes active user database, and wipes keychain credentials.
+   * Throws a generic error if native cleanup fails so callers can distinguish
+   * completed vs. failed sign-out cleanup.
+   */
+  async clearSession(): Promise<void> {
+    this.clearCachedSession();
+    try {
       await invoke('clear_secure_tokens');
     } catch (err) {
-      console.error('Failed to clear session and tokens:', err);
+      console.error('Failed to complete native sign-out cleanup:', err);
+      throw new Error('Sign-out could not be completed. Please retry.');
     }
   },
 };

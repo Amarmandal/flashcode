@@ -94,13 +94,21 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   };
 
   const handleLogout = async () => {
-    await logout();
     onClose();
-    notifications.show({
-      title: 'Signed Out',
-      message: 'You have been signed out of Flashcode.',
-      color: 'blue',
-    });
+    try {
+      await logout();
+      notifications.show({
+        title: 'Signed Out',
+        message: 'You have been signed out of Flashcode.',
+        color: 'blue',
+      });
+    } catch {
+      notifications.show({
+        title: 'Sign-Out Incomplete',
+        message: 'Sign-out could not be completed. Please retry.',
+        color: 'red',
+      });
+    }
   };
 
   const formatBytes = (bytes: number) => {

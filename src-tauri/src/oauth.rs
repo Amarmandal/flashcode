@@ -4,6 +4,8 @@ use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
@@ -13,6 +15,7 @@ use tokio::sync::Mutex;
 
 const SERVICE_NAME: &str = "flashcode_desktop";
 const CREDENTIALS_KEY: &str = "google_credentials";
+const LOGOUT_PENDING_FILE: &str = "logout_pending.marker";
 
 /// Margin in seconds before expiry at which we consider the token expired.
 /// This reduces the chance of a token expiring mid-request.
@@ -23,8 +26,73 @@ const EXPIRY_MARGIN_SECS: i64 = 60;
 /// saving stale credentials after a logout or account switch.
 static CREDENTIAL_MUTEX: std::sync::OnceLock<Mutex<()>> = std::sync::OnceLock::new();
 
+/// Application data directory used to persist the logout-pending marker.
+static APP_DATA_DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
+/// Process-wide flag indicating the active session has been invalidated by logout.
+static SESSION_INVALIDATED: AtomicBool = AtomicBool::new(false);
+
 fn credential_mutex() -> &'static Mutex<()> {
     CREDENTIAL_MUTEX.get_or_init(|| Mutex::new(()))
+}
+
+pub fn set_app_data_dir(dir: PathBuf) {
+    if dir.join(LOGOUT_PENDING_FILE).exists() {
+        SESSION_INVALIDATED.store(true, Ordering::SeqCst);
+    }
+    let _ = APP_DATA_DIR.set(dir);
+}
+
+fn logout_marker_path() -> Result<PathBuf, String> {
+    APP_DATA_DIR
+        .get()
+        .map(|dir| dir.join(LOGOUT_PENDING_FILE))
+        .ok_or_else(|| "Application data directory not initialized".to_string())
+}
+
+/// Immediately invalidates the active session in memory and persists a logout-pending
+/// marker on disk before attempting credential deletion.
+pub fn mark_logout_pending() -> Result<(), String> {
+    SESSION_INVALIDATED.store(true, Ordering::SeqCst);
+    let path = logout_marker_path()?;
+    std::fs::write(&path, b"logout_pending")
+        .map_err(|e| format!("Failed to write logout marker: {}", e))
+}
+
+/// Clears the persistent logout-pending marker once cleanup succeeds.
+pub fn clear_logout_pending() -> Result<(), String> {
+    let path = logout_marker_path()?;
+    match std::fs::remove_file(&path) {
+        Ok(_) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(format!("Failed to remove logout marker: {}", e)),
+    }
+}
+
+/// Activates the native session after a fresh login and database switch succeed.
+pub fn activate_session() -> Result<(), String> {
+    clear_logout_pending()?;
+    SESSION_INVALIDATED.store(false, Ordering::SeqCst);
+    Ok(())
+}
+
+/// Returns true if the session has been invalidated in memory or has a pending logout marker on disk.
+pub fn is_logout_pending_or_invalidated() -> bool {
+    if SESSION_INVALIDATED.load(Ordering::SeqCst) {
+        return true;
+    }
+    if let Ok(path) = logout_marker_path() {
+        if path.exists() {
+            SESSION_INVALIDATED.store(true, Ordering::SeqCst);
+            return true;
+        }
+    }
+    false
+}
+
+/// Returns true if the persistent logout-pending marker file exists on disk.
+pub fn has_logout_pending_marker() -> bool {
+    logout_marker_path().map(|p| p.exists()).unwrap_or(false)
 }
 
 // ===== Credential Storage =====
@@ -132,8 +200,11 @@ pub fn load_credentials() -> Result<Option<GoogleCredentials>, String> {
 
 // ===== Session Management =====
 
-/// Check if the native session is valid (not expired).
+/// Check if the native session is valid (not expired and not invalidated by logout).
 pub fn is_session_valid(creds: &GoogleCredentials) -> bool {
+    if is_logout_pending_or_invalidated() {
+        return false;
+    }
     let now = chrono::Utc::now().timestamp();
     creds.session_expires_at > now && creds.session_authenticated_at > 0
 }
@@ -161,6 +232,20 @@ pub fn session_info_from_creds(creds: &GoogleCredentials) -> NativeSessionInfo {
 /// Acquires the credential mutex.
 pub async fn restore_session() -> Result<Option<NativeSessionInfo>, String> {
     let _guard = credential_mutex().lock().await;
+
+    // Prevent automatic restoration after a failed or interrupted logout.
+    if has_logout_pending_marker() {
+        SESSION_INVALIDATED.store(true, Ordering::SeqCst);
+        delete_credentials_inner()?;
+        cleanup_legacy_entries();
+        clear_logout_pending()?;
+        return Ok(None);
+    }
+
+    if SESSION_INVALIDATED.load(Ordering::SeqCst) {
+        return Ok(None);
+    }
+
     let creds = match load_credentials()? {
         Some(c) => c,
         None => return Ok(None),
@@ -226,8 +311,12 @@ pub async fn refresh_session() -> Result<NativeSessionInfo, String> {
 /// Acquires the credential mutex to prevent a concurrent refresh from
 /// saving stale credentials after this deletion completes.
 pub async fn delete_credentials() -> Result<(), String> {
+    SESSION_INVALIDATED.store(true, Ordering::SeqCst);
     let _guard = credential_mutex().lock().await;
-    delete_credentials_inner()
+    SESSION_INVALIDATED.store(true, Ordering::SeqCst);
+    let res = delete_credentials_inner();
+    cleanup_legacy_entries();
+    res
 }
 
 /// Inner deletion without locking — caller must hold the mutex.
@@ -367,6 +456,12 @@ async fn refresh_and_save(mut creds: GoogleCredentials) -> Result<String, String
         return Err("Token refresh returned an invalid expiry.".to_string());
     }
 
+    if is_logout_pending_or_invalidated() {
+        return Err(
+            "Session was invalidated during token refresh. Please sign in again.".to_string(),
+        );
+    }
+
     // Before saving, verify the stored credentials still belong to the same user.
     // A login or logout may have occurred during the (unlocked) network request...
     // but we hold the mutex, so this can't happen with our current design.
@@ -385,6 +480,12 @@ async fn refresh_and_save(mut creds: GoogleCredentials) -> Result<String, String
             // Do not overwrite their credentials.
             return Err(
                 "Account changed during token refresh. Please try again.".to_string(),
+            );
+        }
+        Some(ref stored) if !is_session_valid(stored) => {
+            return Err(
+                "Session expired or invalidated during token refresh. Please sign in again."
+                    .to_string(),
             );
         }
         Some(_) => {

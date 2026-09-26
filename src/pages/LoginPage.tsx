@@ -29,12 +29,22 @@ import { useAuth } from '../context/AuthContext';
 import { notifications } from '@mantine/notifications';
 
 export const LoginPage: React.FC = () => {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, logoutError, retryLogout } = useAuth();
   const [selectedDuration, setSelectedDuration] = useState<string>('90');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRetryingLogout, setIsRetryingLogout] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const durationDays = parseInt(selectedDuration, 10) || 90;
+
+  const handleRetryLogout = async () => {
+    setIsRetryingLogout(true);
+    try {
+      await retryLogout();
+    } finally {
+      setIsRetryingLogout(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setIsSubmitting(true);
@@ -100,6 +110,30 @@ export const LoginPage: React.FC = () => {
               </Text>
             </Stack>
           </Center>
+
+          {logoutError && (
+            <Alert
+              icon={<IconAlertCircle size={16} />}
+              title="Sign-Out Incomplete"
+              color="orange"
+              variant="light"
+            >
+              <Stack gap="xs">
+                <Text size="xs">{logoutError}</Text>
+                <Group justify="flex-start">
+                  <Button
+                    size="xs"
+                    color="orange"
+                    variant="light"
+                    loading={isRetryingLogout}
+                    onClick={handleRetryLogout}
+                  >
+                    Retry
+                  </Button>
+                </Group>
+              </Stack>
+            </Alert>
+          )}
 
           {errorMsg && (
             <Alert

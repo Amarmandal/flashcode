@@ -22,6 +22,8 @@ interface AuthContextType {
   isLoading: boolean;
   restoreError: string | null;
   retryRestore: () => Promise<void>;
+  logoutError: string | null;
+  retryLogout: () => Promise<void>;
   daysRemaining: number;
   isExpired: boolean;
   loginWithGoogle: (durationDays?: number) => Promise<void>;
@@ -36,6 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const sessionCheckIntervalRef = useRef<number | null>(null);
 
   const handleSessionExpired = useCallback(async () => {
@@ -46,8 +49,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       autoClose: 6000,
     });
     backupScheduler.stop();
-    await authService.clearSession();
     setSession(null);
+    try {
+      await authService.clearSession();
+      setLogoutError(null);
+    } catch {
+      setLogoutError('Sign-out could not be completed. Please retry.');
+    }
   }, []);
 
   // Restore trusted session from native state on mount
@@ -60,10 +68,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Valid session and database ready
         const restoredSession = authService.buildSessionFromNative(nativeSession);
         setSession(restoredSession);
+        setLogoutError(null);
         backupScheduler.start();
       } else {
         // Missing or expired session -> clear stale local state and show login
-        await authService.clearSession();
+        authService.clearCachedSession();
         setSession(null);
       }
     } catch (err: unknown) {
@@ -156,16 +165,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const newSession = authService.createSession(userProfile, googleUser.session);
       setSession(newSession);
       setRestoreError(null);
+      setLogoutError(null);
       backupScheduler.start();
     },
     []
   );
 
   const logout = useCallback(async () => {
+    // 1. Lock access immediately when logout starts
     backupScheduler.stop();
-    await authService.clearSession();
     setSession(null);
+
+    // 2. Attempt native cleanup (credentials + database)
+    try {
+      await authService.clearSession();
+      setLogoutError(null);
+    } catch {
+      const genericMsg = 'Sign-out could not be completed. Please retry.';
+      setLogoutError(genericMsg);
+      throw new Error(genericMsg);
+    }
   }, []);
+
+  const retryLogout = useCallback(async () => {
+    try {
+      await logout();
+      notifications.show({
+        title: 'Signed Out',
+        message: 'You have been signed out of Flashcode.',
+        color: 'blue',
+      });
+    } catch {
+      notifications.show({
+        title: 'Sign-Out Incomplete',
+        message: 'Sign-out could not be completed. Please retry.',
+        color: 'red',
+      });
+    }
+  }, [logout]);
 
   const updateSessionDuration = useCallback(async (days: number) => {
     const updated = await authService.updateSessionDuration(days);
@@ -190,6 +227,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         restoreError,
         retryRestore: initializeAuth,
+        logoutError,
+        retryLogout,
         daysRemaining,
         isExpired,
         loginWithGoogle,

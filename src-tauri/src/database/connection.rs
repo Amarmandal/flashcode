@@ -24,17 +24,16 @@ impl DatabaseConnection {
             fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
         }
 
-        let db_path = app_data_dir.join("flashcodes.db");
-        let conn = Connection::open(&db_path)?;
+        crate::oauth::set_app_data_dir(app_data_dir.clone());
 
-        let mut db = Self {
+        let conn = Connection::open_in_memory()?;
+
+        Ok(Self {
             conn,
             app_data_dir,
             current_user_id: None,
             recovery_failed: false,
-        };
-        db.initialize_db()?;
-        Ok(db)
+        })
     }
 
     pub fn get_connection(&self) -> &Connection {
@@ -90,16 +89,8 @@ impl DatabaseConnection {
     }
 
     pub fn close_user(&mut self) -> Result<(), Error> {
-        let default_path = self.app_data_dir.join("flashcodes.db");
         self.conn = Connection::open_in_memory()?;
-
-        let mut new_conn = Connection::open(&default_path)?;
-        new_conn.execute("PRAGMA foreign_keys = ON;", [])?;
-        let _ = migrations::runner().run(&mut new_conn);
-
-        self.conn = new_conn;
         self.current_user_id = None;
-        println!("Reverted to default database");
         Ok(())
     }
 
@@ -312,24 +303,6 @@ impl DatabaseConnection {
                         )))
                     }
                 }
-            }
-        }
-    }
-
-    fn initialize_db(&mut self) -> Result<(), Error> {
-        self.conn.execute("PRAGMA foreign_keys = ON;", [])?;
-
-        match migrations::runner().run(&mut self.conn) {
-            Ok(_) => {
-                println!("Successfully ran database migrations");
-                Ok(())
-            }
-            Err(e) => {
-                eprintln!("Error running database migrations: {}", e);
-                Err(Error::InvalidParameterName(format!(
-                    "Migration error: {}",
-                    e
-                )))
             }
         }
     }
