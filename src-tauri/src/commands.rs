@@ -830,6 +830,124 @@ pub async fn get_database_path(app: AppHandle) -> Result<SuccessResponse<String>
     })?
 }
 
+#[tauri::command]
+pub async fn read_database_backup_bytes(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<Vec<u8>>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        let bytes = db_guard.backup_to_bytes().map_err(|e| {
+            eprintln!("Online backup error: {:?}", e);
+            ErrorResponse::new(format!("Failed to take SQLite backup: {}", e))
+        })?;
+        Ok(SuccessResponse::new("Database backup bytes read successfully".into(), bytes))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Failed to read database backup".into())
+    })?
+}
+
+#[tauri::command]
+pub async fn import_database_backup_bytes(
+    state: State<'_, AppState>,
+    bytes: Vec<u8>,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        let safety_path = db_guard.restore_from_bytes(&bytes).map_err(|e| {
+            eprintln!("Restore error: {:?}", e);
+            ErrorResponse::new(format!("Failed to restore SQLite database: {}", e))
+        })?;
+        Ok(SuccessResponse::new(
+            "Database restored successfully".into(),
+            safety_path,
+        ))
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("Task join error: {:?}", e);
+        ErrorResponse::new("Import operation failed".into())
+    })?
+}
+
+#[tauri::command]
+pub async fn switch_user_database(
+    state: State<'_, AppState>,
+    user_id: String,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        db_guard.switch_user(&user_id).map_err(|e| {
+            eprintln!("Failed to switch user database: {:?}", e);
+            ErrorResponse::new(format!("Failed to switch user database: {}", e))
+        })?;
+        let path = db_guard.get_active_db_path().to_string_lossy().to_string();
+        Ok(SuccessResponse::new("Switched user database successfully".into(), path))
+    })
+    .await
+    .map_err(|e| ErrorResponse::new(format!("Task join error: {}", e)))?
+}
+
+#[tauri::command]
+pub async fn close_user_database(
+    state: State<'_, AppState>,
+) -> Result<SuccessResponse<String>, ErrorResponse> {
+    let state_clone = state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut db_guard = state_clone.db.lock().map_err(|e| {
+            eprintln!("Error locking database Mutex: {:?}", e);
+            ErrorResponse::new("Failed to acquire database lock".into())
+        })?;
+        db_guard.close_user().map_err(|e| {
+            eprintln!("Failed to close user database: {:?}", e);
+            ErrorResponse::new(format!("Failed to close user database: {}", e))
+        })?;
+        Ok(SuccessResponse::new("Closed user database successfully".into(), "default".into()))
+    })
+    .await
+    .map_err(|e| ErrorResponse::new(format!("Task join error: {}", e)))?
+}
+
+#[tauri::command]
+pub async fn start_google_login(
+    app: AppHandle,
+    client_id: String,
+) -> Result<SuccessResponse<crate::oauth::OAuthResult>, ErrorResponse> {
+    crate::oauth::perform_google_oauth(&app, &client_id)
+        .await
+        .map(|res| SuccessResponse::new("Authenticated successfully with Google".into(), res))
+        .map_err(|e| ErrorResponse::new(e))
+}
+
+#[tauri::command]
+pub async fn get_secure_access_token() -> Result<SuccessResponse<Option<String>>, ErrorResponse> {
+    crate::oauth::get_token("google_access_token")
+        .map(|tok| SuccessResponse::new("Retrieved access token from keychain".into(), tok))
+        .map_err(|e| ErrorResponse::new(e))
+}
+
+#[tauri::command]
+pub async fn clear_secure_tokens() -> Result<SuccessResponse<()>, ErrorResponse> {
+    let _ = crate::oauth::delete_token("google_access_token");
+    let _ = crate::oauth::delete_token("google_refresh_token");
+    Ok(SuccessResponse::new("Cleared secure tokens from keychain".into(), ()))
+}
+
+
 // ===== Quiz Commands =====
 
 #[derive(Debug, Serialize, Deserialize)]
