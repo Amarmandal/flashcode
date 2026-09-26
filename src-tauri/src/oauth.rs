@@ -144,7 +144,8 @@ pub async fn perform_google_oauth(
         let _ = socket.write_all(response.as_bytes()).await;
         let _ = socket.flush().await;
 
-        code.ok_or_else(|| "No authorization code found in redirect request".to_string())
+        code.filter(|value| !value.is_empty())
+            .ok_or_else(|| "No authorization code found in redirect request".to_string())
     })
     .await
     .map_err(|_| "Authentication timed out. Please try again.".to_string())??;
@@ -225,16 +226,10 @@ fn urlencoding(input: &str) -> String {
 
 fn extract_query_param(request: &str, param_name: &str) -> Option<String> {
     let first_line = request.lines().next()?;
-    let path = first_line.split_whitespace().nth(1)?;
-    let query_str = path.split('?').nth(1)?;
+    let request_target = first_line.split_whitespace().nth(1)?;
+    let (_, query) = request_target.split_once('?')?;
 
-    for pair in query_str.split('&') {
-        let mut parts = pair.split('=');
-        if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
-            if key == param_name {
-                return Some(value.to_string());
-            }
-        }
-    }
-    None
+    url::form_urlencoded::parse(query.as_bytes())
+        .find(|(key, _)| key == param_name)
+        .map(|(_, value)| value.into_owned())
 }

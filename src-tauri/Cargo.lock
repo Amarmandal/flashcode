@@ -1159,6 +1159,7 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-updater",
  "tokio",
+ "url",
  "v_htmlescape",
 ]
 
