@@ -86,7 +86,7 @@ In Settings → Secrets and variables → Actions, configure:
 
 | Type | Name | Value |
 | --- | --- | --- |
-| Variable | `VITE_GOOGLE_OAUTH_CLIENT_ID` | Google Desktop app client ID |
+| Secret | `VITE_GOOGLE_OAUTH_CLIENT_ID` | Google Desktop app client ID |
 | Secret | `GOOGLE_OAUTH_CLIENT_SECRET` | Matching Desktop app client secret |
 
 

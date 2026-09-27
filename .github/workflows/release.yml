@@ -80,11 +80,11 @@ jobs:
       - name: Validate Google OAuth build configuration
         shell: bash
         env:
-          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.VITE_GOOGLE_OAUTH_CLIENT_ID }}
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.VITE_GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         run: |
           if [[ -z "$VITE_GOOGLE_OAUTH_CLIENT_ID" || "$VITE_GOOGLE_OAUTH_CLIENT_ID" == YOUR_* || "$VITE_GOOGLE_OAUTH_CLIENT_ID" != *.apps.googleusercontent.com ]]; then
-            echo "::error::Set the repository variable VITE_GOOGLE_OAUTH_CLIENT_ID to your Google Desktop app client ID."
+            echo "::error::Set the repository secret VITE_GOOGLE_OAUTH_CLIENT_ID to your Google Desktop app client ID."
             exit 1
           fi
           if [[ -z "$GOOGLE_OAUTH_CLIENT_SECRET" || "$GOOGLE_OAUTH_CLIENT_SECRET" == YOUR_* ]]; then
@@ -97,7 +97,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Ad-hoc signing needs no Apple certificate or notarization credentials.
           APPLE_SIGNING_IDENTITY: ${{ matrix.platform == 'macos-latest' && '-' || '' }}
-          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.VITE_GOOGLE_OAUTH_CLIENT_ID }}
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.VITE_GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
