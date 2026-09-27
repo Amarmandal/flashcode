@@ -92,6 +92,16 @@ jobs:
             exit 1
           fi
 
+      - name: Validate updater signing configuration
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$TAURI_SIGNING_PRIVATE_KEY" ]]; then
+            echo "::error::Set TAURI_SIGNING_PRIVATE_KEY to the updater private key matching plugins.updater.pubkey in src-tauri/tauri.conf.json. This is separate from Apple code signing."
+            exit 1
+          fi
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -148,17 +158,18 @@ jobs:
             const fs = require('fs');
 
             // Get assets from the release
-            const { data: assets } = await github.rest.repos.listReleaseAssets({
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: process.env.release_id
+              release_id: Number(process.env.release_id)
             });
+            console.log('Release assets:', assets.map(asset => asset.name));
 
             // Find the latest.json file
             const latestJsonAsset = assets.find(asset => asset.name === 'latest.json');
             
             if (!latestJsonAsset) {
-              throw new Error('latest.json not found in release assets');
+              throw new Error(`latest.json not found. Ensure createUpdaterArtifacts is enabled and updater signing succeeds. Available assets: ${assets.map(asset => asset.name).join(', ') || '(none)'}`);
             }
 
             // Download the latest.json content
@@ -172,7 +183,16 @@ jobs:
             });
 
             // Convert the response to string and write to releases.json
-            const latestJsonContent = new TextDecoder().decode(new Uint8Array(latestJsonResponse.data));
+            const latestJsonContent = Buffer.from(latestJsonResponse.data).toString('utf8');
+            const manifest = JSON.parse(latestJsonContent);
+            if (!manifest.version || !manifest.platforms || Object.keys(manifest.platforms).length === 0) {
+              throw new Error('latest.json is missing its version or platform entries');
+            }
+            for (const [platform, entry] of Object.entries(manifest.platforms)) {
+              if (!entry.url || !entry.signature) {
+                throw new Error(`latest.json is missing the update URL or signature for ${platform}`);
+              }
+            }
             fs.writeFileSync('releases.json', latestJsonContent);
             
             console.log('Successfully copied latest.json to releases.json');

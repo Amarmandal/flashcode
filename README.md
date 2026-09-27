@@ -88,9 +88,18 @@ In Settings → Secrets and variables → Actions, configure:
 | --- | --- | --- |
 | Secret | `VITE_GOOGLE_OAUTH_CLIENT_ID` | Google Desktop app client ID |
 | Secret | `GOOGLE_OAUTH_CLIENT_SECRET` | Matching Desktop app client secret |
+| Secret | `TAURI_SIGNING_PRIVATE_KEY` | Updater private key contents matching the existing `plugins.updater.pubkey` in `src-tauri/tauri.conf.json` |
+| Secret (if encrypted) | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password for the updater private key; leave unset for an unencrypted key |
 
 
 The workflow passes the Google values to the frontend/native build on every OS.
+Updater artifacts are enabled, so Tauri signs the update bundles and tauri-action
+uploads `latest.json` to the release. The `update-json` job validates that manifest
+and copies it to `releases.json` on `gh-pages`, the app's existing update endpoint.
+Updater signing is independent of Apple signing and requires no Apple membership.
+Keep the original updater key pair: replacing it prevents existing installations
+from trusting new updates. See [Tauri's updater guide](https://v2.tauri.app/plugin/updater/).
+
 Users of the release do not need an `.env` file. Configure the Google consent
 screen for your intended audience before public distribution, and enable the
 Google Drive API for cloud backup.
