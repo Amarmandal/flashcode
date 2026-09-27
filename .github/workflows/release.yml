@@ -77,37 +77,28 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Import Apple Developer Certificate
-        if: matrix.platform == 'macos-latest'
+      - name: Validate Google OAuth build configuration
+        shell: bash
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.VITE_GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         run: |
-          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security set-keychain-settings -t 3600 -u build.keychain
-          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-          security find-identity -v -p codesigning build.keychain
-
-      - name: Verify certificate
-        if: matrix.platform == 'macos-latest'
-        run: |
-          EXPECTED_IDENTITY="Apple Development: Amar Mandal (9882Y6QT8F)"
-          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "$EXPECTED_IDENTITY")
-          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
-          echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
-          echo "Certificate imported."
+          if [[ -z "$VITE_GOOGLE_OAUTH_CLIENT_ID" || "$VITE_GOOGLE_OAUTH_CLIENT_ID" == YOUR_* || "$VITE_GOOGLE_OAUTH_CLIENT_ID" != *.apps.googleusercontent.com ]]; then
+            echo "::error::Set the repository variable VITE_GOOGLE_OAUTH_CLIENT_ID to your Google Desktop app client ID."
+            exit 1
+          fi
+          if [[ -z "$GOOGLE_OAUTH_CLIENT_SECRET" || "$GOOGLE_OAUTH_CLIENT_SECRET" == YOUR_* ]]; then
+            echo "::error::Set the repository secret GOOGLE_OAUTH_CLIENT_SECRET for the same Google Desktop app client."
+            exit 1
+          fi
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ env.CERT_ID }}
+          # Ad-hoc signing needs no Apple certificate or notarization credentials.
+          APPLE_SIGNING_IDENTITY: ${{ matrix.platform == 'macos-latest' && '-' || '' }}
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.VITE_GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:

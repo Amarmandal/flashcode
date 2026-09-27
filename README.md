@@ -72,6 +72,51 @@ The Google sign-in button uses this app configuration to open the native browser
 OAuth flow. End users do not need a Google Cloud project or an OAuth client ID.
 An unconfigured build cannot complete Google sign-in.
 
+Set `GOOGLE_OAUTH_CLIENT_SECRET` from the same **Desktop app** OAuth registration
+in `.env.local` for development. Release builds embed it in the native Rust binary
+via `src-tauri/build.rs`. It is extractable from the distributed app; storing it
+in Rust or the OS Keychain does not make a shared desktop credential confidential.
+Never use a confidential Web application client secret for this flow. User access
+and refresh tokens are obtained at sign-in and stored in each user's OS credential
+store; they must not be supplied to CI.
+
+### GitHub release configuration
+
+In Settings → Secrets and variables → Actions, configure:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| Variable | `VITE_GOOGLE_OAUTH_CLIENT_ID` | Google Desktop app client ID |
+| Secret | `GOOGLE_OAUTH_CLIENT_SECRET` | Matching Desktop app client secret |
+
+
+The workflow passes the Google values to the frontend/native build on every OS.
+Users of the release do not need an `.env` file. Configure the Google consent
+screen for your intended audience before public distribution, and enable the
+Google Drive API for cloud backup.
+
+macOS releases use **ad-hoc signing** (`APPLE_SIGNING_IDENTITY="-"`). No Apple
+Developer membership, certificate, keychain password, or notarization credentials
+are required. Existing Apple secrets in GitHub are unused by this workflow and
+can remain there. These builds are not notarized and do not have an
+Apple-verified developer identity.
+
+After downloading and installing Flashcode, macOS may block the first launch.
+If you trust the download, try opening it, then go to **System Settings → Privacy
+& Security → Open Anyway** and confirm. Managed Macs may restrict this option.
+See [Apple's opening instructions](https://support.apple.com/en-us/102445) and
+[Tauri's ad-hoc signing guide](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing).
+For verified distribution in the future, use a Developer ID Application
+certificate and notarization.
+
+See [Google's desktop OAuth guide](https://developers.google.com/identity/protocols/oauth2/native-app)
+for the sign-in configuration.
+
+Sanitized build errors and certificate identity names can be shared for debugging.
+Do not share `.env.local`, `.p12` contents, passwords, tokens, or raw verbose build
+logs without reviewing/redacting them. GitHub secret masking protects many log
+occurrences, but does not make embedded desktop credentials confidential.
+
 ### Recommended IDE Setup
 *   [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
