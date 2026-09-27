@@ -5,6 +5,7 @@ import { save, open } from '@tauri-apps/plugin-dialog';
 import { notifications } from '@mantine/notifications';
 import { useState, useEffect } from 'react';
 import { SuccessApiResponse } from '../../types/successApiResponse';
+import { errorMessage } from '../../services/errorMessage';
 
 export function BackupRestore() {
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
@@ -73,7 +74,7 @@ export function BackupRestore() {
       console.error('Export error:', error);
       notifications.show({
         title: 'Export Failed',
-        message: 'An error occurred while exporting the backup',
+        message: errorMessage(error, 'An error occurred while exporting the backup'),
         color: 'red',
       });
     } finally {
@@ -136,7 +137,7 @@ export function BackupRestore() {
       console.error('Import error:', error);
       notifications.show({
         title: 'Import Failed',
-        message: 'An error occurred while importing the backup',
+        message: errorMessage(error, 'An error occurred while importing the backup'),
         color: 'red',
       });
     } finally {

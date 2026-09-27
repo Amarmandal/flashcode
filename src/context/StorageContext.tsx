@@ -5,6 +5,7 @@ import { storageService } from '../services/storageService';
 import { googleDriveService } from '../services/googleDriveService';
 import { authService } from '../services/authService';
 import { useAuth } from './AuthContext';
+import { errorMessage } from '../services/errorMessage';
 
 interface StorageContextType {
   backupConfig: BackupConfig;
@@ -66,7 +67,7 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
       return true;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to backup database';
+      const msg = errorMessage(err, 'Failed to backup database');
       notifications.show({
         title: 'Backup Failed',
         message: msg,
@@ -93,7 +94,7 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
         }, 1200);
         return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Failed to restore database';
+        const msg = errorMessage(err, 'Failed to restore database');
         notifications.show({
           title: 'Restore Failed',
           message: msg,

@@ -6,6 +6,179 @@ use tauri::{AppHandle, Manager};
 
 embed_migrations!("migrations");
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn legacy_database(crlf: bool) -> Connection {
+        let mut conn = Connection::open_in_memory().unwrap();
+        let legacy: Vec<_> = migrations::runner()
+            .get_migrations()
+            .iter()
+            .map(|m| {
+                let sql = m.sql().unwrap().replace("\r\n", "\n");
+                let sql = if crlf { sql.replace('\n', "\r\n") } else { sql };
+                refinery::Migration::unapplied(&format!("V{}__{}", m.version(), m.name()), &sql)
+                    .unwrap()
+            })
+            .collect();
+        refinery::Runner::new(&legacy).run(&mut conn).unwrap();
+        conn.execute(
+            "INSERT INTO decks (name) VALUES ('Saved on another computer')",
+            [],
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn legacy_line_endings_produce_incompatible_checksums() {
+        let canonical: Vec<_> = migrations::runner()
+            .get_migrations()
+            .iter()
+            .map(|m| {
+                refinery::Migration::unapplied(
+                    &format!("V{}__{}", m.version(), m.name()),
+                    &m.sql().unwrap().replace("\r\n", "\n"),
+                )
+                .unwrap()
+            })
+            .collect();
+        let mut conn = legacy_database(true);
+        let error = refinery::Runner::new(&canonical)
+            .run(&mut conn)
+            .unwrap_err();
+        assert!(error.to_string().contains("different"), "{}", error);
+    }
+
+    #[test]
+    fn restores_both_line_endings_and_preserves_safety_snapshot() {
+        for crlf in [false, true] {
+            let app_data_dir = std::env::temp_dir().join(format!(
+                "flashcode_restore_test_{}_{}",
+                std::process::id(),
+                chrono::Utc::now().timestamp_nanos_opt().unwrap()
+            ));
+            fs::create_dir_all(&app_data_dir).unwrap();
+            let source = DatabaseConnection {
+                conn: legacy_database(crlf),
+                app_data_dir: app_data_dir.clone(),
+                current_user_id: None,
+                recovery_failed: false,
+            };
+            let bytes = source.backup_to_bytes().unwrap();
+            let mut target = DatabaseConnection {
+                conn: Connection::open_in_memory().unwrap(),
+                app_data_dir: app_data_dir.clone(),
+                current_user_id: None,
+                recovery_failed: false,
+            };
+            target.switch_user("restore-test").unwrap();
+            target
+                .conn
+                .execute(
+                    "INSERT INTO decks (name) VALUES ('Original Windows data')",
+                    [],
+                )
+                .unwrap();
+            source
+                .conn
+                .execute(
+                    "UPDATE refinery_schema_history SET checksum = '123' WHERE version = 1",
+                    [],
+                )
+                .unwrap();
+            let invalid = source.backup_to_bytes().unwrap();
+            assert!(target.restore_from_bytes(&invalid).is_err());
+            assert_eq!(
+                target
+                    .conn
+                    .query_row("SELECT name FROM decks", [], |r| r.get::<_, String>(0))
+                    .unwrap(),
+                "Original Windows data"
+            );
+            let safety = target.restore_from_bytes(&bytes).unwrap();
+            assert_eq!(
+                target
+                    .conn
+                    .query_row("SELECT name FROM decks", [], |r| r.get::<_, String>(0))
+                    .unwrap(),
+                "Saved on another computer"
+            );
+            let safety_conn = Connection::open(safety).unwrap();
+            assert_eq!(
+                safety_conn
+                    .query_row("SELECT name FROM decks", [], |r| r.get::<_, String>(0))
+                    .unwrap(),
+                "Original Windows data"
+            );
+            // Reopening must use the same compatibility rules as restoring.
+            target.close_user().unwrap();
+            target.switch_user("restore-test").unwrap();
+            assert!(!target.is_recovery_failed());
+            drop(safety_conn);
+            drop(target);
+            drop(source);
+            fs::remove_dir_all(app_data_dir).unwrap();
+        }
+    }
+
+    #[test]
+    fn rejects_real_migration_changes() {
+        let mut conn = legacy_database(true);
+        conn.execute(
+            "UPDATE refinery_schema_history SET checksum = '123' WHERE version = 1",
+            [],
+        )
+        .unwrap();
+        assert!(run_portable_migrations(&mut conn).is_err());
+        let checksum: String = conn
+            .query_row(
+                "SELECT checksum FROM refinery_schema_history WHERE version = 1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(checksum, "123");
+    }
+}
+
+// Windows checkouts can embed CRLF SQL, while macOS checkouts typically use LF.
+// Accept only those two exact checksums; genuine migration changes still fail.
+fn run_portable_migrations(conn: &mut Connection) -> Result<(), Error> {
+    let embedded = migrations::runner();
+    let mut canonical = Vec::new();
+    let has_history = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'refinery_schema_history')",
+        [],
+        |row| row.get::<_, bool>(0),
+    )?;
+    let tx = conn.transaction()?;
+    for migration in embedded.get_migrations() {
+        let name = format!("V{}__{}", migration.version(), migration.name());
+        let sql = migration
+            .sql()
+            .expect("embedded SQL migration")
+            .replace("\r\n", "\n");
+        let lf = refinery::Migration::unapplied(&name, &sql)
+            .map_err(|e| Error::InvalidParameterName(e.to_string()))?;
+        let crlf = refinery::Migration::unapplied(&name, &sql.replace('\n', "\r\n"))
+            .map_err(|e| Error::InvalidParameterName(e.to_string()))?;
+        if has_history {
+            tx.execute(
+                "UPDATE refinery_schema_history SET checksum = ?1 WHERE version = ?2 AND name = ?3 AND checksum = ?4",
+                rusqlite::params![lf.checksum().to_string(), lf.version(), lf.name(), crlf.checksum().to_string()],
+            )?;
+        }
+        canonical.push(lf);
+    }
+    tx.commit()?;
+    refinery::Runner::new(&canonical)
+        .run(conn)
+        .map_err(|e| Error::InvalidParameterName(e.to_string()))?;
+    Ok(())
+}
+
 pub struct DatabaseConnection {
     conn: Connection,
     app_data_dir: PathBuf,
@@ -78,7 +251,7 @@ impl DatabaseConnection {
         // If any step fails, the current connection remains untouched.
         let mut new_conn = Connection::open(&target_path)?;
         new_conn.execute("PRAGMA foreign_keys = ON;", [])?;
-        migrations::runner().run(&mut new_conn).map_err(|e| {
+        run_portable_migrations(&mut new_conn).map_err(|e| {
             Error::InvalidParameterName(format!("Migration error for user database: {}", e))
         })?;
 
@@ -171,7 +344,7 @@ impl DatabaseConnection {
 
             temp_conn.execute("PRAGMA foreign_keys = ON;", [])?;
 
-            migrations::runner().run(&mut temp_conn).map_err(|e| {
+            run_portable_migrations(&mut temp_conn).map_err(|e| {
                 Error::InvalidParameterName(format!(
                     "Candidate database migration failed: {}",
                     e
@@ -239,7 +412,7 @@ impl DatabaseConnection {
 
             let mut new_conn = Connection::open(&target_db_path)?;
             new_conn.execute("PRAGMA foreign_keys = ON;", [])?;
-            migrations::runner().run(&mut new_conn).map_err(|e| {
+            run_portable_migrations(&mut new_conn).map_err(|e| {
                 Error::InvalidParameterName(format!(
                     "Migration failed on restored database: {}",
                     e
@@ -274,7 +447,7 @@ impl DatabaseConnection {
 
                     let mut recovered_conn = Connection::open(&target_db_path)?;
                     recovered_conn.execute("PRAGMA foreign_keys = ON;", [])?;
-                    migrations::runner().run(&mut recovered_conn).map_err(|e| {
+                    run_portable_migrations(&mut recovered_conn).map_err(|e| {
                         Error::InvalidParameterName(format!(
                             "Migration failed while recovering original database: {}",
                             e
