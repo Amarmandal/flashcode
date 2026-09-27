@@ -1,0 +1,2 @@
+# Migration checksums must be identical in Windows, macOS, and Linux builds.
+src-tauri/migrations/*.sql text eol=lf
