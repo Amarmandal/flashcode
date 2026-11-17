@@ -18,6 +18,24 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { IconAlertCircle, IconCheck, IconX } from '@tabler/icons-react';
 import { QuizWithQuestions } from '../types/quiz';
 import { SuccessApiResponse } from '../types/successApiResponse';
+import { MathText } from '../components/quiz/MathText';
+
+function shuffleForAttempt<T>(items: T[]): T[] {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+
+  // A shuffle can randomly produce the original order; avoid that for every
+  // attempt with more than one item so opening a quiz changes its presentation.
+  if (items.length > 1 && shuffled.every((item, index) => item === items[index])) {
+    shuffled.push(shuffled.shift()!);
+  }
+
+  return shuffled;
+}
 
 export const TakeQuizPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,7 +58,13 @@ export const TakeQuizPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await invoke<SuccessApiResponse<QuizWithQuestions>>('get_quiz', { id: parseInt(id!) });
-      setQuiz(res.data);
+      setQuiz({
+        ...res.data,
+        questions: shuffleForAttempt(res.data.questions).map((question) => ({
+          ...question,
+          options: shuffleForAttempt(question.options),
+        })),
+      });
     } catch (e) {
       setError((e as Error)?.message || 'Failed to fetch quiz');
     } finally {
@@ -137,7 +161,7 @@ export const TakeQuizPage: React.FC = () => {
           <Stack gap="xl">
             <Box>
               <Text size="lg" fw={600} mb="xs">
-                {currentQuestion.questionText}
+                <MathText text={currentQuestion.questionText} />
               </Text>
               <Text size="xs" c="dimmed">
                 {currentQuestion.questionType === 'single-choice'
@@ -191,7 +215,7 @@ export const TakeQuizPage: React.FC = () => {
                         ) : (
                           <Checkbox checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />
                         )}
-                        <Text size="md">{option.optionText}</Text>
+                        <Text size="md"><MathText text={option.optionText} /></Text>
                       </Group>
 
                       {showFeedback && option.isCorrect && (

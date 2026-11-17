@@ -1,0 +1,13 @@
+.quiz-math-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.quiz-math-display .katex-display {
+  margin: 0.35em 0;
+}
+
+.quiz-math-display .katex-display > .katex {
+  white-space: normal;
+}

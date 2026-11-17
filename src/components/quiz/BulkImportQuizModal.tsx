@@ -152,21 +152,21 @@ export const BulkImportQuizModal: React.FC<BulkImportQuizModalProps> = ({ opened
   "questions": [
     {
       "questionType": "single-choice",
-      "questionText": "Example single-choice question?",
+      "questionText": "What is the derivative of $f(x)=x^2$?",
       "options": [
         {
           "optionId": 1,
-          "optionText": "First option",
+          "optionText": "$2x$",
           "isCorrect": true
         },
         {
           "optionId": 2,
-          "optionText": "Second option",
+          "optionText": "$x$",
           "isCorrect": false
         },
         {
           "optionId": 3,
-          "optionText": "Third option",
+          "optionText": "$x^2$",
           "isCorrect": false
         }
       ]
@@ -223,7 +223,7 @@ export const BulkImportQuizModal: React.FC<BulkImportQuizModalProps> = ({ opened
     <Modal opened={opened} onClose={handleClose} title="Bulk Import Quiz" size="lg">
       <Stack>
         <Text size="sm" c="dimmed">
-          Import a complete quiz from JSON format.
+          Import a complete quiz from JSON. For math, use KaTeX-compatible LaTeX inside $...$ for inline formulas or $$...$$ for standalone formulas.
         </Text>
 
         <Tabs value={activeTab} onChange={setActiveTab}>
@@ -337,6 +337,12 @@ export const BulkImportQuizModal: React.FC<BulkImportQuizModalProps> = ({ opened
             </Text>
             <Text size="sm" c="blue.9">
               • Options must have "optionId" (string or number), "optionText", and "isCorrect"
+            </Text>
+            <Text size="sm" c="blue.9">
+              • Wrap equations in $...$ inline or $$...$$ on a separate line. Examples: $f(x)=x^2$, $\sum_&#123;i=0&#125;^&#123;n&#125; A_i(C)$
+            </Text>
+            <Text size="sm" c="blue.9">
+              • Use standard KaTeX-supported LaTeX commands such as \frac&#123;a&#125;&#123;b&#125;, \sqrt&#123;x&#125;, and \sum.
             </Text>
           </Stack>
         </Paper>
